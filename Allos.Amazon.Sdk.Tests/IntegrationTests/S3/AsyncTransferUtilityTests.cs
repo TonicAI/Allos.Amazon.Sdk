@@ -13,7 +13,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
 {
     [TestClass]
     [AmazonSdkFork("sdk/test/Services/S3/IntegrationTests/TransferUtilityTests.cs", "AWSSDK_DotNet.IntegrationTests.Tests.S3")]
-    public class TransferUtilityTests : TestBase<AmazonS3Client>
+    public class AsyncTransferUtilityTests : TestBase<AmazonS3Client>
     {
         public static readonly long MegSize = (int)Math.Pow(2, 20);
         public static readonly long KiloSize = (int)Math.Pow(2, 10);
@@ -23,7 +23,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
         {
             get
             {
-                _basePath = Path.Combine(base.BasePath, nameof(TransferUtilityTests));
+                _basePath = Path.Combine(base.BasePath, nameof(AsyncTransferUtilityTests));
                 return _basePath;
             }
         }
@@ -124,7 +124,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             ArgumentNullException.ThrowIfNull(_bucketName);
             
             var client = Client;
-            using (var tu = new TransferUtility(client))
+            using (var tu = new AsyncTransferUtility(client))
             {
                 await tu.UploadAsync(_fullPath, _bucketName).ConfigureAwait(false);
 
@@ -167,7 +167,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             //take the generated file and turn it into an unseekable stream
             
             var stream = GenerateUnseekableStreamFromFile(path);
-            using (var tu = new TransferUtility(client))
+            using (var tu = new AsyncTransferUtility(client))
             {
                 await tu.UploadAsync(stream, _bucketName, fileName).ConfigureAwait(false);
 
@@ -205,7 +205,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             //take the generated file and turn it into an unseekable stream
 
             var stream = GenerateUnseekableStreamFromFile(path);
-            using (var tu = new TransferUtility(client))
+            using (var tu = new AsyncTransferUtility(client))
             {
                 await tu.UploadAsync(stream, _bucketName, fileName).ConfigureAwait(false);
 
@@ -244,7 +244,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             //take the generated file and turn it into an unseekable stream
 
             var stream = GenerateUnseekableStreamFromFile(path);
-            using (var tu = new TransferUtility(client))
+            using (var tu = new AsyncTransferUtility(client))
             {
                 await tu.UploadAsync(stream, _bucketName, fileName).ConfigureAwait(false);
 
@@ -283,7 +283,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             //take the generated file and turn it into an unseekable stream
 
             var stream = GenerateUnseekableStreamFromFile(path);
-            using (var tu = new TransferUtility(client))
+            using (var tu = new AsyncTransferUtility(client))
             {
                 await tu.UploadAsync(stream, _bucketName, fileName).ConfigureAwait(false);
 
@@ -324,7 +324,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             //take the generated file and turn it into an unseekable stream
 
             var stream = GenerateUnseekableStreamFromFile(path);
-            using (var tu = new TransferUtility(client))
+            using (var tu = new AsyncTransferUtility(client))
             {
                 await tu.UploadAsync(stream, _bucketName, fileName).ConfigureAwait(false);
 
@@ -359,7 +359,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             var key = UtilityMethods.GenerateName(@"SimpleUploadTest\EmptyFile");
 
             var stream = new UnseekableStream(setZeroLengthStream: true);
-            using (var tu = new TransferUtility(client))
+            using (var tu = new AsyncTransferUtility(client))
             {
                 await tu.UploadAsync(stream, _bucketName, key).ConfigureAwait(false);
 
@@ -386,7 +386,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             //take the generated file and turn it into an unseekable stream
 
             var stream = GenerateUnseekableStreamFromFile(path);
-            using (var tu = new TransferUtility(client))
+            using (var tu = new AsyncTransferUtility(client))
             {
                 await tu.UploadAsync(stream, _bucketName, fileName).ConfigureAwait(false);
 
@@ -411,7 +411,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             //take the generated file and turn it into an unseekable stream
 
             var stream = GenerateUnseekableStreamFromFile(path);
-            using (var tu = new TransferUtility(client))
+            using (var tu = new AsyncTransferUtility(client))
             {
                 TransferUtilityUploadRequest transferUtilityUploadRequest = new()
                 {
@@ -482,7 +482,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             // Upload the file. A permission denied exception would be thrown if an incorrect request is made
             // missing the required ServerSideEncryptionCustomerMethod and ServerSideEncryptionCustomerProvidedKey
             // values.
-            var tu = new TransferUtility(Client);
+            var tu = new AsyncTransferUtility(Client);
             var request = new TransferUtilityUploadRequest
             {
                 BucketName = _ssecBucketName,
@@ -524,7 +524,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             string base64Key = Convert.ToBase64String(aesEncryption.Key);
 
             // Upload test directory with SSE-C
-            var transferUtility = new TransferUtility(Client);
+            var transferUtility = new AsyncTransferUtility(Client);
             var requestUpload = new TransferUtilityUploadDirectoryRequest
             {
                 BucketName = _bucketName,
@@ -660,7 +660,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
                 //MinSizeBeforePartUpload = MEG_SIZE
             };
             var transferUtility = client != null ? new(client, config)
-                : new TransferUtility(Client, config);
+                : new AsyncTransferUtility(Client, config);
             var request = new TransferUtilityUploadRequest
             {
                 BucketName = _bucketName,
@@ -711,7 +711,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             {
                 ConcurrentServiceRequests = 10,
             };
-            var transferUtility = new TransferUtility(Client, config);
+            var transferUtility = new AsyncTransferUtility(Client, config);
             var request = new TransferUtilityUploadDirectoryRequest
             {
                 BucketName = _bucketName,
@@ -773,7 +773,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             var keyPrefix = directory.Name;
             Directory.Delete(directoryPath, true);
 
-            var transferUtility = new TransferUtility(Client);
+            var transferUtility = new AsyncTransferUtility(Client);
             var request = new TransferUtilityDownloadDirectoryRequest
             {
                 BucketName = _bucketName,
@@ -815,7 +815,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             var directoryPath = directory.FullName;
             Directory.Delete(directoryPath, true);
 
-            var transferUtility = new TransferUtility(Client);
+            var transferUtility = new AsyncTransferUtility(Client);
             var request = new TransferUtilityDownloadDirectoryRequest
             {
                 BucketName = _bucketName,
@@ -842,7 +842,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             {
                 ConcurrentServiceRequests = 10,
             };
-            var transferUtility = new TransferUtility(Client, config);
+            var transferUtility = new AsyncTransferUtility(Client, config);
             var request = new TransferUtilityUploadDirectoryRequest
             {
                 BucketName = _bucketName,
@@ -926,7 +926,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
 
             var downloadedFilePath = originalFilePath + ".dn";
 
-            var transferUtility = new TransferUtility(Client);
+            var transferUtility = new AsyncTransferUtility(Client);
             var request = new TransferUtilityDownloadRequest
             {
                 BucketName = _bucketName,
@@ -959,7 +959,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
                 FilePath = originalFilePath
             }).ConfigureAwait(false);
 
-            var transferUtility = new TransferUtility(Client);
+            var transferUtility = new AsyncTransferUtility(Client);
             var stream = await transferUtility.OpenStreamAsync(_bucketName, key).ConfigureAwait(false);
             Assert.IsNotNull(stream);
             Assert.IsTrue(stream.CanRead);
@@ -989,7 +989,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
 
             var filename = UtilityMethods.GenerateName(objectKey.Replace('/', '\\'));
             var filePath = Path.Combine(BasePath, filename);
-            var transferUtility = new TransferUtility(Client);
+            var transferUtility = new AsyncTransferUtility(Client);
             await transferUtility.DownloadAsync(new()
             {
                 BucketName = _bucketName,
@@ -1019,7 +1019,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             CancellationToken token = tokenSource.Token;
 
             Task? uploadTask = null;
-            using (var transferUtility = new TransferUtility(Client))
+            using (var transferUtility = new AsyncTransferUtility(Client))
             {
                 try
                 {

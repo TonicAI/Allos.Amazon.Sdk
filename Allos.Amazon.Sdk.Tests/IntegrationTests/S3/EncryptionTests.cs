@@ -100,18 +100,18 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             ArgumentNullException.ThrowIfNull(s3EncryptionClient);
             ArgumentNullException.ThrowIfNull(_bucketName);
             
-            var directory = TransferUtilityTests.CreateTestDirectory(basePath, 10 * TransferUtilityTests.KiloSize);
+            var directory = AsyncTransferUtilityTests.CreateTestDirectory(basePath, 10 * AsyncTransferUtilityTests.KiloSize);
             var keyPrefix = directory.Name;
             var directoryPath = directory.FullName;
 
-            using (var transferUtility = new TransferUtility(s3EncryptionClient))
+            using (var transferUtility = new AsyncTransferUtility(s3EncryptionClient))
             {
                 TransferUtilityUploadDirectoryRequest uploadRequest = CreateUploadDirRequest(directoryPath, keyPrefix);
                 await transferUtility.UploadDirectoryAsync(uploadRequest).ConfigureAwait(false);
 
-                var newDir = TransferUtilityTests.GenerateDirectoryPath(basePath);
+                var newDir = AsyncTransferUtilityTests.GenerateDirectoryPath(basePath);
                 await transferUtility.DownloadDirectoryAsync(_bucketName, keyPrefix, newDir).ConfigureAwait(false);
-                await TransferUtilityTests.ValidateDirectoryContents(s3EncryptionClient, _bucketName, keyPrefix, directory).ConfigureAwait(false);
+                await AsyncTransferUtilityTests.ValidateDirectoryContents(s3EncryptionClient, _bucketName, keyPrefix, directory).ConfigureAwait(false);
             }
         }
 

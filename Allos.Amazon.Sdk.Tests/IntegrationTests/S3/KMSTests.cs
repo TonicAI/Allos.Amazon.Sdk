@@ -19,7 +19,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
     {
         private const string Key = "foo.txt";
         private const string TestContents = "Test contents";
-        private static readonly string _largeTestContents = new('@', (int)(TransferUtilityTests.MegSize * 19));
+        private static readonly string _largeTestContents = new('@', (int)(AsyncTransferUtilityTests.MegSize * 19));
         private static readonly string _fileContents = "Test file contents";
         protected override string BasePath => Path.Combine(base.BasePath, nameof(KmsTests));
 
@@ -373,7 +373,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
                 VerifyKeyId(keyId, usedKeyId);
                 await VerifyObject(bucketName, key2, usedKeyId, serverSideEncryptionMethod).ConfigureAwait(false);
 
-                TransferUtility utility = new(Client);
+                AsyncTransferUtility utility = new(Client);
                 var smallUploadRequest = new TransferUtilityUploadRequest
                 {
                     BucketName = bucketName,
@@ -422,7 +422,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             {
                 ConcurrentServiceRequests = 10,
             };
-            var transferUtility = new TransferUtility(Client, config);
+            var transferUtility = new AsyncTransferUtility(Client, config);
             var request = new TransferUtilityUploadDirectoryRequest
             {
                 BucketName = bucketName,
@@ -639,7 +639,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
         }
         private async Task VerifyObjectWithTransferUtility(string bucketName)
         {
-            var transferUtility = new TransferUtility(Client);
+            var transferUtility = new AsyncTransferUtility(Client);
             var filePath = Path.GetFullPath("downloadedFile.txt");
             await transferUtility.DownloadAsync(new()
             {

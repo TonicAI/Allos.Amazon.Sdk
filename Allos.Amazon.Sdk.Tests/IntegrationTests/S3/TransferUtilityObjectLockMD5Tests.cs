@@ -44,7 +44,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
         public async Task TestMultipartUploadStreamViaTransferUtility()
         {
             var transferConfig = new TransferUtilityConfig { MinSizeBeforePartUpload = 6000000 };
-            var transfer = new TransferUtility(Client, transferConfig);
+            var transfer = new AsyncTransferUtility(Client, transferConfig);
             var content = new string('a', 7000000);
             var contentStream = new MemoryStream(Encoding.UTF8.GetBytes(content));
 
@@ -70,7 +70,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
         public async Task TestMultipartUploadFileViaTransferUtility()
         {
             var transferConfig = new TransferUtilityConfig { MinSizeBeforePartUpload = 6000000 };
-            var transfer = new TransferUtility(Client, transferConfig);
+            var transfer = new AsyncTransferUtility(Client, transferConfig);
             var content = new string('a', 7000000);
             var key = UtilityMethods.GenerateName(nameof(TransferUtilityObjectLockMd5Tests));
             var filePath = Path.Combine(Path.GetTempPath(), key + ".txt");
@@ -105,7 +105,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
         {
             var transferConfig = new TransferUtilityConfig { MinSizeBeforePartUpload = 6000000 };
 
-            var transfer = new TransferUtility(Client, transferConfig);
+            var transfer = new AsyncTransferUtility(Client, transferConfig);
             var content = new string('a', 7000000);
             var key = UtilityMethods.GenerateName(nameof(TransferUtilityObjectLockMd5Tests));
             var filePath = Path.Combine(Path.GetTempPath(), key + ".txt");
@@ -134,7 +134,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
         {
             var transferConfig = new TransferUtilityConfig { MinSizeBeforePartUpload = 6000000 };
 
-            var transfer = new TransferUtility(Client, transferConfig);
+            var transfer = new AsyncTransferUtility(Client, transferConfig);
             var content = new string('a', 2000000);
             var key = UtilityMethods.GenerateName(nameof(TransferUtilityObjectLockMd5Tests));
             var filePath = Path.Combine(Path.GetTempPath(), key + ".txt");
@@ -162,7 +162,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
         public async Task TestMultipartUploadStreamFailViaTransferUtility()
         {
             var transferConfig = new TransferUtilityConfig { MinSizeBeforePartUpload = 6000000 };
-            var transfer = new TransferUtility(Client, transferConfig);
+            var transfer = new AsyncTransferUtility(Client, transferConfig);
             var content = new string('a', 7000000);
             var contentStream = new MemoryStream(Encoding.UTF8.GetBytes(content));
 
@@ -183,7 +183,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
         public async Task TestSimpleUploadStreamFailViaTransferUtility()
         {
             var transferConfig = new TransferUtilityConfig { MinSizeBeforePartUpload = 6000000 };
-            var transfer = new TransferUtility(Client, transferConfig);
+            var transfer = new AsyncTransferUtility(Client, transferConfig);
             var content = new string('a', 2000000);
             var contentStream = new MemoryStream(Encoding.UTF8.GetBytes(content));
 
@@ -203,7 +203,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
         public async Task TestSimpleUploadStreamViaTransferUtility()
         {
             var transferConfig = new TransferUtilityConfig { MinSizeBeforePartUpload = 6000000 };
-            var transfer = new TransferUtility(Client, transferConfig);
+            var transfer = new AsyncTransferUtility(Client, transferConfig);
             var content = new string('a', 2000000);
             var contentStream = new MemoryStream(Encoding.UTF8.GetBytes(content));
 
@@ -229,7 +229,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
         public async Task TestSimpleUploadStreamViaTransferUtility_ExplicitMD5()
         {
             var transferConfig = new TransferUtilityConfig { MinSizeBeforePartUpload = 6000000 };
-            var transfer = new TransferUtility(Client, transferConfig);
+            var transfer = new AsyncTransferUtility(Client, transferConfig);
             var content = new string('a', 2000000);
             var contentStream = new MemoryStream(Encoding.UTF8.GetBytes(content));
 
@@ -256,7 +256,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
         public async Task TestSimpleUploadFileViaTransferUtility()
         {
             var transferConfig = new TransferUtilityConfig { MinSizeBeforePartUpload = 6000000 };
-            var transfer = new TransferUtility(Client, transferConfig);
+            var transfer = new AsyncTransferUtility(Client, transferConfig);
             var content = new string('a', 2000000);
             var key = UtilityMethods.GenerateName(nameof(TransferUtilityObjectLockMd5Tests));
             var filePath = Path.Combine(Path.GetTempPath(), key + ".txt");
@@ -289,7 +289,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
         public async Task TestSimpleUploadFileViaTransferUtility_ExplicitMD5()
         {
             var transferConfig = new TransferUtilityConfig { MinSizeBeforePartUpload = 6000000 };
-            var transfer = new TransferUtility(Client, transferConfig);
+            var transfer = new AsyncTransferUtility(Client, transferConfig);
             var content = new string('a', 2000000);
             var key = UtilityMethods.GenerateName(nameof(TransferUtilityObjectLockMd5Tests));
             var filePath = Path.Combine(Path.GetTempPath(), key + ".txt");
@@ -327,7 +327,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
         public async Task TestUploadDirectoryViaTransferUtility()
         {
             var transferConfig = new TransferUtilityConfig { MinSizeBeforePartUpload = 6000000 };
-            var transfer = new TransferUtility(Client, transferConfig);
+            var transfer = new AsyncTransferUtility(Client, transferConfig);
             var directoryKey = UtilityMethods.GenerateName(nameof(TransferUtilityObjectLockMd5Tests));
             var directoryPath = Path.Combine(Path.GetTempPath(), directoryKey);
             Dictionary<string, int> filesWithSize = new()
@@ -375,7 +375,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
         public async Task TestSimpleUploadFileWithObjectLockViaTransferUtility()
         {
             var transferConfig = new TransferUtilityConfig { MinSizeBeforePartUpload = 6000000 };
-            var transfer = new TransferUtility(Client, transferConfig);
+            var transfer = new AsyncTransferUtility(Client, transferConfig);
             var content = new string('a', 2000000);
             var key = UtilityMethods.GenerateName(nameof(TransferUtilityObjectLockMd5Tests));
             var filePath = Path.Combine(Path.GetTempPath(), key + ".txt");
@@ -419,7 +419,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
         public async Task TestUploadDirectoryWithObjectLockViaTransferUtility()
         {
             var transferConfig = new TransferUtilityConfig { MinSizeBeforePartUpload = 6000000 };
-            var transfer = new TransferUtility(Client, transferConfig);
+            var transfer = new AsyncTransferUtility(Client, transferConfig);
             var directoryKey = UtilityMethods.GenerateName(nameof(TransferUtilityObjectLockMd5Tests));
             var directoryPath = Path.Combine(Path.GetTempPath(), directoryKey);
             Dictionary<string, int> filesWithSize = new()
@@ -478,7 +478,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
         public async Task TestMultipartUploadFileWithObjectLockViaTransferUtility()
         {
             var transferConfig = new TransferUtilityConfig { MinSizeBeforePartUpload = 6000000 };
-            var transfer = new TransferUtility(Client, transferConfig);
+            var transfer = new AsyncTransferUtility(Client, transferConfig);
             var content = new string('a', 7000000);
             var key = UtilityMethods.GenerateName(nameof(TransferUtilityObjectLockMd5Tests));
             var filePath = Path.Combine(Path.GetTempPath(), key + ".txt");

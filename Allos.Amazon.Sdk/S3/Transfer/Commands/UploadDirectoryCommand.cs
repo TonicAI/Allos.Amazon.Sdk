@@ -13,7 +13,7 @@ namespace Amazon.Sdk.S3.Transfer.Internal
     internal class UploadDirectoryCommand : BaseCommand
     {
         private readonly TransferUtilityUploadDirectoryRequest _request;
-        private readonly TransferUtility _utility;
+        private readonly AsyncTransferUtility _utility;
         private readonly TransferUtilityConfig _config;
 
         private int _totalNumberOfFiles;
@@ -21,7 +21,7 @@ namespace Amazon.Sdk.S3.Transfer.Internal
         private long _totalBytes;
         private long _transferredBytes;        
 
-        internal UploadDirectoryCommand(TransferUtility utility, TransferUtilityConfig config, TransferUtilityUploadDirectoryRequest request)
+        internal UploadDirectoryCommand(AsyncTransferUtility utility, TransferUtilityConfig config, TransferUtilityUploadDirectoryRequest request)
         {
             _utility = utility;
             _request = request;

@@ -1,9 +1,9 @@
 ﻿using System.Text;
 using Amazon.Runtime;
-using Amazon.Runtime.Internal.Util;
 using Amazon.S3;
 using Amazon.Sdk.Fork;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Serilog;
 using ThirdParty.MD5;
 
 namespace AWSSDK_DotNet.IntegrationTests.Utils
@@ -12,7 +12,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Utils
     public static class UtilityMethods
     {
         public const string SdkTestPrefix = "aws-net-sdk";
-        private static Logger Logger => Logger.GetLogger(typeof(UtilityMethods));
+        private static ILogger Logger => TonicLogger.ForContext(typeof(UtilityMethods));
         
         public static void  CompareFiles(string file1, string file2)
         {

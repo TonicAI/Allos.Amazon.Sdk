@@ -8,7 +8,7 @@ using Amazon.Util.Internal;
 namespace Amazon.Sdk.S3;
 
 /// <summary>
-/// Extensions implementing parts of <see cref="ICoreAmazonS3"/> relevent to <see cref="TransferUtility"/>
+/// Extensions implementing parts of <see cref="ICoreAmazonS3"/> relevent to <see cref="AsyncTransferUtility"/>
 /// </summary>
 [SuppressMessage("ReSharper", "UnusedMember.Global")]
 [SuppressMessage("ReSharper", "UnusedType.Global")]
@@ -17,7 +17,7 @@ public static class AmazonS3ClientExtensions
 {
     public static Task UploadObjectFromStreamAsync(this IAmazonS3 s3Client, string bucketName, string objectKey, Stream stream, IDictionary<string, object> additionalProperties, CancellationToken cancellationToken)
     {
-        var transfer = new TransferUtility(s3Client);
+        var transfer = new AsyncTransferUtility(s3Client);
         var request = new TransferUtilityUploadRequest
         {
             BucketName = bucketName,
@@ -30,7 +30,7 @@ public static class AmazonS3ClientExtensions
 
     public static Task UploadObjectFromFilePathAsync(this IAmazonS3 s3Client, string bucketName, string objectKey, string filepath, IDictionary<string, object> additionalProperties, CancellationToken cancellationToken)
     {
-        var transfer = new TransferUtility(s3Client);
+        var transfer = new AsyncTransferUtility(s3Client);
         var request = new TransferUtilityUploadRequest
         {
             BucketName = bucketName,
@@ -44,7 +44,7 @@ public static class AmazonS3ClientExtensions
 
     public static Task DownloadToFilePathAsync(this IAmazonS3 s3Client, string bucketName, string objectKey, string filepath, IDictionary<string, object> additionalProperties, CancellationToken cancellationToken)
     {
-        var transfer = new TransferUtility(s3Client);
+        var transfer = new AsyncTransferUtility(s3Client);
 
         var request = new TransferUtilityDownloadRequest
         {

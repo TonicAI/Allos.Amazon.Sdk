@@ -1,12 +1,12 @@
 ﻿using System.Net;
 using System.Runtime.ExceptionServices;
 using Amazon.Runtime;
-using Amazon.Runtime.Internal.Util;
 using Amazon.S3;
 using Amazon.S3.Model;
 using Amazon.Sdk.Fork;
 using Amazon.Sdk.S3.Util;
 using Amazon.Util;
+using Serilog;
 
 namespace Amazon.Sdk.S3.Transfer.Internal
 {
@@ -29,7 +29,7 @@ namespace Amazon.Sdk.S3.Transfer.Internal
         };
 #endif
 
-        private static Logger Logger => Logger.GetLogger(typeof(TransferUtility));
+        private static ILogger Logger => TonicLogger.ForContext<AsyncTransferUtility>();
 
         private readonly IAmazonS3 _s3Client;
         private readonly TransferUtilityDownloadRequest _request;
@@ -191,7 +191,10 @@ namespace Amazon.Sdk.S3.Transfer.Internal
                 {
                     if (exception.InnerException is ThreadAbortException)
                     {
-                        Logger.Error(exception, "Encountered a IOException caused by a ThreadAbortException.");
+                        Logger.Error(exception, 
+                            "Encountered a `{ExceptionType}` caused by a `{InnerExceptionType}`",
+                            nameof(IOException),
+                            nameof(ThreadAbortException));
                         return false;
                     }
                     exception = exception.InnerException;
@@ -199,8 +202,10 @@ namespace Amazon.Sdk.S3.Transfer.Internal
 #endif
                 if (retries < maxRetries)
                 {
-                    Logger.InfoFormat("Encountered an IOException. Retrying, retry {0} of {1}.",
-                        retries, maxRetries);
+                    Logger.Information("Encountered an {ExceptionType} Retrying, retry {RetryNumber} of {MaxRetries}",
+                        nameof(IOException),
+                        retries, 
+                        maxRetries);
                     return true;
                 }
 
@@ -210,12 +215,15 @@ namespace Amazon.Sdk.S3.Transfer.Internal
 #if !NETSTANDARD
             if (exception is WebException webException)
             {
-                Logger.Error(exception, "Encountered a WebException ({1}).", webException.GetType().Name, webException.Status);
+                Logger.Error(exception, "Encountered a `{ExceptionType}`: `{Status}`", 
+                    webException.GetType().Name,
+                    webException.Status);
                 if (WebExceptionStatusesToRetryOn.Contains(webException.Status) && retries < maxRetries)
                 {
-
-                    Logger.InfoFormat("Encountered a WebException ({0}). Retrying, retry {1} of {2}.",
-                        webException.Status, retries, maxRetries);
+                    Logger.Information("Encountered a WebException `{Status}`: Retrying, retry {RetryNumber} of {MaxRetries}.=",
+                        webException.Status, 
+                        retries, 
+                        maxRetries);
                     return true;
                 }
 
@@ -224,11 +232,15 @@ namespace Amazon.Sdk.S3.Transfer.Internal
 #endif
             if (!canRetry)
             {
-                Logger.Error(exception, "Encountered a {0}. Reached maximum retries {1} of {2}.", exception.GetType().Name, retries, maxRetries);
+                Logger.Error(exception, "Encountered a {ExceptionType}: Reached maximum retries {RetryNumber} of {MaxRetries}", 
+                    exception.GetType().Name, 
+                    retries, 
+                    maxRetries);
                 return false;
             }
 
-            Logger.Error(exception, "Encountered a non retryable {0}, rethrowing exception.", exception.GetType().Name);
+            Logger.Error(exception, "Encountered a non retryable {ExceptionType}, rethrowing", 
+                exception.GetType().Name);
             return false;
         }
 

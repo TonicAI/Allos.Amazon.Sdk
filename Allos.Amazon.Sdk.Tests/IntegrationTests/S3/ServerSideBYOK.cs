@@ -192,7 +192,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
                 aesEncryption.GenerateKey();
                 string base64Key = Convert.ToBase64String(aesEncryption.Key);
 
-                TransferUtility utility = new(Client);
+                AsyncTransferUtility utility = new(Client);
 
                 var uploadRequest = new TransferUtilityUploadRequest
                 {

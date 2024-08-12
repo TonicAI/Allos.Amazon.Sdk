@@ -22,7 +22,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Bennewitz.Ninja.Amazon.Sdk\Bennewitz.Ninja.Amazon.Sdk.csproj" />
+      <ProjectReference Include="..\Allos.Amazon.Sdk\Allos.Amazon.Sdk.csproj" />
     </ItemGroup>
 
 </Project>

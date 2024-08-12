@@ -15,7 +15,7 @@ namespace Amazon.Sdk.Fork;
 [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
 public sealed class AmazonSdkForkAttribute : Attribute
 {
-    public const string ForkedFromRepositoryTag = "v3.7.99.0"; //"main"
+    public const string ForkedFromRepositoryTag = "v3.7.99.0";
     
     public AmazonSdkForkAttribute(
         string sdkSourcePath, 
@@ -29,7 +29,8 @@ public sealed class AmazonSdkForkAttribute : Attribute
         SdkNamespace = sdkNamespace;
         SdkRepositoryTag = 
             string.IsNullOrWhiteSpace(forkedFromRepositoryTag) ? ForkedFromRepositoryTag : forkedFromRepositoryTag;
-        ForkRepositoryUri = string.IsNullOrWhiteSpace(forkRepositoryUri) ? null : new Uri(forkRepositoryUri);
+        ForkRepositoryUri = string.IsNullOrWhiteSpace(forkRepositoryUri) ? 
+            new Uri("https://github.com/TonicAI/Bennewitz.Ninja.Amazon.Sdk.git") : new Uri(forkRepositoryUri);
     }
     
     /// <summary>

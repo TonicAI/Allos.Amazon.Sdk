@@ -1,9 +1,9 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
-using Amazon.Runtime.Internal.Util;
 using Amazon.S3;
 using Amazon.Sdk.Fork;
 using Amazon.Sdk.S3.Transfer.Internal;
+using Serilog;
 
 namespace Amazon.Sdk.S3.Transfer
 {
@@ -35,7 +35,7 @@ namespace Amazon.Sdk.S3.Transfer
     [AmazonSdkFork("sdk/src/Services/S3/Custom/Transfer/TransferUtility.cs", "Amazon.S3.Transfer")]
     [AmazonSdkFork("sdk/src/Services/S3/Custom/Transfer/_async/TransferUtility.async.cs", "Amazon.S3.Transfer")]
     [AmazonSdkFork("sdk/src/Services/S3/Custom/Transfer/_bcl45%2Bnetstandard/TransferUtility.async.cs", "Amazon.S3.Transfer")]
-    public class TransferUtility : ITransferUtility
+    public class AsyncTransferUtility : IAsyncTransferUtility
     {
         private readonly TransferUtilityConfig _config;
         private readonly bool _shouldDispose;
@@ -44,10 +44,11 @@ namespace Amazon.Sdk.S3.Transfer
         {
             "s3-object-lambda"
         };
-        private static Logger Logger => Logger.GetLogger(typeof(ITransferUtility));
+
+        private static ILogger Logger => TonicLogger.ForContext<AsyncTransferUtility>();
         
         /// <summary>
-        /// 	Constructs a new <see cref="TransferUtility"/> class.
+        /// 	Constructs a new <see cref="AsyncTransferUtility"/> class.
         /// </summary>
         /// <param name="awsAccessKeyId">
         /// 	The AWS Access Key ID.
@@ -61,14 +62,14 @@ namespace Amazon.Sdk.S3.Transfer
         /// Use an instance of <see cref="AmazonS3Client"/> constructed with an <see cref="AmazonS3Config"/> object with the Timeout specified. 
         /// </para>        
         /// </remarks>
-        public TransferUtility(string awsAccessKeyId, string awsSecretAccessKey)
+        public AsyncTransferUtility(string awsAccessKeyId, string awsSecretAccessKey)
             : this(new AmazonS3Client(awsAccessKeyId, awsSecretAccessKey))
         {
             _shouldDispose = true;
         }
 
         /// <summary>
-        /// 	Constructs a new <see cref="TransferUtility"/> class.
+        /// 	Constructs a new <see cref="AsyncTransferUtility"/> class.
         /// </summary>
         /// <param name="awsAccessKeyId">
         /// 	The AWS Access Key ID.
@@ -85,14 +86,14 @@ namespace Amazon.Sdk.S3.Transfer
         /// Use an instance of <see cref="AmazonS3Client"/> constructed with an <see cref="AmazonS3Config"/> object with the Timeout specified. 
         /// </para>        
         /// </remarks>
-        public TransferUtility(string awsAccessKeyId, string awsSecretAccessKey, RegionEndpoint region)
+        public AsyncTransferUtility(string awsAccessKeyId, string awsSecretAccessKey, RegionEndpoint region)
             : this(new AmazonS3Client(awsAccessKeyId, awsSecretAccessKey, region))
         {
             _shouldDispose = true;
         }
 
         /// <summary>
-        /// 	Constructs a new instance of the <see cref="TransferUtility"/> class.
+        /// 	Constructs a new instance of the <see cref="AsyncTransferUtility"/> class.
         /// </summary>
         /// <param name="awsAccessKeyId">
         /// 	The AWS Access Key ID.
@@ -109,14 +110,14 @@ namespace Amazon.Sdk.S3.Transfer
         /// Use an instance of <see cref="AmazonS3Client"/> constructed with an <see cref="AmazonS3Config"/> object with the Timeout specified. 
         /// </para>        
         /// </remarks>
-        public TransferUtility(string awsAccessKeyId, string awsSecretAccessKey, TransferUtilityConfig config)
+        public AsyncTransferUtility(string awsAccessKeyId, string awsSecretAccessKey, TransferUtilityConfig config)
             : this(new AmazonS3Client(awsAccessKeyId, awsSecretAccessKey), config)
         {
             _shouldDispose = true;
         }
 
         /// <summary>
-        /// 	Constructs a new instance of the <see cref="TransferUtility"/> class.
+        /// 	Constructs a new instance of the <see cref="AsyncTransferUtility"/> class.
         /// </summary>
         /// <param name="awsAccessKeyId">
         /// 	The AWS Access Key ID.
@@ -136,7 +137,7 @@ namespace Amazon.Sdk.S3.Transfer
         /// Use an instance of <see cref="AmazonS3Client"/> constructed with an <see cref="AmazonS3Config"/> object with the Timeout specified. 
         /// </para>        
         /// </remarks>
-        public TransferUtility(string awsAccessKeyId, string awsSecretAccessKey, RegionEndpoint region, TransferUtilityConfig config)
+        public AsyncTransferUtility(string awsAccessKeyId, string awsSecretAccessKey, RegionEndpoint region, TransferUtilityConfig config)
             : this(new AmazonS3Client(awsAccessKeyId, awsSecretAccessKey, region), config)
         {
             _shouldDispose = true;
@@ -144,7 +145,7 @@ namespace Amazon.Sdk.S3.Transfer
 
 
         /// <summary>
-        /// 	Constructs a new instance of the <see cref="TransferUtility"/> class.
+        /// 	Constructs a new instance of the <see cref="AsyncTransferUtility"/> class.
         /// </summary>
         /// <param name="s3Client">
         /// 	The Amazon S3 client.
@@ -155,19 +156,19 @@ namespace Amazon.Sdk.S3.Transfer
         /// Use an instance of <see cref="AmazonS3Client"/> constructed with an <see cref="AmazonS3Config"/> object with the Timeout specified. 
         /// </para>        
         /// </remarks>
-        public TransferUtility(IAmazonS3 s3Client)
+        public AsyncTransferUtility(IAmazonS3 s3Client)
             : this(s3Client, new())
         {
         }
 
         /// <summary>
-        /// 	Initializes a new instance of the <see cref="TransferUtility"/> class.
+        /// 	Initializes a new instance of the <see cref="AsyncTransferUtility"/> class.
         /// </summary>
         /// <param name="s3Client">
         /// 	The Amazon S3 client.
         /// </param>
         /// <param name="config">
-        /// 	Specifies advanced configuration settings for <see cref="TransferUtility"/>.
+        /// 	Specifies advanced configuration settings for <see cref="AsyncTransferUtility"/>.
         /// </param>
         /// <remarks>
         /// <para>
@@ -175,14 +176,14 @@ namespace Amazon.Sdk.S3.Transfer
         /// Use an instance of <see cref="AmazonS3Client"/> constructed with an <see cref="AmazonS3Config"/> object with the Timeout specified. 
         /// </para>        
         /// </remarks>
-        public TransferUtility(IAmazonS3 s3Client, TransferUtilityConfig config)
+        public AsyncTransferUtility(IAmazonS3 s3Client, TransferUtilityConfig config)
         {
             S3Client = s3Client;
             _config = config;
         }
 
         /// <summary>
-        /// 	Constructs a new <see cref="TransferUtility"/> class.
+        /// 	Constructs a new <see cref="AsyncTransferUtility"/> class.
         /// </summary>
         /// <remarks>
         /// <para>
@@ -190,14 +191,14 @@ namespace Amazon.Sdk.S3.Transfer
         /// Use an instance of <see cref="AmazonS3Client"/> constructed with an <see cref="AmazonS3Config"/> object with the Timeout specified. 
         /// </para>        
         /// </remarks>
-        public TransferUtility()
+        public AsyncTransferUtility()
             : this(new AmazonS3Client())
         {
             _shouldDispose = true;
         }
 
         /// <summary>
-        /// 	Constructs a new <see cref="TransferUtility"/> class.
+        /// 	Constructs a new <see cref="AsyncTransferUtility"/> class.
         /// </summary>
         /// <param name="region">
         ///     The region to configure the transfer utility for.
@@ -208,21 +209,21 @@ namespace Amazon.Sdk.S3.Transfer
         /// Use an instance of <see cref="AmazonS3Client"/> constructed with an <see cref="AmazonS3Config"/> object with the Timeout specified. 
         /// </para>        
         /// </remarks>
-        public TransferUtility(RegionEndpoint region)
+        public AsyncTransferUtility(RegionEndpoint region)
             : this(new AmazonS3Client(region))
         {
             _shouldDispose = true;
         }
 
         /// <summary>
-        /// 	Constructs a new <see cref="TransferUtility"/> class.
+        /// 	Constructs a new <see cref="AsyncTransferUtility"/> class.
         /// </summary>
         /// <param name="config">
-        /// 	Specifies advanced configuration settings for <see cref="TransferUtility"/>.
+        /// 	Specifies advanced configuration settings for <see cref="AsyncTransferUtility"/>.
         /// </param>
         /// <remarks>
         /// </remarks>
-        public TransferUtility(TransferUtilityConfig config)
+        public AsyncTransferUtility(TransferUtilityConfig config)
             : this(new AmazonS3Client(), config)
         {
             _shouldDispose = true;

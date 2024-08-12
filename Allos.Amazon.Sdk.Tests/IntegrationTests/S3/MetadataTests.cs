@@ -41,8 +41,8 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             { "Content-Disposition", "attachment; filename=\"fname.ext\"" }
         };
         private const string TempFile = "tempFile.txt";
-        private static readonly long _smallFileSize = TransferUtilityTests.KiloSize * 100;
-        private static readonly long _largeFileSize = TransferUtilityTests.MegSize * 20;
+        private static readonly long _smallFileSize = AsyncTransferUtilityTests.KiloSize * 100;
+        private static readonly long _largeFileSize = AsyncTransferUtilityTests.MegSize * 20;
         private static readonly string _basePath = Path.GetFullPath(@"\transferutility\");
 
         private static readonly List<string> _keysToValidate = new();
@@ -98,7 +98,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             await client.PutObjectAsync(putObjectRequest).ConfigureAwait(false);
             await ValidateObjectMetadataAndHeaders(key).ConfigureAwait(false);
 
-            using (var tu = new TransferUtility(client))
+            using (var tu = new AsyncTransferUtility(client))
             {
                 // Test small TransferUtility upload
                 key = "transferUtilitySmall" + _random.Next();
@@ -175,11 +175,11 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
         [TestCategory("S3")]
         public async Task TestDirectoryUploads()
         {
-            var progressValidator = new TransferUtilityTests.DirectoryProgressValidator<UploadDirectoryProgressArgs>();
-            TransferUtilityTests.ConfigureProgressValidator(progressValidator);
+            var progressValidator = new AsyncTransferUtilityTests.DirectoryProgressValidator<UploadDirectoryProgressArgs>();
+            AsyncTransferUtilityTests.ConfigureProgressValidator(progressValidator);
 
             _keysToValidate.Clear();
-            await UploadDirectory(10 * TransferUtilityTests.MegSize, progressValidator, validate: true).ConfigureAwait(false);
+            await UploadDirectory(10 * AsyncTransferUtilityTests.MegSize, progressValidator, validate: true).ConfigureAwait(false);
             progressValidator.AssertOnCompletion();
 
             foreach (var key in _keysToValidate)
@@ -209,7 +209,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
                 Assert.AreEqual(metadataValue.Trim(), response.Metadata[metadataName]);
             }
 
-            using (var tu = new TransferUtility(Client))
+            using (var tu = new AsyncTransferUtility(Client))
             {
                 // Test small TransferUtility upload
                 key = "transferUtilitySmall" + _random.Next();
@@ -252,11 +252,11 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             }
         }
 
-        private async Task UploadDirectory(long size, TransferUtilityTests.DirectoryProgressValidator<UploadDirectoryProgressArgs> progressValidator, bool validate = true)
+        private async Task UploadDirectory(long size, AsyncTransferUtilityTests.DirectoryProgressValidator<UploadDirectoryProgressArgs> progressValidator, bool validate = true)
         {
             ArgumentNullException.ThrowIfNull(_bucketName);
             
-            var directory = TransferUtilityTests.CreateTestDirectory(BasePath, size);
+            var directory = AsyncTransferUtilityTests.CreateTestDirectory(BasePath, size);
             var directoryPath = directory.FullName;
             var keyPrefix = directory.Name;
 
@@ -264,7 +264,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             {
                 ConcurrentServiceRequests = 10,
             };
-            var transferUtility = new TransferUtility(Client, config);
+            var transferUtility = new AsyncTransferUtility(Client, config);
             var request = new TransferUtilityUploadDirectoryRequest
             {
                 BucketName = _bucketName,
@@ -298,7 +298,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             Assert.AreEqual(5, files.Count);
 
             if (validate)
-                await TransferUtilityTests.ValidateDirectoryContents(Client, _bucketName, keyPrefix, directory).ConfigureAwait(false);
+                await AsyncTransferUtilityTests.ValidateDirectoryContents(Client, _bucketName, keyPrefix, directory).ConfigureAwait(false);
         }
 
         private static async Task ValidateObjectMetadataAndHeaders(string key, bool unicode = false)

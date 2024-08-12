@@ -5,7 +5,7 @@ namespace Amazon.Sdk.S3.Transfer
 {
     /// <summary>
     /// 	<para>
-    /// 	Provides configuration options for how <see cref="TransferUtility"/> processes requests.
+    /// 	Provides configuration options for how <see cref="AsyncTransferUtility"/> processes requests.
     /// 	</para>
     /// 	<para>
     /// 	The best configuration settings depend on network

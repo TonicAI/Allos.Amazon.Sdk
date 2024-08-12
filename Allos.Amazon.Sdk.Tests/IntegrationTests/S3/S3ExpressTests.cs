@@ -70,7 +70,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
 
             try
             {
-                using (var tu = new TransferUtility(Client))
+                using (var tu = new AsyncTransferUtility(Client))
                 {
                     await tu.UploadAsync(filePath, _bucketName).ConfigureAwait(false);
 
@@ -134,7 +134,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
                 var directory = new DirectoryInfo(directoryPath);
                 var retrievedDirectory = new DirectoryInfo(retrievedDirectoryPath);
 
-                using (var tu = new TransferUtility(Client))
+                using (var tu = new AsyncTransferUtility(Client))
                 {
                     var uploadDirectoryRequest = new TransferUtilityUploadDirectoryRequest
                     {
@@ -156,7 +156,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
 
                     Assert.AreEqual(5, files.Count);
 
-                    var transferUtility = new TransferUtility(Client);
+                    var transferUtility = new AsyncTransferUtility(Client);
                     var request = new TransferUtilityDownloadDirectoryRequest
                     {
                         BucketName = _bucketName,

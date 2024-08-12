@@ -4,4 +4,4 @@ using System.Runtime.CompilerServices;
 // this allows methods to be exposed for unit tests via 'internal' instead of 'public'
 // https://docs.microsoft.com/en-us/dotnet/api/system.runtime.compilerservices.internalsvisibletoattribute?view=net-6.0
 
-[assembly: InternalsVisibleTo("Bennewitz.Ninja.Amazon.Sdk.Tests")]
+[assembly: InternalsVisibleTo("Allos.Amazon.Sdk.Tests")]

@@ -33,7 +33,7 @@ namespace Amazon.Sdk.S3.Transfer
     [AmazonSdkFork("sdk/src/Services/S3/Custom/Transfer/ITransferUtility.cs", "Amazon.S3.Transfer")]
     [AmazonSdkFork("sdk/src/Services/S3/Custom/Transfer/_async/ITransferUtility.async.cs", "Amazon.S3.Transfer")]
     [AmazonSdkFork("sdk/src/Services/S3/Custom/Transfer/_bcl45%2Bnetstandard/ITransferUtility.async.cs", "Amazon.S3.Transfer")]
-    public interface ITransferUtility : IDisposable
+    public interface IAsyncTransferUtility : IDisposable
     {
         /// <summary>
         /// 	Uploads the specified file.  

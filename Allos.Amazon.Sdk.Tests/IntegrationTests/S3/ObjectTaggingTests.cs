@@ -15,7 +15,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
         private string? _bucketName;
         private readonly string _objectKey = "helloworld";
 
-        private TransferUtility? _transferClient;
+        private AsyncTransferUtility? _transferClient;
         
         [TestInitialize]
         public void TestInitialize()
