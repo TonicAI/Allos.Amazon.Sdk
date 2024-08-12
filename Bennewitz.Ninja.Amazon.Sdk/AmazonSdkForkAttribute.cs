@@ -29,7 +29,7 @@ public sealed class AmazonSdkForkAttribute : Attribute
         SdkNamespace = sdkNamespace;
         SdkRepositoryTag = 
             string.IsNullOrWhiteSpace(forkedFromRepositoryTag) ? ForkedFromRepositoryTag : forkedFromRepositoryTag;
-        ForkRepositoryUri = string.IsNullOrWhiteSpace(forkRepositoryUri) ? new Uri("https://github.com/JanusMael/Bennewitz.Ninja.Amazon.Sdk.git") : new Uri(forkRepositoryUri);
+        ForkRepositoryUri = string.IsNullOrWhiteSpace(forkRepositoryUri) ? null : new Uri(forkRepositoryUri);
     }
     
     /// <summary>
