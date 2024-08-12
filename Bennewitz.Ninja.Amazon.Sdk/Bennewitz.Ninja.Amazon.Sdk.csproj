@@ -1,0 +1,45 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <LangVersion>latest</LangVersion>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+      <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+      <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Amazon.Extensions.S3.Encryption" Version="2.1.1" />
+      <PackageReference Include="AWSSDK.S3" Version="3.7.400.4" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Compile Update="S3\Custom\Transfer\Internal\AbortMultipartUploadsCommand.async.cs">
+        <DependentUpon>AbortMultipartUploadsCommand.cs</DependentUpon>
+      </Compile>
+      <Compile Update="S3\Custom\Transfer\Internal\BaseCommand.async.cs">
+        <DependentUpon>BaseCommand.cs</DependentUpon>
+      </Compile>
+      <Compile Update="S3\Custom\Transfer\Internal\DownloadCommand.async.cs">
+        <DependentUpon>DownloadCommand.cs</DependentUpon>
+      </Compile>
+      <Compile Update="S3\Custom\Transfer\Internal\MultipartUploadCommand.async.cs">
+        <DependentUpon>MultipartUploadCommand.cs</DependentUpon>
+      </Compile>
+      <Compile Update="S3\Custom\Transfer\Internal\OpenStreamCommand.async.cs">
+        <DependentUpon>OpenStreamCommand.cs</DependentUpon>
+      </Compile>
+      <Compile Update="S3\Custom\Transfer\Internal\SimpleUploadCommand.async.cs">
+        <DependentUpon>SimpleUploadCommand.cs</DependentUpon>
+      </Compile>
+    </ItemGroup>
+
+</Project>
