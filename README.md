@@ -1,4 +1,4 @@
-# Bennewitz.Ninja.Amazon.Sdk
+# Allos.Amazon.Sdk
 
 A manually created fork of a subset of the official `AWS SDK`: [aws-sdk-net](https://github.com/aws/aws-sdk-net.git) that discards `[Obsolete]` and synchronous functionality and prefers modern `C#` syntax to that of the original source code. 
 
