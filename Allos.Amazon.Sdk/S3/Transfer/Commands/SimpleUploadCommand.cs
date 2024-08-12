@@ -62,9 +62,6 @@ namespace Amazon.Sdk.S3.Transfer.Internal
                 ServerSideEncryptionCustomerProvidedKeyMD5 = _fileTransporterRequest.ServerSideEncryptionCustomerProvidedKeyMd5,
                 ServerSideEncryptionKeyManagementServiceKeyId = _fileTransporterRequest.ServerSideEncryptionKeyManagementServiceKeyId,
                 TagSet = _fileTransporterRequest.TagSet,
-// if (BCL && !BCL45)
-//              Timeout = ClientConfig.GetTimeoutValue(this._config.DefaultTimeout, this._fileTransporterRequest.Timeout),
-// endif
                 DisableDefaultChecksumValidation = _fileTransporterRequest.DisableDefaultChecksumValidation,
                 DisablePayloadSigning = _fileTransporterRequest.DisablePayloadSigning,
                 ChecksumAlgorithm = _fileTransporterRequest.ChecksumAlgorithm

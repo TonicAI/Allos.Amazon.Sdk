@@ -9,9 +9,7 @@ using Amazon.Util;
 namespace Amazon.Sdk.S3.Transfer
 {
     /// <summary>
-    /// Contains all the parameters
-    /// that can be set when making a this request with the 
-    /// <c>TransferUtility</c> method.
+    /// Contains all the parameters that can be set when making a request with the <c>TransferUtility</c> method.
     /// </summary>
     [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
     [SuppressMessage("ReSharper", "PropertyCanBeMadeInitOnly.Global")]
@@ -51,7 +49,6 @@ namespace Amazon.Sdk.S3.Transfer
         /// </value>
         [MemberNotNullWhen(true, nameof(Key))]
         public string? Key { get; set; }
-
 
         /// <summary>
         /// Checks if Key property is set.
@@ -96,7 +93,6 @@ namespace Amazon.Sdk.S3.Transfer
         /// 	The content type of the uploaded Amazon S3 object.
         /// </value>
         public string? ContentType { get; set; }
-
 
         /// <summary>
         /// Checks if ContentType property is set.
@@ -208,8 +204,7 @@ namespace Amazon.Sdk.S3.Transfer
             get => _partSize.GetValueOrDefault();
             set => _partSize = value;
         }
-
-
+        
         /// <summary>
         /// Checks if PartSize property is set.
         /// </summary>
@@ -269,8 +264,7 @@ namespace Amazon.Sdk.S3.Transfer
         /// </code>
         /// </remarks>
         public event EventHandler<UploadProgressArgs>? UploadProgressEvent;
-
-
+        
         /// <summary>
         /// Causes the UploadProgressEvent event to be fired.
         /// </summary>
@@ -279,8 +273,7 @@ namespace Amazon.Sdk.S3.Transfer
         {
             AWSSDKUtils.InvokeInBackground(UploadProgressEvent, progressArgs, this);
         }
-
-
+        
         /// <summary>
         /// Gets the length of the content by either checking the FileInfo.Length property or the Stream.Length property.
         /// </summary>
@@ -336,14 +329,14 @@ namespace Amazon.Sdk.S3.Transfer
         public bool AutoResetStreamPosition { get; set; } = true;
 
         /// <summary>
-        /// 	Sets whether or not the stream used with this request is
-        /// 	automatically closed when all of the content is read from the stream
+        /// 	Sets whether the stream used with this request is
+        /// 	automatically closed when all the content is read from the stream
         ///   	and returns this object instance, 
         /// 	enabling additional method calls to be chained together.
         /// </summary>
         /// <param name="autoCloseStream">
-        /// 	A value of <c>true</c> if the if the stream is
-        /// 	automatically closed when all of the content is read from the stream.
+        /// 	A value of <c>true</c> if the stream is
+        /// 	automatically closed when all the content is read from the stream.
         /// 	A value of <c>false</c> if otherwise. 	
         /// </param>
         /// <returns>
@@ -444,66 +437,5 @@ namespace Amazon.Sdk.S3.Transfer
         /// </para>
         /// </summary>
         public ChecksumAlgorithm? ChecksumAlgorithm { get; set; }
-    }
-
-    /// <summary>
-    /// Encapsulates the information needed to provide
-    /// transfer progress to subscribers of the Put Object
-    /// Event.
-    /// </summary>
-    [SuppressMessage("ReSharper", "AutoPropertyCanBeMadeGetOnly.Global")]
-    public class UploadProgressArgs : TransferProgressArgs
-    {
-        /// <summary>
-        /// The constructor takes the number of
-        /// currently transferred bytes and the
-        /// total number of bytes to be transferred
-        /// </summary>
-        /// <param name="incrementTransferred">The how many bytes were transferred since last event.</param>
-        /// <param name="transferred">The number of bytes transferred</param>
-        /// <param name="total">The total number of bytes to be transferred</param>
-        public UploadProgressArgs(long incrementTransferred, long transferred, long total)
-            : base(incrementTransferred, transferred, total)
-        {
-        }
-
-        /// <summary>
-        /// The constructor takes the number of
-        /// currently transferred bytes and the
-        /// total number of bytes to be transferred
-        /// </summary>
-        /// <param name="incrementTransferred">The how many bytes were transferred since last event.</param>
-        /// <param name="transferred">The number of bytes transferred</param>
-        /// <param name="total">The total number of bytes to be transferred</param>        
-        /// <param name="filePath">The file being uploaded</param>
-        public UploadProgressArgs(long incrementTransferred, long transferred, long total, string filePath)
-            : this(incrementTransferred, transferred, total, 0, filePath)
-        {
-        }
-
-        /// <summary>
-        /// The constructor takes the number of
-        /// currently transferred bytes and the
-        /// total number of bytes to be transferred
-        /// </summary>
-        /// <param name="incrementTransferred">The how many bytes were transferred since last event.</param>
-        /// <param name="transferred">The number of bytes transferred</param>
-        /// <param name="total">The total number of bytes to be transferred</param>
-        /// <param name="compensationForRetry">A compensation for any upstream aggregators of this event to correct the totalTransferred count,
-        /// in case the underlying request is retried.</param>
-        /// <param name="filePath">The file being uploaded</param>
-        internal UploadProgressArgs(long incrementTransferred, long transferred, long total, long compensationForRetry, string? filePath)
-            : base(incrementTransferred, transferred, total)
-        {
-            FilePath = filePath;
-            CompensationForRetry = compensationForRetry;
-        }
-
-        /// <summary>
-        /// Gets the FilePath.
-        /// </summary>
-        public string? FilePath { get; private set; }
-
-        internal long CompensationForRetry { get; set; }
     }
 }

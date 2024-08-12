@@ -34,8 +34,7 @@ namespace Amazon.Sdk.S3.Transfer
         /// </returns>
         [MemberNotNullWhen(true, nameof(BucketName))]
         internal bool IsSetBucketName() => !string.IsNullOrWhiteSpace(BucketName);
-
-
+        
         /// <summary>
         /// 	Gets or sets the local directory where objects from Amazon S3 will be downloaded.  
 		/// 	If the directory doesn't exist, it will be created.
@@ -66,8 +65,7 @@ namespace Amazon.Sdk.S3.Transfer
         /// the / at the end set the DisableSlashCorrection property to true.
         /// </summary>
         public string? S3Directory { get; set; }
-
-
+        
         /// <summary>
         /// 	Gets whether the S3Directory property is set.
         /// </summary>
@@ -193,7 +191,6 @@ namespace Amazon.Sdk.S3.Transfer
         /// </code>
         /// </remarks>
         public event EventHandler<DownloadDirectoryProgressArgs>? DownloadedDirectoryProgressEvent;
-
 
         internal void OnRaiseProgressEvent(DownloadDirectoryProgressArgs downloadDirectoryProgress)
         {

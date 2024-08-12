@@ -139,8 +139,7 @@ namespace Amazon.Sdk.S3.Transfer
         /// <value>
         /// 	The content type for all the uploaded Amazon S3 objects.
         /// </value>
-        public string?ContentType { get; set; }
-
+        public string? ContentType { get; set; }
 
         /// <summary>
         /// 	Gets or sets the storage class for the uploaded Amazon S3 objects.
@@ -259,8 +258,7 @@ namespace Amazon.Sdk.S3.Transfer
         /// by the TransferUtilityConfig.ConcurrencyLevel property.
         /// </summary>
         public bool UploadFilesConcurrently { get; set; }
-
-
+        
         /// <summary>
         /// The event for UploadDirectoryProgressEvent notifications. All
         /// subscribers will be notified when a new progress

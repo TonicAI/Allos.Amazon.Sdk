@@ -10,6 +10,8 @@ namespace Amazon.Sdk.S3.Transfer;
 /// event.
 /// </summary>
 [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
+[SuppressMessage("ReSharper", "UnusedMember.Global")]
+[SuppressMessage("ReSharper", "AutoPropertyCanBeMadeGetOnly.Global")]
 [AmazonSdkFork("sdk/src/Services/S3/Custom/Transfer/TransferUtilityDownloadDirectoryRequest.cs", "Amazon.S3.Transfer")]
 public class DownloadDirectoryProgressArgs : EventArgs
 {
@@ -31,8 +33,12 @@ public class DownloadDirectoryProgressArgs : EventArgs
     /// <param name="totalNumberOfBytesForCurrentFile">
     /// The size of the current file in bytes.
     /// </param>
-    public DownloadDirectoryProgressArgs(int numberOfFilesDownloaded, int totalNumberOfFiles,
-        string? currentFile, long transferredBytesForCurrentFile, long totalNumberOfBytesForCurrentFile)
+    public DownloadDirectoryProgressArgs(
+        int numberOfFilesDownloaded, 
+        int totalNumberOfFiles,
+        string? currentFile, 
+        long transferredBytesForCurrentFile, 
+        long totalNumberOfBytesForCurrentFile)
     {
         NumberOfFilesDownloaded = numberOfFilesDownloaded;
         TotalNumberOfFiles = totalNumberOfFiles;
@@ -65,8 +71,14 @@ public class DownloadDirectoryProgressArgs : EventArgs
     /// <param name="totalNumberOfBytesForCurrentFile">
     /// The size of the current file in bytes.
     /// </param>
-    public DownloadDirectoryProgressArgs(int numberOfFilesDownloaded, int totalNumberOfFiles, long transferredBytes, long totalBytes,
-        string? currentFile, long transferredBytesForCurrentFile, long totalNumberOfBytesForCurrentFile)
+    public DownloadDirectoryProgressArgs(
+        int numberOfFilesDownloaded, 
+        int totalNumberOfFiles, 
+        long transferredBytes, 
+        long totalBytes,
+        string? currentFile, 
+        long transferredBytesForCurrentFile, 
+        long totalNumberOfBytesForCurrentFile)
     {
         NumberOfFilesDownloaded = numberOfFilesDownloaded;
         TotalNumberOfFiles = totalNumberOfFiles;
@@ -141,7 +153,11 @@ public class DownloadDirectoryProgressArgs : EventArgs
     /// <returns>The string representation of this instance of DownloadDirectoryProgressArgs.</returns>
     public override string ToString()
     {
-        return string.Format(CultureInfo.InvariantCulture, "Total Files: {0}, Downloaded Files {1}, Total Bytes: {2}, Transferred Bytes: {3}",
-            TotalNumberOfFiles, NumberOfFilesDownloaded, TotalBytes, TransferredBytes);
+        return string.Format(CultureInfo.InvariantCulture, 
+            "Total Files: {0}, Downloaded Files {1}, Total Bytes: {2}, Transferred Bytes: {3}",
+            TotalNumberOfFiles, 
+            NumberOfFilesDownloaded, 
+            TotalBytes, 
+            TransferredBytes);
     }
 }

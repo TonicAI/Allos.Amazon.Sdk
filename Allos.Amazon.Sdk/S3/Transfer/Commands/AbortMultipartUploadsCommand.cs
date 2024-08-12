@@ -23,7 +23,11 @@ namespace Amazon.Sdk.S3.Transfer.Internal
             _config = new TransferUtilityConfig();
         }
         
-        internal AbortMultipartUploadsCommand(IAmazonS3 s3Client, string bucketName, DateTime initiateDate, TransferUtilityConfig config)
+        internal AbortMultipartUploadsCommand(
+            IAmazonS3 s3Client, 
+            string bucketName, 
+            DateTime initiateDate, 
+            TransferUtilityConfig config)
         {
             _s3Client = s3Client;
             _bucketName = bucketName;
@@ -91,8 +95,11 @@ namespace Amazon.Sdk.S3.Transfer.Internal
             }
         }
 
-        private async Task<AbortMultipartUploadResponse> AbortAsync(AbortMultipartUploadRequest abortRequest, CancellationTokenSource internalCts,
-            CancellationToken cancellationToken, SemaphoreSlim asyncThrottler)
+        private async Task<AbortMultipartUploadResponse> AbortAsync(
+            AbortMultipartUploadRequest abortRequest, 
+            CancellationTokenSource internalCts,
+            CancellationToken cancellationToken, 
+            SemaphoreSlim asyncThrottler)
         {
             try
             {

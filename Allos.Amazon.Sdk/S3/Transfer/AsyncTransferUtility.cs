@@ -35,6 +35,7 @@ namespace Amazon.Sdk.S3.Transfer
     [AmazonSdkFork("sdk/src/Services/S3/Custom/Transfer/TransferUtility.cs", "Amazon.S3.Transfer")]
     [AmazonSdkFork("sdk/src/Services/S3/Custom/Transfer/_async/TransferUtility.async.cs", "Amazon.S3.Transfer")]
     [AmazonSdkFork("sdk/src/Services/S3/Custom/Transfer/_bcl45%2Bnetstandard/TransferUtility.async.cs", "Amazon.S3.Transfer")]
+    [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public class AsyncTransferUtility : IAsyncTransferUtility
     {
         private readonly TransferUtilityConfig _config;
@@ -45,6 +46,7 @@ namespace Amazon.Sdk.S3.Transfer
             "s3-object-lambda"
         };
 
+        [SuppressMessage("ReSharper", "UnusedMember.Local")] 
         private static ILogger Logger => TonicLogger.ForContext<AsyncTransferUtility>();
         
         /// <summary>
@@ -142,7 +144,6 @@ namespace Amazon.Sdk.S3.Transfer
         {
             _shouldDispose = true;
         }
-
 
         /// <summary>
         /// 	Constructs a new instance of the <see cref="AsyncTransferUtility"/> class.
@@ -349,8 +350,6 @@ namespace Amazon.Sdk.S3.Transfer
             var request = ConstructUploadRequest(stream, bucketName, key);
             return UploadAsync(request, cancellationToken);                    
         }
-
-
 
         /// <summary>
         /// 	Uploads the file or stream specified by the request.  

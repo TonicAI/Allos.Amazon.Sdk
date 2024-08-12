@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using Amazon.Sdk.Fork;
 
 namespace Amazon.Sdk.S3.Transfer;
@@ -8,7 +9,9 @@ namespace Amazon.Sdk.S3.Transfer;
 /// transfer progress to subscribers of the <c>UploadDirectory</c>
 /// event.
 /// </summary>
+[SuppressMessage("ReSharper", "UnusedMember.Global")]
 [AmazonSdkFork("sdk/src/Services/S3/Custom/Transfer/TransferUtilityUploadDirectoryRequest.cs", "Amazon.S3.Transfer")]
+[SuppressMessage("ReSharper", "AutoPropertyCanBeMadeGetOnly.Global")]
 public class UploadDirectoryProgressArgs : EventArgs
 {
     /// <summary>
@@ -29,8 +32,12 @@ public class UploadDirectoryProgressArgs : EventArgs
     /// <param name="totalNumberOfBytesForCurrentFile">
     /// The size of the current file in bytes.
     /// </param>
-    public UploadDirectoryProgressArgs(int numberOfFilesUploaded, int totalNumberOfFiles, 
-        string? currentFile, long transferredBytesForCurrentFile, long totalNumberOfBytesForCurrentFile)
+    public UploadDirectoryProgressArgs(
+        int numberOfFilesUploaded, 
+        int totalNumberOfFiles, 
+        string? currentFile, 
+        long transferredBytesForCurrentFile, 
+        long totalNumberOfBytesForCurrentFile)
     {
         NumberOfFilesUploaded = numberOfFilesUploaded;
         TotalNumberOfFiles = totalNumberOfFiles;
@@ -63,8 +70,14 @@ public class UploadDirectoryProgressArgs : EventArgs
     /// <param name="totalNumberOfBytesForCurrentFile">
     /// The size of the current file in bytes.
     /// </param>
-    public UploadDirectoryProgressArgs(int numberOfFilesUploaded, int totalNumberOfFiles, long transferredBytes, long totalBytes,
-        string? currentFile, long transferredBytesForCurrentFile, long totalNumberOfBytesForCurrentFile)
+    public UploadDirectoryProgressArgs(
+        int numberOfFilesUploaded, 
+        int totalNumberOfFiles, 
+        long transferredBytes, 
+        long totalBytes,
+        string? currentFile, 
+        long transferredBytesForCurrentFile, 
+        long totalNumberOfBytesForCurrentFile)
     {
         NumberOfFilesUploaded = numberOfFilesUploaded;
         TotalNumberOfFiles = totalNumberOfFiles;
@@ -138,7 +151,11 @@ public class UploadDirectoryProgressArgs : EventArgs
     /// <returns>The string representation of this instance of UploadDirectoryProgressArgs.</returns>
     public override string ToString()
     {
-        return string.Format(CultureInfo.InvariantCulture, "Total Files: {0}, Uploaded Files {1}, Total Bytes: {2}, Transferred Bytes: {3}",
-            TotalNumberOfFiles, NumberOfFilesUploaded, TotalBytes, TransferredBytes);
+        return string.Format(CultureInfo.InvariantCulture, 
+            "Total Files: {0}, Uploaded Files {1}, Total Bytes: {2}, Transferred Bytes: {3}",
+            TotalNumberOfFiles, 
+            NumberOfFilesUploaded, 
+            TotalBytes, 
+            TransferredBytes);
     }
 }

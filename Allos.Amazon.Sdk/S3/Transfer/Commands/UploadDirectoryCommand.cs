@@ -21,7 +21,10 @@ namespace Amazon.Sdk.S3.Transfer.Internal
         private long _totalBytes;
         private long _transferredBytes;        
 
-        internal UploadDirectoryCommand(AsyncTransferUtility utility, TransferUtilityConfig config, TransferUtilityUploadDirectoryRequest request)
+        internal UploadDirectoryCommand(
+            AsyncTransferUtility utility, 
+            TransferUtilityConfig config, 
+            TransferUtilityUploadDirectoryRequest request)
         {
             _utility = utility;
             _request = request;
@@ -34,9 +37,15 @@ namespace Amazon.Sdk.S3.Transfer.Internal
         {
             string prefix = GetKeyPrefix();
 
-            string basePath = _request.Directory == null ? string.Empty : new DirectoryInfo(_request.Directory).FullName;
+            string basePath = _request.Directory == null ? 
+                string.Empty : 
+                new DirectoryInfo(_request.Directory).FullName;
 
-            string[] filePaths = await GetFiles(basePath, _request.SearchPattern, _request.SearchOption, cancellationToken)
+            string[] filePaths = await GetFiles(
+                    basePath, 
+                    _request.SearchPattern, 
+                    _request.SearchOption, 
+                    cancellationToken)
                 .ConfigureAwait(continueOnCapturedContext: false);                
             _totalNumberOfFiles = filePaths.Length;
 
@@ -92,7 +101,11 @@ namespace Amazon.Sdk.S3.Transfer.Internal
             }
         }
 
-        private Task<string[]> GetFiles(string path, string searchPattern, SearchOption searchOption, CancellationToken cancellationToken)
+        private Task<string[]> GetFiles(
+            string path, 
+            string searchPattern, 
+            SearchOption searchOption, 
+            CancellationToken cancellationToken)
         {
             return Task.Run(() =>
                 { 
@@ -133,9 +146,6 @@ namespace Amazon.Sdk.S3.Transfer.Internal
                 ObjectLockLegalHoldStatus = _request.ObjectLockLegalHoldStatus,
                 ObjectLockMode = _request.ObjectLockMode,
                 DisablePayloadSigning = _request.DisablePayloadSigning,
-// if (BCL && !BCL45)
-//              Timeout = ClientConfig.GetTimeoutValue(this._config.DefaultTimeout, this._request.Timeout)
-// endif
             };
             
             if (_request.IsSetObjectLockRetainUntilDate())
@@ -169,8 +179,9 @@ namespace Amazon.Sdk.S3.Transfer.Internal
 
         private void UploadProgressEventCallback(object? sender, UploadProgressArgs e)
         {
-            
-            var totalTransferredBytes = Interlocked.Add(ref _transferredBytes, e.IncrementTransferred() - e.CompensationForRetry);
+            var totalTransferredBytes = Interlocked.Add(
+                ref _transferredBytes, 
+                e.IncrementTransferred() - e.CompensationForRetry);
 
             int numberOfFilesUploaded = _numberOfFilesUploaded;
             if (e.TransferredBytes == e.TotalBytes)
