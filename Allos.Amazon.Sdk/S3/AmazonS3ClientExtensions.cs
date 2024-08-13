@@ -1,8 +1,8 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using Allos.Amazon.Sdk.Fork;
+using Allos.Amazon.Sdk.S3.Transfer;
 using Amazon.Runtime.SharedInterfaces;
 using Amazon.S3;
-using Amazon.Sdk.Fork;
-using Amazon.Sdk.S3.Transfer;
 using Amazon.Util.Internal;
 
 namespace Amazon.Sdk.S3;
@@ -15,10 +15,16 @@ namespace Amazon.Sdk.S3;
 [AmazonSdkFork("sdk/src/Services/S3/Custom/_async/AmazonS3Client.Extensions.cs", "Amazon.S3")]
 public static class AmazonS3ClientExtensions
 {
-    public static Task UploadObjectFromStreamAsync(this IAmazonS3 s3Client, string bucketName, string objectKey, Stream stream, IDictionary<string, object> additionalProperties, CancellationToken cancellationToken)
+    public static Task UploadObjectFromStreamAsync(
+        this IAmazonS3 s3Client, 
+        string bucketName, 
+        string objectKey, 
+        Stream stream, 
+        IDictionary<string, object> additionalProperties, 
+        CancellationToken cancellationToken)
     {
         var transfer = new AsyncTransferUtility(s3Client);
-        var request = new TransferUtilityUploadRequest
+        var request = new UploadRequest
         {
             BucketName = bucketName,
             Key = objectKey,
@@ -28,10 +34,16 @@ public static class AmazonS3ClientExtensions
         return transfer.UploadAsync(request, cancellationToken);
     }
 
-    public static Task UploadObjectFromFilePathAsync(this IAmazonS3 s3Client, string bucketName, string objectKey, string filepath, IDictionary<string, object> additionalProperties, CancellationToken cancellationToken)
+    public static Task UploadObjectFromFilePathAsync(
+        this IAmazonS3 s3Client, 
+        string bucketName, 
+        string objectKey, 
+        string filepath, 
+        IDictionary<string, object> additionalProperties, 
+        CancellationToken cancellationToken)
     {
         var transfer = new AsyncTransferUtility(s3Client);
-        var request = new TransferUtilityUploadRequest
+        var request = new UploadRequest
         {
             BucketName = bucketName,
             Key = objectKey,
@@ -42,11 +54,17 @@ public static class AmazonS3ClientExtensions
         return transfer.UploadAsync(request, cancellationToken);
     }
 
-    public static Task DownloadToFilePathAsync(this IAmazonS3 s3Client, string bucketName, string objectKey, string filepath, IDictionary<string, object> additionalProperties, CancellationToken cancellationToken)
+    public static Task DownloadToFilePathAsync(
+        this IAmazonS3 s3Client, 
+        string bucketName, 
+        string objectKey, 
+        string filepath, 
+        IDictionary<string, object> additionalProperties, 
+        CancellationToken cancellationToken)
     {
         var transfer = new AsyncTransferUtility(s3Client);
 
-        var request = new TransferUtilityDownloadRequest
+        var request = new DownloadRequest
         {
             BucketName = bucketName,
             Key = objectKey,

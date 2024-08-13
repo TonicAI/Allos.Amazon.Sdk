@@ -1,7 +1,7 @@
-﻿using Amazon.Sdk.Fork;
+﻿using Allos.Amazon.Sdk.Fork;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace AWSSDK_DotNet.IntegrationTests.Utils
+namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Utils
 {
     [AmazonSdkFork("sdk/test/Common/Utils/AssertExtensions.cs", "AWSSDK_DotNet.IntegrationTests.Utils")]
     public static class AssertExtensions

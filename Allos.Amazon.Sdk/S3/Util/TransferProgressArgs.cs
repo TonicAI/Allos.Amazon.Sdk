@@ -1,10 +1,11 @@
 ﻿using System.Reflection;
-using Amazon.Sdk.Fork;
+using Allos.Amazon.Sdk.Fork;
+using Amazon.S3.Model;
 
-namespace Amazon.S3.Model
+namespace Allos.Amazon.S3.Model
 {
     [AmazonSdkFork("sdk/src/Services/S3/Custom/Util/TransferProgressArgs.cs", "Amazon.S3.Util")]
-    public static class TransferProgressArgsAdapter
+    internal static class TransferProgressArgsAdapter
     {
         private static readonly PropertyInfo IncrementTransferredPropertyInfo;
         
@@ -23,7 +24,8 @@ namespace Amazon.S3.Model
             IncrementTransferredPropertyInfo = incrementTransferredPropertyInfo;
         }
 
-        public static long IncrementTransferred(this TransferProgressArgs transferProgressArgs) =>
-            (long?) IncrementTransferredPropertyInfo.GetValue(transferProgressArgs) ?? default;
+        /// <inheritdoc cref="TransferProgressArgs.IncrementTransferred"/>
+        public static ulong IncrementTransferred(this TransferProgressArgs transferProgressArgs) =>
+            (ulong?) (long?) IncrementTransferredPropertyInfo.GetValue(transferProgressArgs) ?? default;
     }
 }

@@ -1,9 +1,9 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 
-namespace Amazon.Sdk.Fork;
+namespace Allos.Amazon.Sdk.Fork;
 
 /// <summary>
-/// Annotation for declarations indicating the source code was forked from the AWS SDK for .NET
+/// Annotation for declarations indicating that the source code was forked from the AWS SDK for .NET
 /// </summary>
 /// <remarks>
 /// AWS SDK for .NET is Copyright Amazon.com, Inc. or its affiliates with all Rights Reserved.
@@ -15,6 +15,9 @@ namespace Amazon.Sdk.Fork;
 [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
 public sealed class AmazonSdkForkAttribute : Attribute
 {
+    /// <summary>
+    /// the tag from the AWS SDK for .NET repository from which the annotated type was forked
+    /// </summary>
     public const string ForkedFromRepositoryTag = "v3.7.99.0";
     
     public AmazonSdkForkAttribute(
@@ -30,7 +33,7 @@ public sealed class AmazonSdkForkAttribute : Attribute
         SdkRepositoryTag = 
             string.IsNullOrWhiteSpace(forkedFromRepositoryTag) ? ForkedFromRepositoryTag : forkedFromRepositoryTag;
         ForkRepositoryUri = string.IsNullOrWhiteSpace(forkRepositoryUri) ? 
-            new Uri("https://github.com/TonicAI/Bennewitz.Ninja.Amazon.Sdk.git") : new Uri(forkRepositoryUri);
+            new Uri("https://github.com/TonicAI/Allos.Amazon.Sdk.git") : new Uri(forkRepositoryUri);
     }
     
     /// <summary>
@@ -106,12 +109,12 @@ public sealed class AmazonSdkForkAttribute : Attribute
     /// <summary>
     /// http://aws.amazon.com/apache2.0
     /// </summary>
-    public Uri Apache2LicenseUrl => new("http://aws.amazon.com/apache2.0");
+    public Uri Apache2LicenseUrl => new Uri("http://aws.amazon.com/apache2.0");
     
     /// <summary>
     /// https://www.apache.org/licenses/LICENSE-2.0
     /// </summary>
-    public Uri AwsApache2LicenseUrl => new("https://www.apache.org/licenses/LICENSE-2.0");
+    public Uri AwsApache2LicenseUrl => new Uri("https://www.apache.org/licenses/LICENSE-2.0");
 
     /// <summary>
     /// Apache License, Version 2.0, January 2004

@@ -1,19 +1,23 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using Allos.Amazon.Sdk.Fork;
 using Amazon.Runtime.Internal;
 using Amazon.S3;
-using Amazon.Sdk.Fork;
 
-namespace Amazon.Sdk.S3.Transfer
+namespace Allos.Amazon.Sdk.S3.Transfer
 {
     /// <summary>
     /// The base class for requests that return Amazon S3 objects.
     /// </summary>
+    [SuppressMessage("ReSharper", "VirtualMemberNeverOverridden.Global")]
     [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
+    [SuppressMessage("ReSharper", "InconsistentNaming")]
+    [DebuggerDisplay("{DebuggerDisplay}")]
     [AmazonSdkFork("sdk/src/Services/S3/Custom/Transfer/BaseDownloadRequest.cs", "Amazon.S3.Transfer")]
     public abstract class BaseDownloadRequest
     {
-        private DateTime? _modifiedSinceDateUtc;
-        private DateTime? _unmodifiedSinceDateUtc;
+        protected DateTimeOffset? _modifiedSinceDateUtc;
+        protected DateTimeOffset? _unmodifiedSinceDateUtc;
 
         /// <summary>
         /// 	Gets or sets the name of the bucket.
@@ -72,7 +76,7 @@ namespace Amazon.Sdk.S3.Transfer
         /// <value>
         /// 	The <c>ModifiedSinceDate</c> property. 
         /// </value>
-        public DateTime ModifiedSinceDateUtc
+        public DateTimeOffset ModifiedSinceDateUtc
         {
             get => _modifiedSinceDateUtc ?? default(DateTime);
             set => _modifiedSinceDateUtc = value;
@@ -89,9 +93,9 @@ namespace Amazon.Sdk.S3.Transfer
         /// <value>
         /// 	The <c>UnmodifiedSinceDate</c> property.
         /// </value>
-        public DateTime UnmodifiedSinceDateUtc
+        public DateTimeOffset UnmodifiedSinceDateUtc
         {
-            get => _unmodifiedSinceDateUtc ?? default(DateTime);
+            get => _unmodifiedSinceDateUtc ?? default;
             set => _unmodifiedSinceDateUtc = value;
         }
 
@@ -143,5 +147,7 @@ namespace Amazon.Sdk.S3.Transfer
         /// Bucket owners need not specify this parameter in their requests.
         /// </summary>
         public RequestPayer? RequestPayer { get; set; }
+        
+        internal virtual string DebuggerDisplay => ToString() ?? GetType().Name;
     }
 }

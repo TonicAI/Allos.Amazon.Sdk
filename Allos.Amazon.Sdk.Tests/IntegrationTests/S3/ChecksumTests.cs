@@ -1,13 +1,13 @@
-﻿using Amazon.Runtime;
+﻿using Allos.Amazon.Sdk.Fork;
+using Allos.Amazon.Sdk.Tests.IntegrationTests.Utils;
+using Amazon.Runtime;
 using Amazon.S3;
 using Amazon.S3.Model;
 using Amazon.S3.Transfer;
 using Amazon.S3.Util;
-using Amazon.Sdk.Fork;
-using AWSSDK_DotNet.IntegrationTests.Utils;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
+namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
 {
     /// <summary>
     /// Integration tests for putting flexible checksums to S3
@@ -19,7 +19,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
         private static string? _bucketName;
 
         private static readonly string TestContent = "Hello world";
-        private const long MegSize = 1048576;
+        private const ulong MegSize = 1048576;
 
         private static IEnumerable<object[]> GetAlgorithmsToTest =>
             new List<object[]> {
@@ -216,7 +216,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             var nextRandom = random.Next();
             var filePath = Path.Combine(Path.GetTempPath(), "multipartcopy-" + nextRandom + ".txt");
             var retrievedFilepath = Path.Combine(Path.GetTempPath(), "retreived-" + nextRandom + ".txt");
-            var totalSize = MegSize * 15;
+            var totalSize = MegSize * 15U;
 
             UtilityMethods.GenerateFile(filePath, totalSize);
             string sourceKey = "sourceKey-" + random.Next();
@@ -353,7 +353,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
                     Key = key,
                     UploadId = initResponse.UploadId,
                     PartNumber = 1,
-                    PartSize = 5 * MegSize,
+                    PartSize = Convert.ToInt64(5 * MegSize),
                     InputStream = inputStream,
                     ChecksumAlgorithm = ChecksumAlgorithm.FindValue(algorithm.ToString()),
                     DisablePayloadSigning = disablePayloadSigning
@@ -367,7 +367,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
                     Key = key,
                     UploadId = initResponse.UploadId,
                     PartNumber = 2,
-                    PartSize = 5 * MegSize,
+                    PartSize = Convert.ToInt64(5 * MegSize),
                     InputStream = inputStream,
                     ChecksumAlgorithm = ChecksumAlgorithm.FindValue(algorithm.ToString()),
                     DisablePayloadSigning = disablePayloadSigning

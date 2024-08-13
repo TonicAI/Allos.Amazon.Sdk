@@ -1,10 +1,28 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using Allos.Amazon.Sdk.Fork;
+using Serilog;
 
-namespace AWSSDK_DotNet.IntegrationTests.Tests;
+namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests;
 
 [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
+[SuppressMessage("ReSharper", "UnusedMember.Global")]
+[AmazonSdkFork("sdk/test/IntegrationTests/Tests/TestBase.cs", "AWSSDK_DotNet.IntegrationTests.Tests")]
 public abstract class TestBase
 {
+    /// <summary>
+    /// The AWS Credentials profile name to use for the tests, may also be set via the static property <see cref="TestAwsCredentialsProfileName"/>
+    /// </summary>
+    /// <remarks>
+    /// Replace `<see cref="_testAwsCredentialsProfileName"/> = null!` with a valid `profile name` from the local AWS credentials file.
+    /// </remarks>
+    /// <example>
+    /// e.g.
+    ///         string testAwsCredentialsProfileName = "001122334455_AwsExampleUserAccess";
+    ///
+    ///     NOTE there are no enclosing `[]` in the `profile name`
+    /// </example>
+    private static string _testAwsCredentialsProfileName = "543337415716_AWSAdministratorAccess";
+    
     /// <summary>
     /// The AWS Credentials profile name to use for the tests
     /// </summary>
@@ -23,20 +41,19 @@ public abstract class TestBase
     ///     aws_session_token=xxxXxxXxxXXxxxxxxxxXXXXXXXXXXXXXXxxxxxxxxxXxxXxxXXxxxxxxxxXXXXXXXXXXXXXXxxxxxx...
     ///     region=us-east-1
     /// </example>
-    protected static string TestAwsCredentialsProfileName
+    public static string TestAwsCredentialsProfileName
     {
         get
         {
-            string testAwsCredentialsProfileName = null!;
-         
-            // NOTE replace `null!` above with a valid `profile name` from the local AWS credentials file.
-            // It should look something like this (without enclosing `[]`):
-            //
-            //      string testAwsCredentialsProfileName = "001122334455_AwsExampleUserAccess";
-            //
-            ArgumentException.ThrowIfNullOrWhiteSpace(testAwsCredentialsProfileName);
+            ArgumentException.ThrowIfNullOrWhiteSpace(_testAwsCredentialsProfileName);
 
-            return testAwsCredentialsProfileName;
+            return _testAwsCredentialsProfileName;
+        }
+        set
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(value);
+            
+            _testAwsCredentialsProfileName = value;
         }
     }
 
@@ -45,6 +62,9 @@ public abstract class TestBase
     /// </summary>
     internal static string? ExistingBucketName { get; set; }
     
+    /// <summary>
+    /// An existing bucket name (with SSEC) to use instead of creating a new one based on the test run date
+    /// </summary>
     internal static string? ExistingBucketWithSseName { get; set; }
 
     internal static bool ShouldDeleteBucket(string? bucketName)
@@ -70,5 +90,10 @@ public abstract class TestBase
     /// <summary>
     /// The local path for test output
     /// </summary>r
-    protected virtual string BasePath => "./TestOutput";
+    protected virtual string BasePath => "../../TestOutput";
+    
+    private static readonly Lazy<ILogger> _logger =
+        new Lazy<ILogger>(() => TonicLogger.ForContext(typeof(TestBase)));
+
+    internal static ILogger Logger => _logger.Value;
 }

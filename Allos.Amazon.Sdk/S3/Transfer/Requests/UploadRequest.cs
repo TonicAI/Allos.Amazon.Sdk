@@ -1,30 +1,34 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using Allos.Amazon.Sdk.Fork;
 using Amazon.Runtime.Internal;
 using Amazon.S3;
 using Amazon.S3.Model;
 using Amazon.S3.Transfer;
-using Amazon.Sdk.Fork;
 using Amazon.Util;
 
-namespace Amazon.Sdk.S3.Transfer
+namespace Allos.Amazon.Sdk.S3.Transfer
 {
     /// <summary>
-    /// Contains all the parameters that can be set when making a request with the <c>TransferUtility</c> method.
+    /// Contains all the parameters that can be set when making a request with the <see cref="AsyncTransferUtility"/> method.
     /// </summary>
+    [SuppressMessage("ReSharper", "ClassWithVirtualMembersNeverInherited.Global")]
     [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
     [SuppressMessage("ReSharper", "PropertyCanBeMadeInitOnly.Global")]
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
     [SuppressMessage("ReSharper", "AutoPropertyCanBeMadeGetOnly.Global")]
     [SuppressMessage("ReSharper", "MemberCanBePrivate.Global")]
+    [SuppressMessage("ReSharper", "InconsistentNaming")]
+    [DebuggerDisplay("{DebuggerDisplay}")]
     [AmazonSdkFork("sdk/src/Services/S3/Custom/Transfer/TransferUtilityUploadRequest.cs", "Amazon.S3.Transfer")]
-    public class TransferUtilityUploadRequest : BaseUploadRequest
+    public class UploadRequest : BaseUploadRequest
     {
-        private long? _partSize;
+        protected ulong? _partSize;
 
-        private HeadersCollection? _headersCollection;
-        private MetadataCollection? _metadataCollection;
+        protected HeadersCollection? _headersCollection;
+        protected MetadataCollection? _metadataCollection;
 
-        private DateTime? _objectLockRetainUntilDate;
+        protected DateTimeOffset? _objectLockRetainUntilDate;
         
         /// <summary>
         /// 	Gets or sets the name of the bucket.
@@ -199,7 +203,7 @@ namespace Amazon.Sdk.S3.Transfer
         /// <value>
         /// 	The part size of the upload.
         /// </value>
-        public long PartSize
+        public ulong PartSize
         {
             get => _partSize.GetValueOrDefault();
             set => _partSize = value;
@@ -218,7 +222,7 @@ namespace Amazon.Sdk.S3.Transfer
         /// </summary>
         public HeadersCollection Headers
         {
-            get => _headersCollection ??= new();
+            get => _headersCollection ??= new HeadersCollection();
             internal set => _headersCollection = value;
         }
 
@@ -227,7 +231,7 @@ namespace Amazon.Sdk.S3.Transfer
         /// </summary>
         public MetadataCollection Metadata
         {
-            get => _metadataCollection ??= new();
+            get => _metadataCollection ??= new MetadataCollection();
             internal set => _metadataCollection = value;
         }
 
@@ -278,35 +282,35 @@ namespace Amazon.Sdk.S3.Transfer
         /// Gets the length of the content by either checking the FileInfo.Length property or the Stream.Length property.
         /// </summary>
         /// <value>The length of the content.</value>
-        internal long ContentLength
+        internal ulong? ContentLength
         {
             get
             {
-                long length;
+                ulong? length;
                 try
                 {
                     if (IsSetFilePath())
                     {
                         //System.IO.
-                        FileInfo fileInfo = new(FilePath);
-                        length = fileInfo.Length;
+                        FileInfo fileInfo = new FileInfo(FilePath);
+                        length = fileInfo.Length.ToUInt64();
                     }
                     else if (IsSetInputStream())
                     {
-                        length = InputStream.Length - InputStream.Position;
+                        length = (InputStream.Length - InputStream.Position).ToUInt64();
                     }
                     else
                     {
-                        throw new ArgumentException($"{nameof(FilePath)} or {nameof(InputStream)} must be set before calculating the {nameof(ContentLength)}");
+                        throw new ArgumentException(
+                            $"{nameof(FilePath)} or {nameof(InputStream)} must be set before calculating the {nameof(ContentLength)}");
                     }
                 }
                 catch (NotSupportedException)
                 {
                     //length is unknown
-                    length = -1;
+                    length = null;
                 }
-
-
+                
                 return length;
             }
         }
@@ -342,7 +346,7 @@ namespace Amazon.Sdk.S3.Transfer
         /// <returns>
         /// 	This object instance, enabling additional method calls to be chained together.
         /// </returns>
-        public TransferUtilityUploadRequest WithAutoCloseStream(bool autoCloseStream)
+        public UploadRequest WithAutoCloseStream(bool autoCloseStream)
         {
             AutoCloseStream = autoCloseStream;
             return this;
@@ -356,7 +360,7 @@ namespace Amazon.Sdk.S3.Transfer
         /// DisableMD5Stream to the same value. The default value is false. Set this value to true to 
         /// disable the default checksum validation used in all S3 upload requests or override this value per
         /// request by setting the DisableDefaultChecksumValidation property on <see cref="PutObjectRequest"/>,
-        /// <see cref="UploadPartRequest"/>, or <see cref="S3.Transfer.TransferUtilityUploadRequest"/>.</para>
+        /// <see cref="UploadPartRequest"/>, or <see cref="UploadRequest"/>.</para>
         /// <para>Checksums, SigV4 payload signing, and HTTPS each provide some data integrity 
         /// verification. If DisableDefaultChecksumValidation is true and DisablePayloadSigning is true, then the 
         /// possibility of data corruption is completely dependent on HTTPS being the only remaining 
@@ -412,7 +416,7 @@ namespace Amazon.Sdk.S3.Transfer
         /// The date and time when you want this object's Object Lock to expire.
         /// </para>
         /// </summary>
-        public DateTime ObjectLockRetainUntilDate
+        public DateTimeOffset ObjectLockRetainUntilDate
         {
             get => _objectLockRetainUntilDate.GetValueOrDefault();
             set => _objectLockRetainUntilDate = value;
@@ -437,5 +441,7 @@ namespace Amazon.Sdk.S3.Transfer
         /// </para>
         /// </summary>
         public ChecksumAlgorithm? ChecksumAlgorithm { get; set; }
+        
+        internal virtual string DebuggerDisplay => ToString() ?? GetType().Name;
     }
 }

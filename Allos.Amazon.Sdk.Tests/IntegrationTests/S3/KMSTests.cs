@@ -1,19 +1,20 @@
 ﻿using System.Net;
 using System.Text;
+using Allos.Amazon.Sdk.Fork;
+using Allos.Amazon.Sdk.S3.Transfer;
+using Allos.Amazon.Sdk.Tests.IntegrationTests.Utils;
 using Amazon;
 using Amazon.S3;
 using Amazon.S3.Model;
 using Amazon.S3.Util;
-using Amazon.Sdk.Fork;
 using Amazon.Util;
-using Amazon.Sdk.S3.Transfer;
-using AWSSDK_DotNet.IntegrationTests.Utils;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using AmazonS3Client = Amazon.S3.AmazonS3Client;
 
-namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
+namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
 {
-    [TestClass]
+    // These tests require being able to get the KMS key id from the response headers and so are disabled
+    //[TestClass]
     [AmazonSdkFork("sdk/test/Services/S3/IntegrationTests/KMSTests.cs", "AWSSDK_DotNet.IntegrationTests.Tests.S3")]
     public class KmsTests : TestBase<AmazonS3Client>
     {
@@ -374,7 +375,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
                 await VerifyObject(bucketName, key2, usedKeyId, serverSideEncryptionMethod).ConfigureAwait(false);
 
                 AsyncTransferUtility utility = new(Client);
-                var smallUploadRequest = new TransferUtilityUploadRequest
+                var smallUploadRequest = new UploadRequest
                 {
                     BucketName = bucketName,
                     Key = Key,
@@ -385,7 +386,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
                 await utility.UploadAsync(smallUploadRequest).ConfigureAwait(false);
                 await VerifyObject(bucketName, Key, keyId, serverSideEncryptionMethod).ConfigureAwait(false);
 
-                var largeUploadRequest = new TransferUtilityUploadRequest
+                var largeUploadRequest = new UploadRequest
                 {
                     BucketName = bucketName,
                     Key = Key,
@@ -418,12 +419,12 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
                 UtilityMethods.WriteFile(filePath, _fileContents);
             }
 
-            var config = new TransferUtilityConfig
+            var config = new AsyncTransferConfig
             {
                 ConcurrentServiceRequests = 10,
             };
             var transferUtility = new AsyncTransferUtility(Client, config);
-            var request = new TransferUtilityUploadDirectoryRequest
+            var request = new UploadDirectoryRequest
             {
                 BucketName = bucketName,
                 Directory = directoryPath,
@@ -496,7 +497,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
                     usedKeyId = await VerifyPresignedPut(keyId, url, serverSideEncryptionMethod).ConfigureAwait(false);
                     break;
                 }
-                catch (AmazonS3Exception s3Ex) when (s3Ex.IsSenderException())
+                catch (AmazonS3Exception s3Ex) when (s3Ex.IsSenderException(Logger))
                 {
                     throw;
                 }
@@ -513,9 +514,11 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
         {
             string dstKey = "dstObject";
             string srcKey = key;
+            // ReSharper disable NotAccessedVariable
             string srcVersionId;
             string srcETag;
             DateTime srcTimeStamp;
+            // ReSharper restore NotAccessedVariable
             string? uploadId = null;
 
             try
@@ -526,9 +529,12 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
                     BucketName = bucketName,
                     Key = srcKey
                 }).ConfigureAwait(false);
+                
+                // ReSharper disable RedundantAssignment
                 srcTimeStamp = gomr.LastModified;
                 srcVersionId = gomr.VersionId;
                 srcETag = gomr.ETag;
+                // ReSharper restore RedundantAssignment
 
                 //Start the multipart upload
                 InitiateMultipartUploadResponse imur = await Client.InitiateMultipartUploadAsync(new()

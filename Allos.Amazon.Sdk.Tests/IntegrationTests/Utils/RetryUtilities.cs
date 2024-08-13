@@ -1,10 +1,10 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using Allos.Amazon.Sdk.Fork;
+using Allos.Amazon.Sdk.Tests.IntegrationTests.Tests;
 using Amazon;
 using Amazon.Runtime;
-using Amazon.Sdk.Fork;
-using AWSSDK_DotNet.IntegrationTests.Tests;
 
-namespace AWSSDK_DotNet.IntegrationTests.Utils
+namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Utils
 {
     [AmazonSdkFork("sdk/test/IntegrationTests/Utils/RetryUtilities.cs", "AWSSDK_DotNet.IntegrationTests.Utils")]
     public static class RetryUtilities

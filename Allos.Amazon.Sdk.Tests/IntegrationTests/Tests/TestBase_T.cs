@@ -1,13 +1,13 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+using Allos.Amazon.Sdk.Fork;
+using Allos.Amazon.Sdk.Tests.IntegrationTests.Utils;
 using Amazon.Runtime;
-using Amazon.Sdk.Fork;
-using AWSSDK_DotNet.IntegrationTests.Utils;
 
-namespace AWSSDK_DotNet.IntegrationTests.Tests
+namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests
 {
-    [AmazonSdkFork("sdk/test/IntegrationTests/Tests/TestBase.cs", "AWSSDK_DotNet.IntegrationTests.Tests")]
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
+    [AmazonSdkFork("sdk/test/IntegrationTests/Tests/TestBase.cs", "AWSSDK_DotNet.IntegrationTests.Tests")]
     public class TestBase<T> : TestBase
         where T : AmazonServiceClient, new()
     {
