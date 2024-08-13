@@ -13,7 +13,9 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
 {
-    [TestClass]
+    // these tests fail UNLESS setting Bucket ACLs is allowed and so are currently disabled
+    // since Tonic Development AWS account DOES NOT allow setting Bucket ACLs
+    //[TestClass]
     [AmazonSdkFork("sdk/test/Services/S3/IntegrationTests/EncryptionTests.cs", "AWSSDK_DotNet.IntegrationTests.Tests.S3")]
     public class EncryptionTests : TestBase<AmazonS3Client>
     {

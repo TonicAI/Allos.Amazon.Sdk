@@ -35,16 +35,18 @@ namespace Allos.Amazon.Sdk.S3.Transfer
     /// </remarks>
     [SuppressMessage("ReSharper", "ClassWithVirtualMembersNeverInherited.Global")]
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
+    [SuppressMessage("ReSharper", "InconsistentNaming")]
+    [SuppressMessage("ReSharper", "MemberCanBePrivate.Global")]
     [DebuggerDisplay("{DebuggerDisplay}")]
     [AmazonSdkFork("sdk/src/Services/S3/Custom/Transfer/TransferUtility.cs", "Amazon.S3.Transfer")]
     [AmazonSdkFork("sdk/src/Services/S3/Custom/Transfer/_async/TransferUtility.async.cs", "Amazon.S3.Transfer")]
     [AmazonSdkFork("sdk/src/Services/S3/Custom/Transfer/_bcl45%2Bnetstandard/TransferUtility.async.cs", "Amazon.S3.Transfer")]
     public class AsyncTransferUtility : IAsyncTransferUtility
     {
-        private readonly AsyncTransferConfig _config;
-        private readonly bool _shouldDispose;
-        private bool _isDisposed;
-        private readonly HashSet<string> _blockedServiceNames = new HashSet<string>
+        protected readonly AsyncTransferConfig _config;
+        protected readonly bool _shouldDispose;
+        protected bool _isDisposed;
+        protected readonly HashSet<string> _blockedServiceNames = new HashSet<string>
         {
             "s3-object-lambda"
         };
@@ -400,29 +402,47 @@ namespace Allos.Amazon.Sdk.S3.Transfer
                 
             CheckForBlockedArn(request.BucketName);
             var command = GetUploadCommand(request, null);
-            await command.ExecuteAsync(cancellationToken);
+            bool isMultiPartUpload = command is MultipartUploadCommand;
 
-            if (command is MultipartUploadCommand)
+            try
             {
-                var metadata = await S3Client.GetObjectMetadataAsync(
-                        new()
-                        {
-                            BucketName = request.BucketName,
-                            Key = request.Key
-                        },
-                        cancellationToken)
-                    .ConfigureAwait(false);
+                await command.ExecuteAsync(cancellationToken);
+                
+                if (isMultiPartUpload)
+                {
+                    var metadata = await S3Client.GetObjectMetadataAsync(
+                            new()
+                            {
+                                BucketName = request.BucketName,
+                                Key = request.Key,
+                                ServerSideEncryptionCustomerMethod = request.ServerSideEncryptionCustomerMethod,
+                                ServerSideEncryptionCustomerProvidedKey = request.ServerSideEncryptionCustomerProvidedKey
+                            },
+                            cancellationToken)
+                        .ConfigureAwait(false);
 
-                var progressArgs = new UploadProgressArgs(
-                    0,
-                    metadata.ContentLength.ToUInt64(),
-                    request.ContentLength,
-                    0,
-                    request.FilePath
-                );
+                    var progressArgs = new UploadProgressArgs(
+                        0,
+                        metadata.ContentLength.ToUInt64(),
+                        request.ContentLength,
+                        0,
+                        request.FilePath
+                    );
 
-                request.OnRaiseProgressEvent(progressArgs);
+                    request.OnRaiseProgressEvent(progressArgs);
+                }
             }
+            finally
+            {
+                if (isMultiPartUpload &&
+                    request.InputStream != null && 
+                    !request.IsSetFilePath() && 
+                    request.AutoCloseStream)
+                {
+                    request.InputStream.Close();
+                }
+            }
+            
         }
 
         /// <summary>
@@ -438,7 +458,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer
         ///     A cancellation token that can be used by other objects or threads to receive notice of cancellation.
         /// </param>
         /// <returns>The task object representing the asynchronous operation.</returns>
-        public virtual Task AbortMultipartUploadsAsync(string bucketName, DateTime initiatedDate, CancellationToken cancellationToken = default)
+        public virtual Task AbortMultipartUploadsAsync(string bucketName, DateTimeOffset initiatedDate, CancellationToken cancellationToken = default)
         {
             CheckForBlockedArn(bucketName);
             var command = new AbortMultipartUploadsCommand(S3Client, bucketName, initiatedDate, _config);
@@ -840,7 +860,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer
         {
             if (request.ContentLength.HasValue)
             {
-                return request.ContentLength.Value >= _config.MinSizeBeforePartUpload.ToUInt64();
+                return request.ContentLength.Value >= _config.MinSizeBeforePartUpload;
             }
             //If the length is null that means when we tried to get the ContentLength, we caught a NotSupportedException,
             //or it means the length is unknown. In this case we do a MultiPartUpload. If we are uploading

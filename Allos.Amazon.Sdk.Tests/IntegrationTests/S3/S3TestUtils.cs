@@ -14,9 +14,10 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
     {
         private const uint MaxSpinLoops = 100;
 
+        [SuppressMessage("ReSharper", "UnusedParameter.Global")]
         public static string CreateBucket(IAmazonS3 s3Client, bool createForSse)
         {
-            string bucketName = TestBase.ExistingBucketName ?? UtilityMethods.SdkTestPrefix + DateTime.Now.Ticks;
+            string bucketName = TestBase.ExistingBucketName ?? UtilityMethods.UniqueTestBucketName();
             
             if (AmazonS3Util.DoesS3BucketExistV2(s3Client, bucketName))
             {
@@ -28,10 +29,11 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
             return bucketName;
         }
 
+        [SuppressMessage("ReSharper", "UnusedParameter.Global")]
         public static string CreateBucket(IAmazonS3 s3Client, PutBucketRequest bucketRequest, bool createForSse)
         {
             string bucketName = string.IsNullOrWhiteSpace(bucketRequest.BucketName) ?
-                TestBase.ExistingBucketName ?? UtilityMethods.SdkTestPrefix + DateTime.Now.Ticks :
+                TestBase.ExistingBucketName ?? UtilityMethods.UniqueTestBucketName() :
                 bucketRequest.BucketName;
 
             if (AmazonS3Util.DoesS3BucketExistV2(s3Client, bucketName))
@@ -91,29 +93,27 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
 
         private static void SetPublicBucketAcLs(IAmazonS3 client, string bucketName)
         {
-            throw new Exception("cannot set public");
-            // client.PutBucketOwnershipControlsAsync(new()
-            // {
-            //     BucketName = bucketName,
-            //     OwnershipControls = new()
-            //     {
-            //         Rules = new()
-            //         {
-            //                 new() {ObjectOwnership = ObjectOwnership.BucketOwnerPreferred}
-            //             }
-            //     }
-            // }).ConfigureAwait(false).GetAwaiter().GetResult();
-            //
-            // client.PutPublicAccessBlockAsync(new()
-            // {
-            //     BucketName = bucketName,
-            //     PublicAccessBlockConfiguration = new()
-            //     {
-            //         BlockPublicAcls = false
-            //     }
-            // }).ConfigureAwait(false).GetAwaiter().GetResult();
+             client.PutBucketOwnershipControlsAsync(new()
+             {
+                 BucketName = bucketName,
+                 OwnershipControls = new()
+                 {
+                     Rules = new()
+                     {
+                             new() {ObjectOwnership = ObjectOwnership.BucketOwnerPreferred}
+                         }
+                 }
+             }).ConfigureAwait(false).GetAwaiter().GetResult();
+            
+             client.PutPublicAccessBlockAsync(new()
+             {
+                 BucketName = bucketName,
+                 PublicAccessBlockConfiguration = new()
+                 {
+                     BlockPublicAcls = false
+                 }
+             }).ConfigureAwait(false).GetAwaiter().GetResult();
         }
-
 
         public static void WaitForBucket(IAmazonS3 client, string bucketName, bool skipDoubleCheck = false)
         {

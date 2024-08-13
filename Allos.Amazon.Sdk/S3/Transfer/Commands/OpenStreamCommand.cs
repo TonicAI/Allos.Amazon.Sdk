@@ -7,12 +7,13 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
 {
     [SuppressMessage("ReSharper", "MemberCanBePrivate.Global")]
     [SuppressMessage("ReSharper", "ClassWithVirtualMembersNeverInherited.Global")]
+    [SuppressMessage("ReSharper", "InconsistentNaming")]
     [AmazonSdkFork("sdk/src/Services/S3/Custom/Transfer/Internal/OpenStreamCommand.cs", "Amazon.S3.Transfer.Internal")]
     [AmazonSdkFork("sdk/src/Services/S3/Custom/Transfer/Internal/_async/OpenStreamCommand.async.cs", "Amazon.S3.Transfer.Internal")]
     internal class OpenStreamCommand : BaseCommand
     {
-        private readonly IAmazonS3 _s3Client;
-        private readonly OpenStreamRequest _request;
+        protected readonly IAmazonS3 _s3Client;
+        protected readonly OpenStreamRequest _request;
 
         internal OpenStreamCommand(IAmazonS3 s3Client, OpenStreamRequest request)
         {
@@ -28,7 +29,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
             ResponseStream = response.ResponseStream;
         }
 
-        private GetObjectRequest ConstructRequest()
+        protected virtual GetObjectRequest ConstructRequest()
         {
             if (!_request.IsSetBucketName())
             {
@@ -42,6 +43,6 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
             return ConvertToGetObjectRequest(_request);
         }
 
-        internal Stream? ResponseStream { get; private set; }
+        internal virtual Stream? ResponseStream { get; private set; }
     }
 }

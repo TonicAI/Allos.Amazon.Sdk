@@ -13,7 +13,8 @@ using AmazonS3Client = Amazon.S3.AmazonS3Client;
 
 namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
 {
-    [TestClass]
+    // These tests require being able to get the KMS key id from the response headers and so are disabled
+    //[TestClass]
     [AmazonSdkFork("sdk/test/Services/S3/IntegrationTests/KMSTests.cs", "AWSSDK_DotNet.IntegrationTests.Tests.S3")]
     public class KmsTests : TestBase<AmazonS3Client>
     {

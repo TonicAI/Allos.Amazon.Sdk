@@ -9,18 +9,20 @@ namespace Allos.Amazon.Sdk
     [SuppressMessage("ReSharper", "RedundantExtendsListEntry")]
     [SuppressMessage("ReSharper", "EventNeverSubscribedTo.Global")]
     [SuppressMessage("ReSharper", "UnusedType.Global")]
+    [SuppressMessage("ReSharper", "MemberCanBePrivate.Global")]
+    [SuppressMessage("ReSharper", "InconsistentNaming")]
     [AmazonSdkFork("sdk/src/Core/Amazon.Runtime/Internal/Util/EventStream.cs", "Amazon.Runtime.Internal.Util")]
     public partial class EventStream : WrapperStream
     {
         public event EventHandler<StreamBytesReadEventArgs>? OnRead;
         
-        private readonly bool _leaveStreamOpen;
+        protected readonly bool _leaveStreamOpen;
         
         [SuppressMessage("ReSharper", "NotAccessedField.Local")] 
         private readonly ILogger _logger;
         
-        private long _totalBytesRead;
-        private bool _isEndOfStream;
+        protected long _totalBytesRead;
+        protected bool _isEndOfStream;
 
         public EventStream(Stream stream, bool leaveStreamOpen = true, ILogger? logger = null)
             : base(stream)

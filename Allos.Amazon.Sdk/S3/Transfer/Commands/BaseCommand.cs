@@ -110,11 +110,11 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
 
             if (request.IsSetModifiedSinceDateUtc())
             {
-                getRequest.ModifiedSinceDateUtc = request.ModifiedSinceDateUtc;
+                getRequest.ModifiedSinceDateUtc = request.ModifiedSinceDateUtc.DateTime;
             }
             if (request.IsSetUnmodifiedSinceDateUtc())
             {
-                getRequest.UnmodifiedSinceDateUtc = request.UnmodifiedSinceDateUtc;
+                getRequest.UnmodifiedSinceDateUtc = request.UnmodifiedSinceDateUtc.DateTime;
             }
 
             getRequest.ServerSideEncryptionCustomerMethod = request.ServerSideEncryptionCustomerMethod;

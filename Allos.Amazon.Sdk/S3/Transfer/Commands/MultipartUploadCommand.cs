@@ -73,7 +73,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
             _contentLength = _fileTransporterRequest.ContentLength;
 
             _partSize = fileTransporterRequest.IsSetPartSize() ? 
-                fileTransporterRequest.PartSize : 
+                fileTransporterRequest.PartSize.ToInt64() : 
                 CalculatePartSize(_contentLength);
 
             if (fileTransporterRequest.InputStream != null)
@@ -193,13 +193,6 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
                         inputStream.Close();
                     }
                     _inputStreams.Clear();
-
-                    if (_fileTransporterRequest.InputStream != null && 
-                        !_fileTransporterRequest.IsSetFilePath() && 
-                        _fileTransporterRequest.AutoCloseStream)
-                    {
-                        _fileTransporterRequest.InputStream.Close();
-                    }
                 } 
             }
         }
@@ -312,7 +305,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
             try
             {
                 // if partSize is not specified on the request, the default value is 0
-                long minPartSize = request.PartSize != 0 ? request.PartSize : S3Constants.MinPartSize;
+                long minPartSize = request.PartSize != 0 ? request.PartSize.ToInt64() : S3Constants.MinPartSize;
                 var uploadPartResponses = new List<UploadPartResponse>();
                 var readBuffer = ArrayPool<byte>.Shared.Rent(readBufferSize);
                 var partBuffer = ArrayPool<byte>.Shared.Rent((int)minPartSize + (readBufferSize));
@@ -517,26 +510,34 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
 
             var contentLengthLong = Convert.ToInt64(_contentLength);
 
-            ArgumentException.ThrowIfNullOrWhiteSpace(_fileTransporterRequest.FilePath);
-            
-            var fileInfo = new FileInfo(_fileTransporterRequest.FilePath);
-
-            if (!fileInfo.Exists)
-            {
-                throw new FileNotFoundException(
-                    $"The file `{fileInfo.FullName}` does not exist",
-                    nameof(_fileTransporterRequest.FilePath));
-            }
-
-            var partFileName = $"{fileInfo.Name}.part{partNumber}";
+            string partFileName;
             string partFileFauxPath;
             
-            if (fileInfo.Directory != null)
+            if (_fileTransporterRequest.IsSetFilePath())
             {
-                partFileFauxPath = Path.Combine(fileInfo.Directory.FullName, partFileName);
+                var fileInfo = new FileInfo(_fileTransporterRequest.FilePath);
+                
+                if (!fileInfo.Exists)
+                {
+                    throw new FileNotFoundException(
+                        $"The file `{fileInfo.FullName}` does not exist",
+                        nameof(_fileTransporterRequest.FilePath));
+                }
+                
+                partFileName = $"{fileInfo.Name}.part{partNumber}";
+
+                if (fileInfo.Directory != null)
+                {
+                    partFileFauxPath = Path.Combine(fileInfo.Directory.FullName, partFileName);
+                }
+                else
+                {
+                    partFileFauxPath = partFileName;
+                }
             }
             else
             {
+                partFileName = $"{_fileTransporterRequest.Key}.part{partNumber}";
                 partFileFauxPath = partFileName;
             }
             
@@ -675,7 +676,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
             };
 
             if (_fileTransporterRequest.IsSetObjectLockRetainUntilDate())
-                initRequest.ObjectLockRetainUntilDate = _fileTransporterRequest.ObjectLockRetainUntilDate;
+                initRequest.ObjectLockRetainUntilDate = _fileTransporterRequest.ObjectLockRetainUntilDate.DateTime;
 
             ((IAmazonWebServiceRequest)initRequest).AddBeforeRequestHandler(requestEventHandler ?? RequestEventHandler);
 

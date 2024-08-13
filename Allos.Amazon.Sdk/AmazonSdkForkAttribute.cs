@@ -3,7 +3,7 @@
 namespace Allos.Amazon.Sdk.Fork;
 
 /// <summary>
-/// Annotation for declarations indicating the source code was forked from the AWS SDK for .NET
+/// Annotation for declarations indicating that the source code was forked from the AWS SDK for .NET
 /// </summary>
 /// <remarks>
 /// AWS SDK for .NET is Copyright Amazon.com, Inc. or its affiliates with all Rights Reserved.
@@ -15,6 +15,9 @@ namespace Allos.Amazon.Sdk.Fork;
 [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
 public sealed class AmazonSdkForkAttribute : Attribute
 {
+    /// <summary>
+    /// the tag from the AWS SDK for .NET repository from which the annotated type was forked
+    /// </summary>
     public const string ForkedFromRepositoryTag = "v3.7.99.0";
     
     public AmazonSdkForkAttribute(
@@ -30,7 +33,7 @@ public sealed class AmazonSdkForkAttribute : Attribute
         SdkRepositoryTag = 
             string.IsNullOrWhiteSpace(forkedFromRepositoryTag) ? ForkedFromRepositoryTag : forkedFromRepositoryTag;
         ForkRepositoryUri = string.IsNullOrWhiteSpace(forkRepositoryUri) ? 
-            new Uri("https://github.com/TonicAI/Bennewitz.Ninja.Amazon.Sdk.git") : new Uri(forkRepositoryUri);
+            new Uri("https://github.com/TonicAI/Allos.Amazon.Sdk.git") : new Uri(forkRepositoryUri);
     }
     
     /// <summary>

@@ -127,7 +127,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
             putRequest.ObjectLockMode = _fileTransporterRequest.ObjectLockMode;
 
             if (_fileTransporterRequest.IsSetObjectLockRetainUntilDate())
-                putRequest.ObjectLockRetainUntilDate = _fileTransporterRequest.ObjectLockRetainUntilDate;
+                putRequest.ObjectLockRetainUntilDate = _fileTransporterRequest.ObjectLockRetainUntilDate.DateTime;
 
             return putRequest;
         }

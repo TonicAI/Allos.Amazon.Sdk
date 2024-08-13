@@ -19,7 +19,7 @@ public abstract class TestBase
     /// e.g.
     ///         string testAwsCredentialsProfileName = "001122334455_AwsExampleUserAccess";
     ///
-    /// NOTE there are no enclosing `[]` in the `profile name`
+    ///     NOTE there are no enclosing `[]` in the `profile name`
     /// </example>
     private static string _testAwsCredentialsProfileName = "543337415716_AWSAdministratorAccess";
     
@@ -62,6 +62,9 @@ public abstract class TestBase
     /// </summary>
     internal static string? ExistingBucketName { get; set; }
     
+    /// <summary>
+    /// An existing bucket name (with SSEC) to use instead of creating a new one based on the test run date
+    /// </summary>
     internal static string? ExistingBucketWithSseName { get; set; }
 
     internal static bool ShouldDeleteBucket(string? bucketName)
@@ -89,5 +92,8 @@ public abstract class TestBase
     /// </summary>r
     protected virtual string BasePath => "../../TestOutput";
     
-    public static readonly ILogger Logger = TonicLogger.ForContext(typeof(TestBase));
+    private static readonly Lazy<ILogger> _logger =
+        new Lazy<ILogger>(() => TonicLogger.ForContext(typeof(TestBase)));
+
+    internal static ILogger Logger => _logger.Value;
 }

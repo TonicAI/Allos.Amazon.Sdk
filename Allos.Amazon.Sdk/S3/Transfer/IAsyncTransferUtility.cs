@@ -164,7 +164,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer
         ///     A cancellation token that can be used by other objects or threads to receive notice of cancellation.
         /// </param>
         /// <returns>The task object representing the asynchronous operation.</returns>
-        Task AbortMultipartUploadsAsync(string bucketName, DateTime initiatedDate, CancellationToken cancellationToken = default);
+        Task AbortMultipartUploadsAsync(string bucketName, DateTimeOffset initiatedDate, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 	Downloads the content from Amazon S3 and writes it to the specified file.    

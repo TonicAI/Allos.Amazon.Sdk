@@ -7,7 +7,8 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
 {
-    [TestClass]
+    // these tests are disabled because Tonic does not yet support / need S3Express
+    //[TestClass]
     [AmazonSdkFork("sdk/test/Services/S3/IntegrationTests/S3ExpressTests.cs", "AWSSDK_DotNet.IntegrationTests.Tests.S3")]
     public class S3ExpressTests : TestBase<AmazonS3Client>
     {

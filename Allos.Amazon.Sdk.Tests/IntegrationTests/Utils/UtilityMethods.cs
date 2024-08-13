@@ -10,11 +10,14 @@ using ThirdParty.MD5;
 
 namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Utils
 {
+    [SuppressMessage("ReSharper", "UnusedMember.Global")]
     [AmazonSdkFork("sdk/test/IntegrationTests/Utils/UtilityMethods.cs", "AWSSDK_DotNet.IntegrationTests.Utils")]
     public static class UtilityMethods
     {
         [SuppressMessage("ReSharper", "AutoPropertyCanBeMadeGetOnly.Global")]
-        public static string SdkTestPrefix { get; set; } = "allos-amzsdk-tests";
+        public static string SdkTestPrefix { get; set; } = "allos-amz-sdk-tests";
+
+        public static string UniqueTestBucketName() => SdkTestPrefix + DateTimeOffset.Now.Ticks;
         
         public static void CompareFiles(string file1, string file2)
         {

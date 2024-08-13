@@ -18,7 +18,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
         
         protected readonly IAmazonS3 _s3Client;
         protected readonly string _bucketName;
-        protected readonly DateTime _initiatedDate;
+        protected readonly DateTimeOffset _initiatedDate;
 
         internal AbortMultipartUploadsCommand(IAmazonS3 s3Client, string bucketName, DateTime initiateDate)
         {
@@ -31,7 +31,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
         internal AbortMultipartUploadsCommand(
             IAmazonS3 s3Client, 
             string bucketName, 
-            DateTime initiateDate, 
+            DateTimeOffset initiateDate, 
             AsyncTransferConfig config)
         {
             _s3Client = s3Client;

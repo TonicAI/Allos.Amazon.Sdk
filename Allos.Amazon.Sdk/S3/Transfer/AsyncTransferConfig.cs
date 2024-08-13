@@ -37,7 +37,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer
         /// Gets or sets the minimum size required (in bytes) to enable multi-part upload. The default is 16 MB.
         /// If the file size is greater than or equal to MinSizeBeforePartUpload, multi-part upload will be used.
         /// </summary>
-        public virtual long MinSizeBeforePartUpload { get; set; } = 16 * (long)Math.Pow(2, 20);
+        public virtual ulong MinSizeBeforePartUpload { get; set; } = (16 * (long)Math.Pow(2, 20)).ToUInt64();
 
         /// <summary>
         /// This property determines how many active threads
