@@ -1,15 +1,15 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography;
+using Allos.Amazon.Sdk.Fork;
+using Allos.Amazon.Sdk.S3.Transfer;
+using Allos.Amazon.Sdk.S3.Util;
+using Allos.Amazon.Sdk.Tests.IntegrationTests.Utils;
 using Amazon.S3;
 using Amazon.S3.Model;
-using Amazon.Sdk.Fork;
-using Amazon.Sdk.S3.Transfer;
-using Amazon.Sdk.S3.Util;
-using AWSSDK_DotNet.IntegrationTests.Utils;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using AmazonS3Client = Amazon.S3.AmazonS3Client;
 
-namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
+namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
 {
     [TestClass]
     [AmazonSdkFork("sdk/test/Services/S3/IntegrationTests/TransferUtilityTests.cs", "AWSSDK_DotNet.IntegrationTests.Tests.S3")]
@@ -105,7 +105,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
         public async Task SimpleUploadProgressTest()
         {
             var fileName = UtilityMethods.GenerateName(@"SimpleUploadTest\SmallFile");
-            var progressValidator = new TransferProgressValidator<UploadProgressArgs>
+            var progressValidator = new UploadProgressValidator<UploadProgressArgs>
             {
                 Validate = p =>
                 {
@@ -136,7 +136,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
                 Assert.IsTrue(response.ETag.Length > 0);
 
                 var downloadPath = _fullPath + ".download";
-                var downloadRequest = new TransferUtilityDownloadRequest
+                var downloadRequest = new DownloadRequest
                 {
                     BucketName = _bucketName,
                     Key = TestFile,
@@ -176,11 +176,11 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
                     BucketName = _bucketName,
                     Key = fileName
                 }).ConfigureAwait(false);
-                Assert.AreEqual(fileSize, (ulong) metadata.ContentLength);
+                Assert.AreEqual(fileSize, metadata.ContentLength.ToUInt64());
 
                 //Download the file and validate content of downloaded file is equal.
                 var downloadPath = path + ".download";
-                var downloadRequest = new TransferUtilityDownloadRequest
+                var downloadRequest = new DownloadRequest
                 {
                     BucketName = _bucketName,
                     Key = fileName,
@@ -214,11 +214,11 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
                     BucketName = _bucketName,
                     Key = fileName
                 }).ConfigureAwait(false);
-                Assert.AreEqual(fileSize, (ulong) metadata.ContentLength);
+                Assert.AreEqual(fileSize, metadata.ContentLength.ToUInt64());
 
                 //Download the file and validate content of downloaded file is equal.
                 var downloadPath = path + ".download";
-                var downloadRequest = new TransferUtilityDownloadRequest
+                var downloadRequest = new DownloadRequest
                 {
                     BucketName = _bucketName,
                     Key = fileName,
@@ -253,11 +253,11 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
                     BucketName = _bucketName,
                     Key = fileName
                 }).ConfigureAwait(false);
-                Assert.AreEqual(fileSize, (ulong) metadata.ContentLength);
+                Assert.AreEqual(fileSize, metadata.ContentLength.ToUInt64());
 
                 //Download the file and validate content of downloaded file is equal.
                 var downloadPath = path + ".download";
-                var downloadRequest = new TransferUtilityDownloadRequest
+                var downloadRequest = new DownloadRequest
                 {
                     BucketName = _bucketName,
                     Key = fileName,
@@ -292,11 +292,11 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
                     BucketName = _bucketName,
                     Key = fileName
                 }).ConfigureAwait(false);
-                Assert.AreEqual(fileSize, (ulong) metadata.ContentLength);
+                Assert.AreEqual(fileSize, metadata.ContentLength.ToUInt64());
 
                 //Download the file and validate content of downloaded file is equal.
                 var downloadPath = path + ".download";
-                var downloadRequest = new TransferUtilityDownloadRequest
+                var downloadRequest = new DownloadRequest
                 {
                     BucketName = _bucketName,
                     Key = fileName,
@@ -333,11 +333,11 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
                     BucketName = _bucketName,
                     Key = fileName
                 }).ConfigureAwait(false);
-                Assert.AreEqual(fileSize, (ulong) metadata.ContentLength);
+                Assert.AreEqual(fileSize, metadata.ContentLength.ToUInt64());
 
                 //Download the file and validate content of downloaded file is equal.
                 var downloadPath = path + ".download";
-                var downloadRequest = new TransferUtilityDownloadRequest
+                var downloadRequest = new DownloadRequest
                 {
                     BucketName = _bucketName,
                     Key = fileName,
@@ -382,7 +382,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             var fileName = UtilityMethods.GenerateName(@"UnSeekableStream\EmptyFile");
             var path = Path.Combine(BasePath, fileName);
             var fileSize = 0;
-            UtilityMethods.GenerateFile(path, (ulong) fileSize);
+            UtilityMethods.GenerateFile(path, fileSize.ToUInt32());
             //take the generated file and turn it into an unseekable stream
 
             var stream = GenerateUnseekableStreamFromFile(path);
@@ -413,24 +413,24 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             var stream = GenerateUnseekableStreamFromFile(path);
             using (var tu = new AsyncTransferUtility(client))
             {
-                TransferUtilityUploadRequest transferUtilityUploadRequest = new()
+                UploadRequest uploadRequest = new()
                 {
                     BucketName = _bucketName,
                     Key = fileName,
                     InputStream = stream
                 };
 
-                transferUtilityUploadRequest.Metadata.Add("testmetadata", "testmetadatavalue");
-                transferUtilityUploadRequest.Headers["Content-Disposition"] = "attachment; filename=\"" + fileName + "\"";
+                uploadRequest.Metadata.Add("testmetadata", "testmetadatavalue");
+                uploadRequest.Headers["Content-Disposition"] = "attachment; filename=\"" + fileName + "\"";
 
-                await tu.UploadAsync(transferUtilityUploadRequest).ConfigureAwait(false);
+                await tu.UploadAsync(uploadRequest).ConfigureAwait(false);
 
                 var metadata = await Client.GetObjectMetadataAsync(new()
                 {
                     BucketName = _bucketName,
                     Key = fileName
                 }).ConfigureAwait(false);
-                Assert.AreEqual(fileSize, (ulong) metadata.ContentLength);
+                Assert.AreEqual(fileSize, metadata.ContentLength.ToUInt64());
                 Assert.IsTrue(metadata.Metadata.Count > 0);
                 Assert.AreEqual("testmetadatavalue", metadata.Metadata["testmetadata"]);
                 Assert.IsTrue(metadata.Headers.Count > 0);
@@ -438,7 +438,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
 
                 //Download the file and validate content of downloaded file is equal.
                 var downloadPath = path + ".download";
-                var downloadRequest = new TransferUtilityDownloadRequest
+                var downloadRequest = new DownloadRequest
                 {
                     BucketName = _bucketName,
                     Key = fileName,
@@ -483,7 +483,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             // missing the required ServerSideEncryptionCustomerMethod and ServerSideEncryptionCustomerProvidedKey
             // values.
             var tu = new AsyncTransferUtility(Client);
-            var request = new TransferUtilityUploadRequest
+            var request = new UploadRequest
             {
                 BucketName = _ssecBucketName,
                 FilePath = fullFilePath,
@@ -525,7 +525,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
 
             // Upload test directory with SSE-C
             var transferUtility = new AsyncTransferUtility(Client);
-            var requestUpload = new TransferUtilityUploadDirectoryRequest
+            var requestUpload = new UploadDirectoryRequest
             {
                 BucketName = _bucketName,
                 Directory = directoryTestPath,
@@ -542,7 +542,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             // Download remote test directory with SSE-C
             var downloadPath = GenerateDirectoryPath(BasePath);
 
-            var requestDownload = new TransferUtilityDownloadDirectoryRequest
+            var requestDownload = new DownloadDirectoryRequest
             {
                 BucketName = _bucketName,
                 S3Directory = remoteDirectory,
@@ -584,7 +584,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             using (RetryUtilities.DisableClockSkewCorrection())
             {
                 var fileName = UtilityMethods.GenerateName(@"MultipartUploadTest\File");
-                var progressValidator = new TransferProgressValidator<UploadProgressArgs>
+                var progressValidator = new UploadProgressValidator<UploadProgressArgs>
                 {
                     ValidateProgressInterval = false,
                     Validate = p =>
@@ -639,8 +639,11 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             }
         }
 
-        private async Task Upload(string fileName, ulong size, 
-            TransferProgressValidator<UploadProgressArgs>? progressValidator, AmazonS3Client? client = null)
+        private async Task Upload(
+            string fileName, 
+            ulong size, 
+            UploadProgressValidator<UploadProgressArgs>? progressValidator, 
+            AmazonS3Client? client = null)
         {
             ArgumentNullException.ThrowIfNull(_bucketName);
             
@@ -653,14 +656,14 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
 
             var path = Path.Combine(BasePath, fileName);
             UtilityMethods.GenerateFile(path, size);
-            var config = new TransferUtilityConfig
+            var config = new AsyncTransferConfig
             {
                 //ConcurrentServiceRequests = 1,
                 //MinSizeBeforePartUpload = MEG_SIZE
             };
             var transferUtility = client != null ? new(client, config)
                 : new AsyncTransferUtility(Client, config);
-            var request = new TransferUtilityUploadRequest
+            var request = new UploadRequest
             {
                 BucketName = _bucketName,
                 FilePath = path,
@@ -682,7 +685,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             }).ConfigureAwait(false);
             Console.WriteLine("Expected Size: {0} , Actual Size {1}", size, metadata.ContentLength);
             Assert.AreEqual(_octetStreamContentType, metadata.Headers.ContentType);
-            Assert.AreEqual(size, (ulong) metadata.ContentLength);
+            Assert.AreEqual(size, metadata.ContentLength.ToUInt64());
             await ValidateFileContents(Client, _bucketName, key, path).ConfigureAwait(false);
         }
 
@@ -706,12 +709,12 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             var keyPrefix = directory.Name;
             var directoryPath = directory.FullName;
 
-            var config = new TransferUtilityConfig
+            var config = new AsyncTransferConfig
             {
                 ConcurrentServiceRequests = 10,
             };
             var transferUtility = new AsyncTransferUtility(Client, config);
-            var request = new TransferUtilityUploadDirectoryRequest
+            var request = new UploadDirectoryRequest
             {
                 BucketName = _bucketName,
                 Directory = directoryPath,
@@ -773,7 +776,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             Directory.Delete(directoryPath, true);
 
             var transferUtility = new AsyncTransferUtility(Client);
-            var request = new TransferUtilityDownloadDirectoryRequest
+            var request = new DownloadDirectoryRequest
             {
                 BucketName = _bucketName,
                 LocalDirectory = directoryPath,
@@ -807,7 +810,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
 
                 Assert.AreEqual(
                     numberOfTestFiles,
-                    (uint) downloadDirectory.GetFiles("*", SearchOption.AllDirectories).Length
+                    downloadDirectory.GetFiles("*", SearchOption.AllDirectories).Length.ToUInt32()
                     );
                 await ValidateDirectoryContents(Client, _bucketName, string.Empty, downloadDirectory).ConfigureAwait(false);
             }
@@ -829,7 +832,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             Directory.Delete(directoryPath, true);
 
             var transferUtility = new AsyncTransferUtility(Client);
-            var request = new TransferUtilityDownloadDirectoryRequest
+            var request = new DownloadDirectoryRequest
             {
                 BucketName = _bucketName,
                 LocalDirectory = directoryPath,
@@ -856,12 +859,12 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             var directory = CreateTestDirectoryWithFilePrefix(BasePath, size, keyPrefix, numberOfTestFiles);
             var directoryPath = directory.FullName;
 
-            var config = new TransferUtilityConfig
+            var config = new AsyncTransferConfig
             {
                 ConcurrentServiceRequests = 10,
             };
             var transferUtility = new AsyncTransferUtility(Client, config);
-            var request = new TransferUtilityUploadDirectoryRequest
+            var request = new UploadDirectoryRequest
             {
                 BucketName = _bucketName,
                 Directory = directoryPath,
@@ -948,7 +951,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             var downloadedFilePath = originalFilePath + ".dn";
 
             var transferUtility = new AsyncTransferUtility(Client);
-            var request = new TransferUtilityDownloadRequest
+            var request = new DownloadRequest
             {
                 BucketName = _bucketName,
                 FilePath = downloadedFilePath,
@@ -1029,7 +1032,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             var path = Path.Combine(BasePath, fileName);
             UtilityMethods.GenerateFile(path, 20 * MegSize);
 
-            TransferUtilityUploadRequest uploadRequest = new()
+            UploadRequest uploadRequest = new()
             {
                 BucketName = _bucketName,
                 Key = fileName,
@@ -1249,14 +1252,83 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
                 {
                     Thread.Sleep(1000 * retries);
                 }
-                Assert.IsTrue(IsProgressEventComplete, "IsProgressEventComplete is false");
+                Assert.IsTrue(
+                    IsProgressEventComplete, 
+                    $"{nameof(IsProgressEventComplete)} is false." + Environment.NewLine +
+                    $"Last Progress Event: {LastProgressEventValue}"
+                    );
+            }
+        }
+        
+        /// <remarks>
+        /// <see cref="UploadProgressArgs"/> shadows properties with `new` so a dedicated
+        /// validator for it is needed to accurately read property values 
+        /// </remarks>
+        private class UploadProgressValidator<T> : ProgressValidator<T> 
+            where T : UploadProgressArgs
+        {
+            public Action<T>? Validate { get; set; }
+
+            public bool ValidateProgressInterval { get; set; }
+
+            public UploadProgressValidator()
+            {
+                ValidateProgressInterval = true;
+            }
+
+            public void OnProgressEvent(object? sender, T progress)
+            {
+                try
+                {
+                    Console.WriteLine("Progress Event : {0}%\t{1}/{2}", progress.PercentDone, progress.TransferredBytes, progress.TotalBytes);
+                    Assert.IsFalse(progress.PercentDone > 100, "Progress percent done cannot be greater than 100%");
+                    if (IsProgressEventComplete)
+                        Assert.Fail("A progress event was received after completion.");
+
+                    if (progress.TransferredBytes == progress.TotalBytes)
+                    {
+                        Assert.AreEqual(progress.PercentDone, 100U);
+                        IsProgressEventComplete = true;
+                    }
+
+                    if (LastProgressEventValue != null)
+                    {
+                        if (progress.PercentDone < LastProgressEventValue.PercentDone)
+                            Console.WriteLine("Progress Event : --------------------------");
+
+                        Assert.IsTrue(progress.PercentDone >= LastProgressEventValue.PercentDone);
+                        Assert.IsTrue(progress.TransferredBytes > LastProgressEventValue.TransferredBytes);
+
+                        if (progress.TransferredBytes < progress.TotalBytes)
+                        {
+                            if (progress.TransferredBytes - LastProgressEventValue.TransferredBytes < 100 * KiloSize)
+                                Console.WriteLine("Progress Event : *******Part Uploaded********");
+
+                            if (ValidateProgressInterval)
+                            {
+                                // When TransferUtility uploads using multipart upload, the TransferredBytes
+                                // will be less than the interval for last chunk of each upload part request.
+                                Assert.IsTrue(progress.TransferredBytes - LastProgressEventValue.TransferredBytes >= 100 * KiloSize);
+                            }
+                        }
+                    }
+
+                    ArgumentNullException.ThrowIfNull(Validate);
+                    Validate(progress);
+                    LastProgressEventValue = progress;
+                }
+                catch (Exception ex)
+                {
+                    ProgressEventException = ex;
+                    Console.WriteLine("Exception caught: {0}", ex.Message);
+                    throw;
+                }
             }
         }
 
-        private class TransferProgressValidator<T> : ProgressValidator<T> where T : TransferProgressArgs
+        private class TransferProgressValidator<T> : ProgressValidator<T> 
+            where T : TransferProgressArgs
         {
-            //private MethodInfo memberInfo = null;
-
             public Action<T>? Validate { get; set; }
 
             public bool ValidateProgressInterval { get; set; }
@@ -1270,6 +1342,15 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             {
                 try
                 {
+                    if (progress is UploadProgressArgs uploadProgressArgs)
+                    {
+                        //because `UploadProgressArgs` shadows properties with `new`
+                        //a cast is needed to accurately read properties
+                    }
+                    else
+                    {
+                        
+                    }
                     Console.WriteLine("Progress Event : {0}%\t{1}/{2}", progress.PercentDone, progress.TransferredBytes, progress.TotalBytes);
                     Assert.IsFalse(progress.PercentDone > 100, "Progress percent done cannot be greater than 100%");
                     if (IsProgressEventComplete)
@@ -1291,14 +1372,14 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
 
                         if (progress.TransferredBytes < progress.TotalBytes)
                         {
-                            if ((ulong) progress.TransferredBytes - (ulong) LastProgressEventValue.TransferredBytes < 100 * KiloSize)
+                            if (progress.TransferredBytes.ToUInt64() - LastProgressEventValue.TransferredBytes.ToUInt64() < 100 * KiloSize)
                                 Console.WriteLine("Progress Event : *******Part Uploaded********");
 
                             if (ValidateProgressInterval)
                             {
                                 // When TransferUtility uploads using multipart upload, the TransferredBytes
                                 // will be less than the interval for last chunk of each upload part request.
-                                Assert.IsTrue((ulong) progress.TransferredBytes - (ulong) LastProgressEventValue.TransferredBytes >= 100 * KiloSize);
+                                Assert.IsTrue(progress.TransferredBytes.ToUInt64() - LastProgressEventValue.TransferredBytes.ToUInt64() >= 100 * KiloSize);
                             }
                         }
                     }

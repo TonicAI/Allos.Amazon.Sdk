@@ -1,21 +1,22 @@
-﻿using System.Text;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Text;
+using Allos.Amazon.Sdk.Fork;
+using Allos.Amazon.Sdk.Tests.IntegrationTests.Tests;
 using Amazon.Runtime;
 using Amazon.S3;
-using Amazon.Sdk;
-using Amazon.Sdk.Fork;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Serilog;
 using ThirdParty.MD5;
 
-namespace AWSSDK_DotNet.IntegrationTests.Utils
+namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Utils
 {
     [AmazonSdkFork("sdk/test/IntegrationTests/Utils/UtilityMethods.cs", "AWSSDK_DotNet.IntegrationTests.Utils")]
     public static class UtilityMethods
     {
-        public const string SdkTestPrefix = "aws-net-sdk";
-        private static ILogger Logger => TonicLogger.ForContext(typeof(UtilityMethods));
+        [SuppressMessage("ReSharper", "AutoPropertyCanBeMadeGetOnly.Global")]
+        public static string SdkTestPrefix { get; set; } = "allos-amzsdk-tests";
         
-        public static void  CompareFiles(string file1, string file2)
+        public static void CompareFiles(string file1, string file2)
         {
             byte[] file1Md5 = ComputeHash(file1);
             byte[] file2Md5 = ComputeHash(file2);
@@ -35,7 +36,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Utils
             return fileMd5;
         }
 
-        public static T? WaitUntilSuccess<T>(Func<T> loadFunction, int sleepSeconds = 5, int maxWaitSeconds = 300)
+        public static T? WaitUntilSuccess<T>(Func<T> loadFunction, uint sleepSeconds = 5, uint maxWaitSeconds = 300)
         {
             T? result = default;            
             WaitUntil(() =>
@@ -45,7 +46,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Utils
                     result = loadFunction();
                     return result != null;
                 }
-                catch (AmazonS3Exception s3Ex) when (s3Ex.IsSenderException())
+                catch (AmazonS3Exception s3Ex) when (s3Ex.IsSenderException(TestBase.Logger))
                 {
                     throw;
                 }
@@ -58,7 +59,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Utils
             return result;
         }
 
-        public static void WaitUntilException(Action action, int sleepSeconds = 5, int maxWaitSeconds = 300)
+        public static void WaitUntilException(Action action, uint sleepSeconds = 5, uint maxWaitSeconds = 300)
         {        
             WaitUntil(() =>
             {
@@ -67,13 +68,13 @@ namespace AWSSDK_DotNet.IntegrationTests.Utils
             }, sleepSeconds, maxWaitSeconds);
         }
 
-        public static void WaitUntilSuccess(Action action, int sleepSeconds = 5, int maxWaitSeconds = 300)
+        public static void WaitUntilSuccess(Action action, uint sleepSeconds = 5, uint maxWaitSeconds = 300)
         {
             if (sleepSeconds < 0) throw new ArgumentOutOfRangeException(nameof(sleepSeconds));
             WaitUntilSuccess(action, new ListSleeper(sleepSeconds * 1000), maxWaitSeconds);
         }
 
-        public static void WaitUntilSuccess(Action action, ListSleeper sleeper, int maxWaitSeconds = 300)
+        public static void WaitUntilSuccess(Action action, ListSleeper sleeper, uint maxWaitSeconds = 300)
         {
             WaitUntil(() =>
             {
@@ -82,7 +83,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Utils
                     action();
                     return true;
                 }
-                catch (AmazonS3Exception s3Ex) when (s3Ex.IsSenderException())
+                catch (AmazonS3Exception s3Ex) when (s3Ex.IsSenderException(TestBase.Logger))
                 {
                     throw;
                 }
@@ -93,13 +94,13 @@ namespace AWSSDK_DotNet.IntegrationTests.Utils
             }, sleeper, maxWaitSeconds);
         }
 
-        public static void WaitUntil(Func<bool> matchFunction, int sleepSeconds = 5, int maxWaitSeconds = 300)
+        public static void WaitUntil(Func<bool> matchFunction, uint sleepSeconds = 5, uint maxWaitSeconds = 300)
         {
             if (sleepSeconds < 0) throw new ArgumentOutOfRangeException(nameof(sleepSeconds));
             WaitUntil(matchFunction, new ListSleeper(sleepSeconds * 1000), maxWaitSeconds);
         }
 
-        private static void WaitUntil(Func<bool> matchFunction, ListSleeper sleeper, int maxWaitSeconds = 300)
+        private static void WaitUntil(Func<bool> matchFunction, ListSleeper sleeper, uint maxWaitSeconds = 300)
         {
             if (maxWaitSeconds < 0) throw new ArgumentOutOfRangeException(nameof(maxWaitSeconds));
 
@@ -154,13 +155,13 @@ namespace AWSSDK_DotNet.IntegrationTests.Utils
             private int _attempt;
             private readonly int[] _millisecondsList;
 
-            public ListSleeper(params int[] millisecondsList)
+            public ListSleeper(params uint[] millisecondsList)
             {
                 if (millisecondsList.Length < 1)
                     throw new ArgumentException($"There must be at least one sleep period in {millisecondsList}", nameof(millisecondsList));
 
                 _attempt = 0;
-                _millisecondsList = millisecondsList;
+                _millisecondsList = millisecondsList.Select(x => x.ToInt32()).ToArray();
             }
 
             public void Sleep()
@@ -176,18 +177,15 @@ namespace AWSSDK_DotNet.IntegrationTests.Utils
             /// ListSleeper(500, 1000, 2000, 5000)
             /// </summary>
             /// <returns>A new ListSleeper with exponential growth</returns>
-            public static ListSleeper Create()
-            {
-                return new(500, 1000, 2000, 5000);
-            }
+            public static ListSleeper Create() => new (500, 1000, 2000, 5000);
         }
 
-        public static bool IsSenderException(this AmazonS3Exception ex)
+        public static bool IsSenderException(this AmazonS3Exception ex, ILogger logger)
         {
             var result = ex.ErrorType == ErrorType.Sender;
             if (result)
             {
-                Logger.Error(ex, ex.ToString());
+                logger.Error(ex, ex.ToString());
             }
             return result;
         }

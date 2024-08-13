@@ -1,8 +1,8 @@
 using System.Reflection;
+using Allos.Amazon.Sdk.Fork;
 using Amazon.Runtime;
-using Amazon.Sdk.Fork;
 
-namespace AWSSDK_DotNet.IntegrationTests.Tests
+namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests
 {
     [AmazonSdkFork("sdk/test/IntegrationTests/Tests/General.CommonUtilities.cs", "AWSSDK_DotNet.IntegrationTests.Tests")]
     public static class General

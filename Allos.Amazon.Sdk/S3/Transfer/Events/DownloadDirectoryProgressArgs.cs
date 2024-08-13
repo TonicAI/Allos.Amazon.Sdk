@@ -1,17 +1,19 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
-using Amazon.Sdk.Fork;
+﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using Allos.Amazon.Sdk.Fork;
 
-namespace Amazon.Sdk.S3.Transfer;
+namespace Allos.Amazon.Sdk.S3.Transfer;
 
 /// <summary>
 /// Encapsulates the information needed to provide
 /// transfer progress to subscribers of the <c>DownloadDirectory</c>
 /// event.
 /// </summary>
+[SuppressMessage("ReSharper", "ClassWithVirtualMembersNeverInherited.Global")]
 [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
 [SuppressMessage("ReSharper", "UnusedMember.Global")]
 [SuppressMessage("ReSharper", "AutoPropertyCanBeMadeGetOnly.Global")]
+[DebuggerDisplay("{DebuggerDisplay}")]
 [AmazonSdkFork("sdk/src/Services/S3/Custom/Transfer/TransferUtilityDownloadDirectoryRequest.cs", "Amazon.S3.Transfer")]
 public class DownloadDirectoryProgressArgs : EventArgs
 {
@@ -150,8 +152,8 @@ public class DownloadDirectoryProgressArgs : EventArgs
     /// The string representation of this instance of DownloadDirectoryProgressArgs.
     /// </summary>
     /// <returns>The string representation of this instance of DownloadDirectoryProgressArgs.</returns>
-    public override string ToString()
-    {
-        return $"Downloaded {NumberOfFilesDownloaded} of {TotalNumberOfFiles}, {TransferredBytes} bytes transferred of {TotalBytes} total bytes";
-    }
+    public override string ToString() => 
+        $"Downloaded {NumberOfFilesDownloaded} of {TotalNumberOfFiles}, {TransferredBytes} bytes transferred of {TotalBytes} total bytes";
+    
+    internal virtual string DebuggerDisplay => ToString();
 }

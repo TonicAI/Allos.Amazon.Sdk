@@ -1,17 +1,18 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using Allos.Amazon.Sdk.Fork;
 using Amazon.S3.Model;
-using Amazon.Sdk.Fork;
 using Amazon.Util;
 
-namespace Amazon.Sdk.S3.Transfer
+namespace Allos.Amazon.Sdk.S3.Transfer
 {
     /// <summary>
     /// Contains all the parameters
     /// that can be set when making a request with the 
-    /// <c>TransferUtility</c> method.
+    /// <see cref="AsyncTransferUtility"/> method.
     /// </summary>
+    [SuppressMessage("ReSharper", "ClassWithVirtualMembersNeverInherited.Global")]
     [AmazonSdkFork("sdk/src/Services/S3/Custom/Transfer/TransferUtilityDownloadRequest.cs", "Amazon.S3.Transfer")]
-    public class TransferUtilityDownloadRequest : BaseDownloadRequest
+    public class DownloadRequest : BaseDownloadRequest
     {
         /// <summary>
         /// 	Get or sets the file path location of where the
@@ -20,14 +21,14 @@ namespace Amazon.Sdk.S3.Transfer
         /// <value>
         /// 	The file path location of where the downloaded Amazon S3 object will be written to.
         /// </value>
-        public string? FilePath { get; set; }
+        public virtual string? FilePath { get; set; }
 
         /// <summary>
         /// Checks if FilePath property is set.
         /// </summary>
         /// <returns>True if FilePath property is set.</returns>
         [MemberNotNullWhen(true, nameof(FilePath))]
-        internal bool IsSetFilePath() => !string.IsNullOrWhiteSpace(FilePath);
+        internal virtual bool IsSetFilePath() => !string.IsNullOrWhiteSpace(FilePath);
 
         /// <summary>
         /// The event for WriteObjectProgressEvent notifications. All
@@ -62,7 +63,7 @@ namespace Amazon.Sdk.S3.Transfer
         /// Causes the WriteObjectProgressEvent event to be fired.
         /// </summary>
         /// <param name="progressArgs">Progress data for the stream being written to file.</param>        
-        internal void OnRaiseProgressEvent(WriteObjectProgressArgs progressArgs)
+        internal virtual void OnRaiseProgressEvent(WriteObjectProgressArgs progressArgs)
         {
             AWSSDKUtils.InvokeInBackground(WriteObjectProgressEvent, progressArgs, this);
         }

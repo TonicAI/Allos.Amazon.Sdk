@@ -1,17 +1,17 @@
 ﻿using System.Runtime.ExceptionServices;
 using System.Security.Cryptography;
 using System.Text;
+using Allos.Amazon.Sdk.Fork;
+using Allos.Amazon.Sdk.S3.Transfer;
+using Allos.Amazon.Sdk.Tests.IntegrationTests.Utils;
 using Amazon.Extensions.S3.Encryption;
 using Amazon.Extensions.S3.Encryption.Primitives;
 using Amazon.S3;
 using Amazon.S3.Model;
 using Amazon.S3.Util;
-using Amazon.Sdk.Fork;
-using Amazon.Sdk.S3.Transfer;
-using AWSSDK_DotNet.IntegrationTests.Utils;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
+namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
 {
     [TestClass]
     [AmazonSdkFork("sdk/test/Services/S3/IntegrationTests/EncryptionTests.cs", "AWSSDK_DotNet.IntegrationTests.Tests.S3")]
@@ -106,7 +106,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
 
             using (var transferUtility = new AsyncTransferUtility(s3EncryptionClient))
             {
-                TransferUtilityUploadDirectoryRequest uploadRequest = CreateUploadDirRequest(directoryPath, keyPrefix);
+                UploadDirectoryRequest uploadRequest = CreateUploadDirRequest(directoryPath, keyPrefix);
                 await transferUtility.UploadDirectoryAsync(uploadRequest).ConfigureAwait(false);
 
                 var newDir = AsyncTransferUtilityTests.GenerateDirectoryPath(basePath);
@@ -115,9 +115,9 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             }
         }
 
-        private static TransferUtilityUploadDirectoryRequest CreateUploadDirRequest(string directoryPath, string keyPrefix)
+        private static UploadDirectoryRequest CreateUploadDirRequest(string directoryPath, string keyPrefix)
         {
-            TransferUtilityUploadDirectoryRequest uploadRequest =
+            UploadDirectoryRequest uploadRequest =
                 new()
                 {
                     BucketName = _bucketName,
@@ -209,7 +209,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             var retrievedFilepath = Path.Combine(Path.GetTempPath(), "retreived-" + nextRandom + ".txt");
             var totalSize = MegSize * 15;
 
-            UtilityMethods.GenerateFile(filePath, (ulong) totalSize);
+            UtilityMethods.GenerateFile(filePath, totalSize.ToUInt64());
             string key = "key-" + _random.Next();
 
             Stream inputStream = File.OpenRead(filePath);
@@ -395,7 +395,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             var retrievedFilepath = Path.Combine(BasePath, $"retreived-{nextRandom}.txt"); 
             var totalSize = MegSize * 15;
 
-            UtilityMethods.GenerateFile(filePath, (ulong) totalSize);
+            UtilityMethods.GenerateFile(filePath, totalSize.ToUInt64());
             string key = "key-" + _random.Next();
 
             Stream inputStream = File.OpenRead(filePath);

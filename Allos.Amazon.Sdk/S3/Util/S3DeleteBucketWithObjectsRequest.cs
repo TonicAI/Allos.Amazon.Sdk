@@ -1,12 +1,13 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using Allos.Amazon.Sdk.Fork;
 using Amazon.S3;
-using Amazon.Sdk.Fork;
 
-namespace Amazon.Sdk.S3.Util
+namespace Allos.Amazon.Sdk.S3.Util
 {
     /// <summary>
     /// Internal class used to pass the parameters for DeleteS3BucketWithObjects operation.
     /// </summary>
+    [SuppressMessage("ReSharper", "ClassWithVirtualMembersNeverInherited.Global")]
     [AmazonSdkFork("sdk/src/Services/S3/Custom/Util/S3DeleteBucketWithObjectsRequest.cs", "Amazon.S3.Util")]
     internal class S3DeleteBucketWithObjectsRequest
     {

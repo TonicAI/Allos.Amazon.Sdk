@@ -1,14 +1,15 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using Allos.Amazon.Sdk.Fork;
 using Amazon.S3.Model;
-using Amazon.Sdk.Fork;
 
-namespace Amazon.Sdk.S3.Util
+namespace Allos.Amazon.Sdk.S3.Util
 {
     /// <summary>
     /// Contains updates from DeleteS3BucketWithObjects operation.
     /// </summary>
-    [AmazonSdkFork("sdk/src/Services/S3/Custom/Util/S3DeleteBucketWithObjectsUpdate.cs", "Amazon.S3.Util")]
+    [SuppressMessage("ReSharper", "ClassWithVirtualMembersNeverInherited.Global")]
     [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
+    [AmazonSdkFork("sdk/src/Services/S3/Custom/Util/S3DeleteBucketWithObjectsUpdate.cs", "Amazon.S3.Util")]
     public class S3DeleteBucketWithObjectsUpdate
     {
         /// <summary>

@@ -1,37 +1,40 @@
-﻿using Amazon.S3.Internal;
-using Amazon.S3.Model;
-using Amazon.Sdk.Fork;
+﻿using System.Diagnostics.CodeAnalysis;
+using Allos.Amazon.Sdk.Fork;
+using Amazon.S3.Internal;
 
-namespace Amazon.Sdk.S3.Transfer.Internal
+namespace Allos.Amazon.Sdk.S3.Transfer.Internal
 {
     /// <summary>
     /// This command files all the files that meets the criteria specified in the TransferUtilityUploadDirectoryRequest request
     /// and uploads them.
     /// </summary>
+    [SuppressMessage("ReSharper", "InconsistentNaming")]
+    [SuppressMessage("ReSharper", "MemberCanBePrivate.Global")]
+    [SuppressMessage("ReSharper", "ClassWithVirtualMembersNeverInherited.Global")]
     [AmazonSdkFork("sdk/src/Services/S3/Custom/Transfer/Internal/UploadDirectoryCommand.cs", "Amazon.S3.Transfer.Internal")]
     [AmazonSdkFork("sdk/src/Services/S3/Custom/Transfer/Internal/_bcl45+netstandard/UploadDirectoryCommand.cs", "Amazon.S3.Transfer.Internal")]
     internal class UploadDirectoryCommand : BaseCommand
     {
-        private readonly TransferUtilityUploadDirectoryRequest _request;
-        private readonly AsyncTransferUtility _utility;
-        private readonly TransferUtilityConfig _config;
+        protected readonly UploadDirectoryRequest _request;
+        protected readonly AsyncTransferUtility _utility;
+        protected readonly AsyncTransferConfig _config;
 
-        private uint _totalNumberOfFiles;
-        private uint _numberOfFilesUploaded;
-        private ulong _totalBytes;
-        private ulong _transferredBytes;        
+        protected uint _totalNumberOfFiles;
+        protected uint _numberOfFilesUploaded;
+        protected ulong _totalBytes;
+        protected ulong _transferredBytes;        
 
         internal UploadDirectoryCommand(
             AsyncTransferUtility utility, 
-            TransferUtilityConfig config, 
-            TransferUtilityUploadDirectoryRequest request)
+            AsyncTransferConfig config, 
+            UploadDirectoryRequest request)
         {
             _utility = utility;
             _request = request;
             _config = config;
         }
         
-        public bool UploadFilesConcurrently { get; set; }
+        public virtual bool UploadFilesConcurrently { get; set; }
 
         public override async Task ExecuteAsync(CancellationToken cancellationToken)
         {
@@ -47,7 +50,7 @@ namespace Amazon.Sdk.S3.Transfer.Internal
                     _request.SearchOption, 
                     cancellationToken)
                 .ConfigureAwait(continueOnCapturedContext: false);                
-            _totalNumberOfFiles = (uint) filePaths.Length;
+            _totalNumberOfFiles = filePaths.Length.ToUInt32();
 
             SemaphoreSlim? asyncThrottler = null;
             SemaphoreSlim? loopThrottler = null;
@@ -56,7 +59,7 @@ namespace Amazon.Sdk.S3.Transfer.Internal
             {
                 var pendingTasks = new List<Task>();
                 loopThrottler = UploadFilesConcurrently ? 
-                    new(_config.ConcurrentServiceRequests) :
+                    new SemaphoreSlim(_config.ConcurrentServiceRequests.ToInt32()) :
                     new SemaphoreSlim(1);
 
                 asyncThrottler = _utility.S3Client is IAmazonS3Encryption ?
@@ -66,7 +69,7 @@ namespace Amazon.Sdk.S3.Transfer.Internal
                     null :
                     // Use a throttler which will be shared between simple and multipart uploads
                     // to control concurrent IO.
-                    new SemaphoreSlim(_config.ConcurrentServiceRequests);
+                    new SemaphoreSlim(_config.ConcurrentServiceRequests.ToInt32());
 
 
                 internalCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -101,7 +104,7 @@ namespace Amazon.Sdk.S3.Transfer.Internal
             }
         }
 
-        private Task<string[]> GetFiles(
+        protected virtual Task<string[]> GetFiles(
             string path, 
             string searchPattern, 
             SearchOption searchOption, 
@@ -112,14 +115,14 @@ namespace Amazon.Sdk.S3.Transfer.Internal
                     var filePaths = Directory.GetFiles(path, searchPattern, searchOption);
                     foreach (var filePath in filePaths)
                     {
-                        _totalBytes += (ulong) new FileInfo(filePath).Length;
+                        _totalBytes += new FileInfo(filePath).Length.ToUInt64();
                     }
                     return filePaths;
                 }, cancellationToken);
 
         }
 
-        private TransferUtilityUploadRequest ConstructRequest(string basePath, string filepath, string prefix)
+        protected virtual UploadRequest ConstructRequest(string basePath, string filepath, string prefix)
         {
             string key = filepath.Substring(basePath.Length);
             key = key.Replace(@"\", "/");
@@ -127,7 +130,7 @@ namespace Amazon.Sdk.S3.Transfer.Internal
                 key = key.Substring(1);
             key = prefix + key;
 
-            var uploadRequest = new TransferUtilityUploadRequest
+            var uploadRequest = new UploadRequest
             {
                 BucketName = _request.BucketName,
                 Key = key,
@@ -149,7 +152,7 @@ namespace Amazon.Sdk.S3.Transfer.Internal
             };
             
             if (_request.IsSetObjectLockRetainUntilDate())
-                uploadRequest.ObjectLockRetainUntilDate = _request.ObjectLockRetainUntilDate;
+                uploadRequest.ObjectLockRetainUntilDate = _request.ObjectLockRetainUntilDate.DateTime;
 
             uploadRequest.UploadProgressEvent += UploadProgressEventCallback;
 
@@ -159,7 +162,7 @@ namespace Amazon.Sdk.S3.Transfer.Internal
             return uploadRequest;
         }
 
-        private string GetKeyPrefix()
+        protected virtual string GetKeyPrefix()
         {
             var prefix = string.Empty;
             if (_request.IsSetKeyPrefix())
@@ -177,7 +180,7 @@ namespace Amazon.Sdk.S3.Transfer.Internal
             return prefix;
         }
 
-        private void UploadProgressEventCallback(object? sender, UploadProgressArgs e)
+        protected virtual void UploadProgressEventCallback(object? sender, UploadProgressArgs e)
         {
             var totalTransferredBytes = Interlocked.Add(
                 ref _transferredBytes, 
@@ -191,15 +194,9 @@ namespace Amazon.Sdk.S3.Transfer.Internal
 
             // If concurrent upload is enabled (i.e. _request.UploadFilesConcurrently),
             // values for current file (including transferred, total bytes, and file path) may not be set.
-            UploadDirectoryProgressArgs uploadDirectoryProgressArgs = new(
-                numberOfFilesUploaded, 
-                _totalNumberOfFiles,
-                totalTransferredBytes, 
-                _totalBytes, 
-                e.FilePath, 
-                e.TransferredBytes, 
-                e.TotalBytes
-            );
+            UploadDirectoryProgressArgs uploadDirectoryProgressArgs = new UploadDirectoryProgressArgs(
+                numberOfFilesUploaded, _totalNumberOfFiles, totalTransferredBytes, _totalBytes, e.FilePath,
+                e.TransferredBytes, e.TotalBytes);
             
             _request.OnRaiseProgressEvent(uploadDirectoryProgressArgs);
         }

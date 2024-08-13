@@ -1,10 +1,12 @@
-﻿using Amazon.Sdk.Fork;
+﻿using System.Diagnostics.CodeAnalysis;
+using Allos.Amazon.Sdk.Fork;
 
-namespace Amazon.Sdk.S3.Util
+namespace Allos.Amazon.Sdk.S3.Util
 {
     /// <summary>
     /// Options which control the behaviour of the DeleteS3BucketWithObjects operation.
     /// </summary>
+    [SuppressMessage("ReSharper", "ClassWithVirtualMembersNeverInherited.Global")]
     [AmazonSdkFork("sdk/src/Services/S3/Custom/Util/S3DeleteBucketWithObjectsOptions.cs", "Amazon.S3.Util")]
     public class S3DeleteBucketWithObjectsOptions
     {

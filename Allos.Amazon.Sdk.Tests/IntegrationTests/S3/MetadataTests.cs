@@ -1,14 +1,14 @@
-﻿using Amazon;
+﻿using Allos.Amazon.Sdk.Fork;
+using Allos.Amazon.Sdk.S3.Transfer;
+using Allos.Amazon.Sdk.Tests.IntegrationTests.Utils;
+using Amazon;
 using Amazon.S3;
 using Amazon.S3.Model;
 using Amazon.S3.Util;
-using Amazon.Sdk.Fork;
-using Amazon.Sdk.S3.Transfer;
-using AWSSDK_DotNet.IntegrationTests.Utils;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using AmazonS3Client = Amazon.S3.AmazonS3Client;
 
-namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
+namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
 {
     [TestClass]
     [AmazonSdkFork("sdk/test/Services/S3/IntegrationTests/MetadataTests.cs", "AWSSDK_DotNet.IntegrationTests.Tests.S3")]
@@ -103,7 +103,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
                 // Test small TransferUtility upload
                 key = "transferUtilitySmall" + _random.Next();
                 UtilityMethods.GenerateFile(TempFile, _smallFileSize);
-                var smallRequest = new TransferUtilityUploadRequest
+                var smallRequest = new UploadRequest
                 {
                     BucketName = _bucketName,
                     Key = key,
@@ -119,7 +119,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
                 {
                     key = "transferUtilityLarge" + _random.Next();
                     UtilityMethods.GenerateFile(TempFile, _largeFileSize);
-                    var largeRequest = new TransferUtilityUploadRequest
+                    var largeRequest = new UploadRequest
                     {
                         BucketName = _bucketName,
                         Key = key,
@@ -214,7 +214,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
                 // Test small TransferUtility upload
                 key = "transferUtilitySmall" + _random.Next();
                 UtilityMethods.GenerateFile(TempFile, _smallFileSize);
-                var smallRequest = new TransferUtilityUploadRequest
+                var smallRequest = new UploadRequest
                 {
                     BucketName = _bucketName,
                     Key = key,
@@ -235,7 +235,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
                 {
                     key = "transferUtilityLarge" + _random.Next();
                     UtilityMethods.GenerateFile(TempFile, _largeFileSize);
-                    var largeRequest = new TransferUtilityUploadRequest
+                    var largeRequest = new UploadRequest
                     {
                         BucketName = _bucketName,
                         Key = key,
@@ -263,12 +263,12 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             var directoryPath = directory.FullName;
             var keyPrefix = directory.Name;
 
-            var config = new TransferUtilityConfig
+            var config = new AsyncTransferConfig
             {
                 ConcurrentServiceRequests = 10,
             };
             var transferUtility = new AsyncTransferUtility(Client, config);
-            var request = new TransferUtilityUploadDirectoryRequest
+            var request = new UploadDirectoryRequest
             {
                 BucketName = _bucketName,
                 Directory = directoryPath,
@@ -312,7 +312,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             }
         }
 
-        private static void SetMetadataAndHeaders(TransferUtilityUploadRequest request)
+        private static void SetMetadataAndHeaders(UploadRequest request)
         {
             SetMetadata(request.Metadata);
             SetHeaders(request.Headers);

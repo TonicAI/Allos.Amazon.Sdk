@@ -1,22 +1,22 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using Allos.Amazon.Sdk.Fork;
 using Amazon.S3;
-using Amazon.Sdk.Fork;
 
-namespace Amazon.Sdk.S3.Transfer
+namespace Allos.Amazon.Sdk.S3.Transfer
 {
     /// <summary>
     /// 	<para>
     /// 	Provides a high level utility for managing transfers to and from Amazon S3.
     /// 	</para>
     /// 	<para>
-    /// 	<c>TransferUtility</c> provides a simple API for 
+    /// 	<see cref="AsyncTransferUtility"/> provides a simple API for 
     /// 	uploading content to and downloading content
     /// 	from Amazon S3. It makes extensive use of Amazon S3 multipart uploads to
     /// 	achieve enhanced throughput, performance, and reliability. 
     /// 	</para>
     /// 	<para>
     /// 	When uploading large files by specifying file paths instead of a stream, 
-    /// 	<c>TransferUtility</c> uses multiple threads to upload
+    /// 	<see cref="AsyncTransferUtility"/> uses multiple threads to upload
     /// 	multiple parts of a single upload at once. When dealing with large content
     /// 	sizes and high bandwidth, this can increase throughput significantly.
     /// 	</para>
@@ -149,7 +149,7 @@ namespace Amazon.Sdk.S3.Transfer
         ///     A cancellation token that can be used by other objects or threads to receive notice of cancellation.
         /// </param>
         /// <returns>The task object representing the asynchronous operation.</returns>
-        Task UploadAsync(TransferUtilityUploadRequest request, CancellationToken cancellationToken = default);
+        Task UploadAsync(UploadRequest request, CancellationToken cancellationToken = default);
         
         /// <summary>
         /// 	Aborts the multipart uploads that were initiated before the specified date.
@@ -178,7 +178,7 @@ namespace Amazon.Sdk.S3.Transfer
         ///     A cancellation token that can be used by other objects or threads to receive notice of cancellation.
         /// </param>
         /// <returns>The task object representing the asynchronous operation.</returns>
-        Task DownloadAsync(TransferUtilityDownloadRequest request, CancellationToken cancellationToken = default);
+        Task DownloadAsync(DownloadRequest request, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 	Returns a stream from which the caller can read the content from the specified
@@ -199,7 +199,7 @@ namespace Amazon.Sdk.S3.Transfer
 
         /// <summary>
         /// 	Returns a stream to read the contents from Amazon S3 as 
-        /// 	specified by the <c>TransferUtilityOpenStreamRequest</c>.
+        /// 	specified by the <see cref="OpenStreamRequest"/>.
         /// 	The caller of this method is responsible for closing the stream.
         /// </summary>
         /// <param name="request">
@@ -209,7 +209,7 @@ namespace Amazon.Sdk.S3.Transfer
         ///     A cancellation token that can be used by other objects or threads to receive notice of cancellation.
         /// </param>
         /// <returns>The task object representing the asynchronous operation.</returns>
-        Task<Stream> OpenStreamAsync(TransferUtilityOpenStreamRequest request, CancellationToken cancellationToken = default);
+        Task<Stream> OpenStreamAsync(OpenStreamRequest request, CancellationToken cancellationToken = default);
         
         /// <summary>
         /// 	Uploads files from a specified directory.  
@@ -300,7 +300,7 @@ namespace Amazon.Sdk.S3.Transfer
         ///     A cancellation token that can be used by other objects or threads to receive notice of cancellation.
         /// </param>
         /// <returns>The task object representing the asynchronous operation.</returns>
-        Task UploadDirectoryAsync(TransferUtilityUploadDirectoryRequest request, CancellationToken cancellationToken = default);
+        Task UploadDirectoryAsync(UploadDirectoryRequest request, CancellationToken cancellationToken = default);
         
         /// <summary>
         /// 	Downloads the objects in Amazon S3 that have a key that starts with the value 
@@ -324,7 +324,7 @@ namespace Amazon.Sdk.S3.Transfer
         /// <summary>
         /// 	Downloads the objects in Amazon S3 that have a key that starts with the value 
         /// 	specified by the <c>S3Directory</c>
-        /// 	property of the passed in <c>TransferUtilityDownloadDirectoryRequest</c> object.
+        /// 	property of the passed in <see cref="DownloadDirectoryRequest"/> object.
         /// </summary>
         /// <param name="request">
         /// 	Contains all the parameters required to download objects from Amazon S3 
@@ -334,7 +334,7 @@ namespace Amazon.Sdk.S3.Transfer
         ///     A cancellation token that can be used by other objects or threads to receive notice of cancellation.
         /// </param>
         /// <returns>The task object representing the asynchronous operation.</returns>
-        Task DownloadDirectoryAsync(TransferUtilityDownloadDirectoryRequest request, CancellationToken cancellationToken = default);
+        Task DownloadDirectoryAsync(DownloadDirectoryRequest request, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 	Downloads the content from Amazon S3 and writes it to the specified file.    

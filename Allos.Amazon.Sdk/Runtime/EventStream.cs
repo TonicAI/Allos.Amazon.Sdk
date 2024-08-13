@@ -1,23 +1,32 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using Allos.Amazon.Sdk.Fork;
 using Amazon.Runtime.Internal.Util;
-using Amazon.Sdk.Fork;
+using ILogger = Serilog.ILogger;
 
-namespace Amazon.Sdk
+namespace Allos.Amazon.Sdk
 {
+    [SuppressMessage("ReSharper", "RedundantExtendsListEntry")]
     [SuppressMessage("ReSharper", "EventNeverSubscribedTo.Global")]
     [SuppressMessage("ReSharper", "UnusedType.Global")]
     [AmazonSdkFork("sdk/src/Core/Amazon.Runtime/Internal/Util/EventStream.cs", "Amazon.Runtime.Internal.Util")]
-    public class EventStream : WrapperStream
+    public partial class EventStream : WrapperStream
     {
         public event EventHandler<StreamBytesReadEventArgs>? OnRead;
         
         private readonly bool _leaveStreamOpen;
+        
+        [SuppressMessage("ReSharper", "NotAccessedField.Local")] 
+        private readonly ILogger _logger;
+        
+        private long _totalBytesRead;
+        private bool _isEndOfStream;
 
-        public EventStream(Stream stream, bool leaveStreamOpen = true)
+        public EventStream(Stream stream, bool leaveStreamOpen = true, ILogger? logger = null)
             : base(stream)
         {
             _leaveStreamOpen = leaveStreamOpen;
+            _logger = logger ?? TonicLogger.ForContext<EventStream>();
         }
 
         public override bool CanRead => BaseStream.CanRead;
@@ -56,8 +65,11 @@ namespace Amazon.Sdk
         public override int Read(byte[] buffer, int offset, int count)
         {
             int bytesRead = BaseStream.Read(buffer, offset, count);
-
-            OnRead?.Invoke(this, new StreamBytesReadEventArgs(bytesRead));
+            
+            _totalBytesRead += bytesRead;
+            _isEndOfStream = bytesRead == 0 && _totalBytesRead > 0;
+            
+            OnRead?.Invoke(this, new StreamBytesReadEventArgs(bytesRead, _totalBytesRead, _isEndOfStream));
 
             return bytesRead;
         }
@@ -77,8 +89,11 @@ namespace Amazon.Sdk
         {
             int bytesRead = await BaseStream.ReadAsync(buffer, offset, count, cancellationToken)
                 .ConfigureAwait(false);
+
+            _totalBytesRead += bytesRead;
+            _isEndOfStream = bytesRead == 0 && _totalBytesRead > 0;
             
-            OnRead?.Invoke(this, new StreamBytesReadEventArgs(bytesRead));
+            OnRead?.Invoke(this, new StreamBytesReadEventArgs(bytesRead, _totalBytesRead, _isEndOfStream));
 
             return bytesRead;
         }
@@ -171,6 +186,7 @@ namespace Amazon.Sdk
         
         protected override void Dispose(bool disposing)
         {
+
         }
     }
 }

@@ -1,21 +1,24 @@
-﻿using System.Net;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Net;
 using System.Runtime.ExceptionServices;
+using Allos.Amazon.Sdk.Fork;
+using Allos.Amazon.Sdk.S3.Util;
 using Amazon.Runtime;
 using Amazon.S3;
 using Amazon.S3.Model;
-using Amazon.Sdk.Fork;
-using Amazon.Sdk.S3.Util;
 using Amazon.Util;
-using Serilog;
 
-namespace Amazon.Sdk.S3.Transfer.Internal
+namespace Allos.Amazon.Sdk.S3.Transfer.Internal
 {
+    [SuppressMessage("ReSharper", "InconsistentNaming")]
+    [SuppressMessage("ReSharper", "MemberCanBePrivate.Global")]
+    [SuppressMessage("ReSharper", "ClassWithVirtualMembersNeverInherited.Global")]
     [AmazonSdkFork("sdk/src/Services/S3/Custom/Transfer/Internal/DownloadCommand.cs", "Amazon.S3.Transfer.Internal")]
     [AmazonSdkFork("sdk/src/Services/S3/Custom/Transfer/Internal/_async/DownloadCommand.async.cs", "Amazon.S3.Transfer.Internal")]
     internal class DownloadCommand : BaseCommand
     {
-        private static readonly int MaxBackoffInMilliseconds = (int)TimeSpan.FromSeconds(30).TotalMilliseconds;
-        
+        protected static readonly uint _maxBackoffInMillisecondsDefault = (uint)TimeSpan.FromSeconds(30).TotalMilliseconds;
+        protected virtual uint MaxBackoffInMilliseconds => _maxBackoffInMillisecondsDefault;
 #if !NETSTANDARD
         // Set of web exception status codes to retry on.
         private static readonly ICollection<WebExceptionStatus> WebExceptionStatusesToRetryOn = new HashSet<WebExceptionStatus>
@@ -29,12 +32,10 @@ namespace Amazon.Sdk.S3.Transfer.Internal
         };
 #endif
 
-        private static ILogger Logger => TonicLogger.ForContext<AsyncTransferUtility>();
+        protected readonly IAmazonS3 _s3Client;
+        protected readonly DownloadRequest _request;
 
-        private readonly IAmazonS3 _s3Client;
-        private readonly TransferUtilityDownloadRequest _request;
-
-        internal DownloadCommand(IAmazonS3 s3Client, TransferUtilityDownloadRequest request)
+        internal DownloadCommand(IAmazonS3 s3Client, DownloadRequest request)
         {
             _s3Client = s3Client;
             _request = request;
@@ -58,8 +59,8 @@ namespace Amazon.Sdk.S3.Transfer.Internal
             //\
             GetObjectRequest getRequest = ConvertToGetObjectRequest(_request);
 
-            var maxRetries = _s3Client.Config.MaxErrorRetry;
-            var retries = 0;
+            var maxRetries = _s3Client.Config.MaxErrorRetry.ToUInt32();
+            uint retries = 0;
             bool shouldRetry;
             string? mostRecentETag = null;
             do
@@ -156,7 +157,7 @@ namespace Amazon.Sdk.S3.Transfer.Internal
             } while (shouldRetry);
         }
 
-        private static bool HandleExceptionForHttpClient(Exception exception, int retries, int maxRetries)
+        protected virtual bool HandleExceptionForHttpClient(Exception exception, uint retries, uint maxRetries)
         {
             if (AWSHttpClient.IsHttpInnerException(exception))
             {
@@ -176,12 +177,10 @@ namespace Amazon.Sdk.S3.Transfer.Internal
             return HandleException(exception, retries, maxRetries);
         }
 
-        private void OnWriteObjectProgressEvent(object? sender, WriteObjectProgressArgs e)
-        {
+        protected virtual void OnWriteObjectProgressEvent(object? sender, WriteObjectProgressArgs e) =>
             _request.OnRaiseProgressEvent(e);
-        }
 
-        private static bool HandleException(Exception exception, int retries, int maxRetries)
+        protected virtual bool HandleException(Exception exception, uint retries, uint maxRetries)
         {
             var canRetry = true;
             if (exception is IOException)
@@ -244,10 +243,10 @@ namespace Amazon.Sdk.S3.Transfer.Internal
             return false;
         }
 
-        private static void WaitBeforeRetry(int retries)
+        protected virtual void WaitBeforeRetry(uint retries)
         {
             int delay = (int)(Math.Pow(4, retries) * 100);
-            delay = Math.Min(delay, MaxBackoffInMilliseconds);
+            delay = Math.Min(delay, MaxBackoffInMilliseconds.ToInt32());
             AWSSDKUtils.Sleep(delay);
         }
 
@@ -256,7 +255,7 @@ namespace Amazon.Sdk.S3.Transfer.Internal
         /// </summary>
         /// <param name="filepath">The fully qualified path of the file.</param>
         /// <returns></returns>
-        private static ByteRange ByteRangeRemainingForDownload(string filepath)
+        protected virtual ByteRange ByteRangeRemainingForDownload(string filepath)
         {
             /*
              * Initialize the ByteRange as the whole file.
@@ -264,11 +263,11 @@ namespace Amazon.Sdk.S3.Transfer.Internal
              * S3 will stop sending bits if you specify beyond the
              * size of the file anyways.
              */
-            ByteRange byteRange = new(0, long.MaxValue);
+            ByteRange byteRange = new ByteRange(0, long.MaxValue);
 
             if (File.Exists(filepath))
             {
-                FileInfo info = new(filepath);
+                FileInfo info = new FileInfo(filepath);
                 byteRange.Start = info.Length;
             }
 

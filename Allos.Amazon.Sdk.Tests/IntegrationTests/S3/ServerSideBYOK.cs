@@ -1,16 +1,16 @@
 ﻿using System.Net;
 using System.Security.Cryptography;
+using Allos.Amazon.Sdk.Fork;
+using Allos.Amazon.Sdk.S3.Transfer;
+using Allos.Amazon.Sdk.Tests.IntegrationTests.Utils;
 using Amazon.S3;
 using Amazon.S3.Model;
 using Amazon.S3.Util;
-using Amazon.Sdk.Fork;
-using Amazon.Sdk.S3.Transfer;
-using AWSSDK_DotNet.IntegrationTests.Utils;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using ThirdParty.MD5;
 using AmazonS3Client = Amazon.S3.AmazonS3Client;
 
-namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
+namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
 {
     [TestClass]
     [AmazonSdkFork("sdk/test/Services/S3/IntegrationTests/ServerSideBYOK.cs", "AWSSDK_DotNet.IntegrationTests.Tests.S3")]
@@ -194,7 +194,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
 
                 AsyncTransferUtility utility = new(Client);
 
-                var uploadRequest = new TransferUtilityUploadRequest
+                var uploadRequest = new UploadRequest
                 {
                     BucketName = bucketName,
                     Key = Key,
@@ -218,7 +218,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
                 GetObjectMetadataResponse getObjectMetadataResponse = await Client.GetObjectMetadataAsync(getObjectMetadataRequest).ConfigureAwait(false);
                 Assert.AreEqual(ServerSideEncryptionCustomerMethod.AES256, getObjectMetadataResponse.ServerSideEncryptionCustomerMethod);
 
-                var openRequest = new TransferUtilityOpenStreamRequest
+                var openRequest = new OpenStreamRequest
                 {
                     BucketName = bucketName,
                     Key = Key,

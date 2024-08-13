@@ -1,38 +1,40 @@
 ﻿using System.Buffers;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
+using Allos.Amazon.Sdk.Fork;
+using Allos.Amazon.Sdk.S3.Util;
 using Amazon.Runtime;
 using Amazon.Runtime.Internal;
 using Amazon.S3;
 using Amazon.S3.Internal;
 using Amazon.S3.Model;
-using Amazon.Sdk.Fork;
-using Amazon.Sdk.S3.Util;
 using Amazon.Util;
 using Serilog;
 
-namespace Amazon.Sdk.S3.Transfer.Internal
+namespace Allos.Amazon.Sdk.S3.Transfer.Internal
 {
     /// <summary>
     /// The command to manage an upload using the S3 multipart API.
     /// </summary>
+    [SuppressMessage("ReSharper", "InconsistentNaming")]
+    [SuppressMessage("ReSharper", "MemberCanBePrivate.Global")]
+    [SuppressMessage("ReSharper", "ClassWithVirtualMembersNeverInherited.Global")]
     [AmazonSdkFork("sdk/src/Services/S3/Custom/Transfer/Internal/MultipartUploadCommand.cs", "Amazon.S3.Transfer.Internal")]
     [AmazonSdkFork("sdk/src/Services/S3/Custom/Transfer/Internal/_async/MultipartUploadCommand.async.cs", "Amazon.S3.Transfer.Internal")]
     internal class MultipartUploadCommand : BaseCommand
     {
-        private readonly IAmazonS3 _s3Client;
-        private readonly long _partSize;
-        private int _totalNumberOfParts;
-        private readonly TransferUtilityConfig _config;
-        private readonly TransferUtilityUploadRequest _fileTransporterRequest;
-        private readonly ConcurrentDictionary<uint, Stream> _inputStreams;
+        protected readonly IAmazonS3 _s3Client;
+        protected readonly long _partSize;
+        protected uint _totalNumberOfParts;
+        protected readonly AsyncTransferConfig _config;
+        protected readonly UploadRequest _fileTransporterRequest;
+        protected readonly ConcurrentDictionary<uint, Stream> _inputStreams;
 
-        private List<UploadPartResponse> _uploadResponses = new();
-        private ulong _totalTransferredBytes;
-        private readonly Queue<UploadPartRequest> _partsToUpload = new();
+        protected List<UploadPartResponse> _uploadResponses;
+        protected ulong _totalTransferredBytes;
+        protected readonly Queue<UploadPartRequest> _partsToUpload;
         
-        private readonly ulong? _contentLength;
-        private static ILogger Logger => TonicLogger.ForContext<AsyncTransferUtility>();
+        protected readonly ulong? _contentLength;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MultipartUploadCommand"/> class.
@@ -40,19 +42,21 @@ namespace Amazon.Sdk.S3.Transfer.Internal
         /// <param name="s3Client">The s3 client.</param>
         /// <param name="config">The config object that has the number of threads to use.</param>
         /// <param name="fileTransporterRequest">The file transporter request.</param>
+        /// <param name="logger">Logger</param>
         internal MultipartUploadCommand(
             IAmazonS3 s3Client, 
-            TransferUtilityConfig config, 
-            TransferUtilityUploadRequest fileTransporterRequest)
+            AsyncTransferConfig config, 
+            UploadRequest fileTransporterRequest,
+            ILogger logger)
         {
             if (fileTransporterRequest.IsSetFilePath())
             {
-                Logger.Debug("Beginning upload of file `{FilePath}`", 
+                logger.Debug("Beginning upload of file `{FilePath}`", 
                     fileTransporterRequest.FilePath);
             }
             else if (fileTransporterRequest.IsSetInputStream())
             {
-                Logger.Debug("Beginning upload of `{StreamType}`", 
+                logger.Debug("Beginning upload of `{StreamType}`", 
                     fileTransporterRequest.InputStream.GetType().FullName);
             }
             else
@@ -60,7 +64,8 @@ namespace Amazon.Sdk.S3.Transfer.Internal
                 throw new ArgumentException(
                     $"One of `{nameof(fileTransporterRequest.FilePath)}` or `{nameof(fileTransporterRequest.InputStream)}` must be provided");
             }
-
+            _uploadResponses = new List<UploadPartResponse>();
+            _partsToUpload = new Queue<UploadPartRequest>();
             _inputStreams = new ConcurrentDictionary<uint, Stream>();
             _config = config;
             _s3Client = s3Client;
@@ -79,14 +84,14 @@ namespace Amazon.Sdk.S3.Transfer.Internal
                 }
             }
 
-            Logger.Debug("Upload part size {PartSize}", _partSize);
+            logger.Debug("Upload part size {PartSize}", _partSize);
         }
         
-        public SemaphoreSlim? AsyncThrottler { get; set; }
+        public virtual SemaphoreSlim? AsyncThrottler { get; set; }
 
         public override async Task ExecuteAsync(CancellationToken cancellationToken)
         {
-            if (_fileTransporterRequest.InputStream is { CanSeek: false } || 
+            if (_fileTransporterRequest.InputStream is { CanSeek: false } ||
                  !_fileTransporterRequest.ContentLength.HasValue)
             {
                 await UploadUnseekableStreamAsync(_fileTransporterRequest, cancellationToken).ConfigureAwait(false);
@@ -103,7 +108,6 @@ namespace Amazon.Sdk.S3.Transfer.Internal
                     initResponse.UploadId);
 
                 var pendingUploadPartTasks = new List<Task<UploadPartResponse>>();
-                var pendingUploadPartTaskContinuations = new List<Task>();
 
                 SemaphoreSlim? localThrottler = null;
                 CancellationTokenSource? internalCts = null;
@@ -125,14 +129,14 @@ namespace Amazon.Sdk.S3.Transfer.Internal
                         filePosition += _partSize;
                     }
 
-                    _totalNumberOfParts = _partsToUpload.Count;
+                    _totalNumberOfParts = _partsToUpload.Count.ToUInt32();
 
                     Logger.Debug("Scheduling the {TotalNumberOfParts} UploadPartRequests in the queue",
                         _totalNumberOfParts);
 
                     internalCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
                     var concurrencyLevel = CalculateConcurrentServiceRequests();
-                    localThrottler = AsyncThrottler ?? new SemaphoreSlim(concurrencyLevel);
+                    localThrottler = AsyncThrottler ?? new SemaphoreSlim(concurrencyLevel.ToInt32());
 
                     foreach (var uploadRequest in _partsToUpload)
                     {
@@ -152,16 +156,6 @@ namespace Amazon.Sdk.S3.Transfer.Internal
                         var task = UploadPartAsync(uploadRequest, internalCts, localThrottler);
                         
                         pendingUploadPartTasks.Add(task);
-
-                        var continuation = task.ContinueWith(t =>
-                        {
-                            _inputStreams.TryRemove((uint)uploadRequest.PartNumber, out var inputStream);
-                            
-                            inputStream?.Dispose();
-                            
-                        }, internalCts.Token);
-                        
-                        pendingUploadPartTaskContinuations.Add(continuation);
                     }
 
                     Logger.Debug("Waiting for upload part requests to complete `{UploadId}`", 
@@ -193,29 +187,24 @@ namespace Amazon.Sdk.S3.Transfer.Internal
 
                     if (localThrottler != null && localThrottler != AsyncThrottler)
                         localThrottler.Dispose();
+                    
+                    foreach (var inputStream in _inputStreams.Values)
+                    {
+                        inputStream.Close();
+                    }
+                    _inputStreams.Clear();
 
                     if (_fileTransporterRequest.InputStream != null && 
                         !_fileTransporterRequest.IsSetFilePath() && 
                         _fileTransporterRequest.AutoCloseStream)
                     {
-                        await _fileTransporterRequest.InputStream.DisposeAsync().ConfigureAwait(false);
+                        _fileTransporterRequest.InputStream.Close();
                     }
-
-                    //continuations are intended to clean up input streams,
-                    //but that may happen, happen partially, or not happen at all
-                    //what is left of the input streams are explicitly cleared below
-                    pendingUploadPartTaskContinuations.Clear();
-                    
-                    foreach (var inputStream in _inputStreams.Values)
-                    {
-                        await inputStream.DisposeAsync().ConfigureAwait(false);
-                    }
-                    _inputStreams.Clear();
                 } 
             }
         }
 
-        private async Task<UploadPartResponse> UploadPartAsync(
+        protected virtual async Task<UploadPartResponse> UploadPartAsync(
             UploadPartRequest uploadRequest, 
             CancellationTokenSource internalCts, 
             SemaphoreSlim asyncThrottler)
@@ -237,16 +226,23 @@ namespace Amazon.Sdk.S3.Transfer.Internal
             }
             finally
             {
+                uploadRequest.InputStream.Close();
                 asyncThrottler.Release();
             }
         }       
 
-        private void Cleanup(string uploadId, List<Task<UploadPartResponse>> tasks)
+        protected virtual void Cleanup(string uploadId, List<Task<UploadPartResponse>> tasks)
+        {
+            WaitForAllTasks(tasks);
+            AbortMultipartUpload(uploadId);
+        }
+
+        protected virtual void WaitForAllTasks(List<Task<UploadPartResponse>> tasks)
         {
             try
             {
                 // Make sure all tasks complete (to completion/faulted/cancelled).
-                Task.WaitAll(tasks.Cast<Task>().ToArray(), 5000); 
+                Task.WaitAll(tasks.Cast<Task>().ToArray(), _config.MultipartUploadFinalizeTimeout.ToInt32()); 
             }
             catch(Exception exception)
             {
@@ -255,14 +251,29 @@ namespace Amazon.Sdk.S3.Transfer.Internal
                     "A timeout occured while waiting for all upload part request to complete as part of aborting the multipart upload : {ErrorMessage}",
                     exception.Message);
             }
-            AbortMultipartUpload(uploadId);
         }
-
-        private void AbortMultipartUpload(string uploadId)
+        
+        protected virtual void WaitForAllTasks(List<Task> tasks)
         {
             try
             {
-                _s3Client.AbortMultipartUploadAsync(new()
+                // Make sure all tasks complete (to completion/faulted/cancelled).
+                Task.WaitAll(tasks.Cast<Task>().ToArray(), _config.MultipartUploadFinalizeTimeout.ToInt32()); 
+            }
+            catch(Exception exception)
+            {
+                Logger.Information(
+                    exception,
+                    "A timeout occured while waiting for all upload part request to complete as part of aborting the multipart upload : {ErrorMessage}",
+                    exception.Message);
+            }
+        }
+
+        protected virtual void AbortMultipartUpload(string uploadId)
+        {
+            try
+            {
+                _s3Client.AbortMultipartUploadAsync(new AbortMultipartUploadRequest
                 {
                     BucketName = _fileTransporterRequest.BucketName,
                     Key = _fileTransporterRequest.Key,
@@ -276,8 +287,8 @@ namespace Amazon.Sdk.S3.Transfer.Internal
                     e.Message);
             }
         }
-        private async Task UploadUnseekableStreamAsync(
-            TransferUtilityUploadRequest request, 
+        protected virtual async Task UploadUnseekableStreamAsync(
+            UploadRequest request, 
             CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(request.InputStream);
@@ -305,15 +316,15 @@ namespace Amazon.Sdk.S3.Transfer.Internal
                 var uploadPartResponses = new List<UploadPartResponse>();
                 var readBuffer = ArrayPool<byte>.Shared.Rent(readBufferSize);
                 var partBuffer = ArrayPool<byte>.Shared.Rent((int)minPartSize + (readBufferSize));
-                MemoryStream nextUploadBuffer = new(partBuffer);
+                MemoryStream nextUploadBuffer = new MemoryStream(partBuffer);
                 await using (var stream = request.InputStream)
                 {
                     try
                     {
-                        int partNumber = 1;
-                        int readBytesCount, readAheadBytesCount;
+                        uint partNumber = 1;
+                        int readAheadBytesCount;
 
-                        readBytesCount = await stream.ReadAsync(readBuffer, 0, readBuffer.Length, cancellationToken)
+                        var readBytesCount = await stream.ReadAsync(readBuffer, 0, readBuffer.Length, cancellationToken)
                             .ConfigureAwait(false);
 
                         do
@@ -336,7 +347,7 @@ namespace Amazon.Sdk.S3.Transfer.Internal
                                         // nextUploadBuffer as the pastSize. The length will be incorrectly computed
                                         // for the part as (int)minPartSize + (READ_BUFFER_SIZE) as defined above for partBuffer.
                                         await nextUploadBuffer.DisposeAsync().ConfigureAwait(false);
-                                        nextUploadBuffer = new();
+                                        nextUploadBuffer = new MemoryStream();
                                     }
                                 }
                                 bool isLastPart = readAheadBytesCount == 0;
@@ -347,7 +358,7 @@ namespace Amazon.Sdk.S3.Transfer.Internal
                                 UploadPartRequest uploadPartRequest = ConstructUploadPartRequestForNonSeekableStream(
                                     nextUploadBuffer, 
                                     partNumber, 
-                                    partSize, 
+                                    partSize.ToUInt64(), 
                                     isLastPart, 
                                     initiateResponse);
 
@@ -362,7 +373,7 @@ namespace Amazon.Sdk.S3.Transfer.Internal
                                 partNumber++;
 
                                 await nextUploadBuffer.DisposeAsync().ConfigureAwait(false);
-                                nextUploadBuffer = new(partBuffer);
+                                nextUploadBuffer = new MemoryStream(partBuffer);
                             }
                             readBytesCount = readAheadBytesCount;
                         }
@@ -388,18 +399,18 @@ namespace Amazon.Sdk.S3.Transfer.Internal
             }
             catch (Exception ex)
             {
-                await _s3Client.AbortMultipartUploadAsync(new()
+                await _s3Client.AbortMultipartUploadAsync(new AbortMultipartUploadRequest
                 {
                     BucketName = request.BucketName,
                     Key = request.Key,
                     UploadId = initiateResponse.UploadId
                 }, cancellationToken).ConfigureAwait(false);
-                Logger.Error(ex, ex.Message);
+                Logger.Error(ex, "{ErrorMessage}", ex.Message);
                 throw;
             }
         }
 
-        private static long CalculatePartSize(ulong? fileSize)
+        protected static long CalculatePartSize(ulong? fileSize)
         {
             if(fileSize == null)
             {
@@ -414,7 +425,7 @@ namespace Amazon.Sdk.S3.Transfer.Internal
             return (long)partSize;
         }
 
-        private string? DetermineContentType()
+        protected virtual string? DetermineContentType()
         {
             if (_fileTransporterRequest.IsSetContentType())
                 return _fileTransporterRequest.ContentType;
@@ -437,9 +448,9 @@ namespace Amazon.Sdk.S3.Transfer.Internal
             return null;
         }
 
-        private int CalculateConcurrentServiceRequests()
+        protected virtual uint CalculateConcurrentServiceRequests()
         {
-            int threadCount;
+            uint threadCount;
             if (_fileTransporterRequest.IsSetFilePath()
                 && !(_s3Client is IAmazonS3Encryption))
             {
@@ -457,12 +468,12 @@ namespace Amazon.Sdk.S3.Transfer.Internal
             return threadCount;
         }
 
-        private CompleteMultipartUploadRequest ConstructCompleteMultipartUploadRequest(
+        protected virtual CompleteMultipartUploadRequest ConstructCompleteMultipartUploadRequest(
             InitiateMultipartUploadResponse initResponse
             ) => 
             ConstructCompleteMultipartUploadRequest(initResponse, false, null);
 
-        private CompleteMultipartUploadRequest ConstructCompleteMultipartUploadRequest(
+        protected virtual CompleteMultipartUploadRequest ConstructCompleteMultipartUploadRequest(
             InitiateMultipartUploadResponse initResponse, 
             bool skipPartValidation, 
             RequestEventHandler? requestEventHandler)
@@ -497,7 +508,7 @@ namespace Amazon.Sdk.S3.Transfer.Internal
             return compRequest;
         }
 
-        private UploadPartRequest ConstructUploadPartRequest(
+        protected virtual UploadPartRequest ConstructUploadPartRequest(
             uint partNumber, 
             long filePosition, 
             InitiateMultipartUploadResponse initiateResponse)
@@ -542,10 +553,11 @@ namespace Amazon.Sdk.S3.Transfer.Internal
             }
 
             var progressHandler = new ProgressHandler(
-                (ulong) _s3Client.Config.ProgressUpdateInterval,
+                _s3Client.Config.ProgressUpdateInterval.ToUInt64(),
                 _contentLength,
                 partFileFauxPath,
-                UploadPartProgressEventCallback
+                UploadPartProgressEventCallback,
+                Logger
                 );
             
             ((IAmazonWebServiceRequest)uploadPartRequest).AddBeforeRequestHandler(RequestEventHandler);
@@ -572,7 +584,7 @@ namespace Amazon.Sdk.S3.Transfer.Internal
                 ArgumentNullException.ThrowIfNull(uploadPartRequest.InputStream);
             }
 
-            var eventStream = new EventStream(uploadPartRequest.InputStream);
+            var eventStream = new EventStream(uploadPartRequest.InputStream, logger: Logger);
             
             eventStream.OnRead += progressHandler.OnBytesRead;
             
@@ -581,9 +593,9 @@ namespace Amazon.Sdk.S3.Transfer.Internal
             return uploadPartRequest;
         }
 
-        private UploadPartRequest ConstructGenericUploadPartRequest(InitiateMultipartUploadResponse initiateResponse)
+        protected virtual UploadPartRequest ConstructGenericUploadPartRequest(InitiateMultipartUploadResponse initiateResponse)
         {
-            UploadPartRequest uploadPartRequest = new()
+            UploadPartRequest uploadPartRequest = new UploadPartRequest
             {
                 BucketName = _fileTransporterRequest.BucketName,
                 Key = _fileTransporterRequest.Key,
@@ -606,28 +618,29 @@ namespace Amazon.Sdk.S3.Transfer.Internal
             return uploadPartRequest;
         }
 
-        private UploadPartRequest ConstructUploadPartRequestForNonSeekableStream(
+        protected virtual UploadPartRequest ConstructUploadPartRequestForNonSeekableStream(
             Stream inputStream, 
-            int partNumber, 
-            long partSize, 
+            uint partNumber, 
+            ulong partSize, 
             bool isLastPart, 
             InitiateMultipartUploadResponse initiateResponse)
         {
             UploadPartRequest uploadPartRequest = ConstructGenericUploadPartRequest(initiateResponse);
             
             uploadPartRequest.InputStream = inputStream;
-            uploadPartRequest.PartNumber = partNumber;
-            uploadPartRequest.PartSize = partSize;
+            uploadPartRequest.PartNumber = partNumber.ToInt32();
+            uploadPartRequest.PartSize = partSize.ToInt64();
             uploadPartRequest.IsLastPart = isLastPart;
 
             var progressHandler = new ProgressHandler(
-                (ulong) _s3Client.Config.ProgressUpdateInterval,
+                _s3Client.Config.ProgressUpdateInterval.ToUInt64(),
                 _contentLength,
                 uploadPartRequest.FilePath, 
-                UploadPartProgressEventCallback
+                UploadPartProgressEventCallback,
+                Logger
                 );
                 
-            var eventStream = new EventStream(uploadPartRequest.InputStream);
+            var eventStream = new EventStream(uploadPartRequest.InputStream, logger: Logger);
             
             eventStream.OnRead += progressHandler.OnBytesRead;
             
@@ -638,10 +651,10 @@ namespace Amazon.Sdk.S3.Transfer.Internal
             return uploadPartRequest;
         }
 
-        private InitiateMultipartUploadRequest ConstructInitiateMultipartUploadRequest() => 
+        protected virtual InitiateMultipartUploadRequest ConstructInitiateMultipartUploadRequest() => 
             ConstructInitiateMultipartUploadRequest(null);
 
-        private InitiateMultipartUploadRequest ConstructInitiateMultipartUploadRequest(RequestEventHandler? requestEventHandler)
+        protected virtual InitiateMultipartUploadRequest ConstructInitiateMultipartUploadRequest(RequestEventHandler? requestEventHandler)
         {
             var initRequest = new InitiateMultipartUploadRequest
             {
@@ -674,7 +687,7 @@ namespace Amazon.Sdk.S3.Transfer.Internal
             return initRequest;
         }
 
-        private void UploadPartProgressEventCallback(object? sender, UploadProgressArgs e)
+        protected virtual void UploadPartProgressEventCallback(object? sender, UploadProgressArgs e)
         {
             ulong transferredBytes = Interlocked.Add(
                 ref _totalTransferredBytes, 
@@ -690,21 +703,26 @@ namespace Amazon.Sdk.S3.Transfer.Internal
         }
     }
 
+    [SuppressMessage("ReSharper", "InconsistentNaming")]
+    [SuppressMessage("ReSharper", "MemberCanBePrivate.Global")]
+    [SuppressMessage("ReSharper", "ClassWithVirtualMembersNeverInherited.Global")]
     internal class ProgressHandler
     {
-        private UploadProgressArgs? _lastProgressArgs;
-        private readonly EventHandler<UploadProgressArgs> _callback;
-        private readonly ulong? _contentLength;
-        private ulong _totalBytesRead;
-        private ulong _totalIncrementTransferred;
-        private readonly ulong _progressUpdateInterval;
-        private string? _filePath;
+        protected UploadProgressArgs? _lastProgressArgs;
+        protected readonly EventHandler<UploadProgressArgs> _callback;
+        protected readonly ulong? _contentLength;
+        protected ulong _totalBytesRead;
+        protected ulong _totalIncrementTransferred;
+        protected readonly ulong _progressUpdateInterval;
+        protected readonly string? _filePath;
+        protected readonly ILogger _logger;
 
         public ProgressHandler(
             ulong progressUpdateInterval,
             ulong? contentLength,
             string? filePath, 
-            EventHandler<UploadProgressArgs> callback
+            EventHandler<UploadProgressArgs> callback,
+            ILogger logger
             )
         {
             ArgumentNullException.ThrowIfNull(callback);
@@ -713,9 +731,10 @@ namespace Amazon.Sdk.S3.Transfer.Internal
             _contentLength = contentLength;
             _filePath = filePath;
             _callback = callback;
+            _logger = logger;
         }
 
-        private void OnTransferProgress(object? sender, UploadProgressArgs e)
+        protected virtual void OnTransferProgress(object? sender, UploadProgressArgs e)
         {
             ulong compensationForRetry = 0U;
 
@@ -724,7 +743,7 @@ namespace Amazon.Sdk.S3.Transfer.Internal
                 if (_lastProgressArgs.TransferredBytes >= e.TransferredBytes)
                 {
                     // The request was retried
-                    compensationForRetry = (ulong) _lastProgressArgs.TransferredBytes;
+                    compensationForRetry = _lastProgressArgs.TransferredBytes;
                 }
             }
 
@@ -735,21 +754,17 @@ namespace Amazon.Sdk.S3.Transfer.Internal
             _lastProgressArgs = e;
         }
 
-        public void OnBytesRead(object? sender, StreamBytesReadEventArgs args)
+        public virtual void OnBytesRead(object? sender, EventStream.StreamBytesReadEventArgs args)
         {
-            if (_callback == null)
-                return;
-
-            var bytesRead = args.BytesRead;
-            
             // Invoke the progress callback only if bytes read > 0
-            if (bytesRead > 0)
+            if (args.BytesRead > 0)
             {
+                var bytesRead = args.BytesRead.ToUInt32();
                 _totalBytesRead += bytesRead;
                 _totalIncrementTransferred += bytesRead;
-
+                
                 if (_totalIncrementTransferred >= _progressUpdateInterval ||
-                    _totalBytesRead == _contentLength)
+                    (_contentLength.HasValue && _totalBytesRead == _contentLength.Value))
                 {
                     var uploadProgressArgs = new UploadProgressArgs(
                         _totalIncrementTransferred,

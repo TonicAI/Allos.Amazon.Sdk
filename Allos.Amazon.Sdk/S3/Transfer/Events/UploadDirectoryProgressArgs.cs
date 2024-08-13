@@ -1,17 +1,19 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
-using Amazon.Sdk.Fork;
+﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using Allos.Amazon.Sdk.Fork;
 
-namespace Amazon.Sdk.S3.Transfer;
+namespace Allos.Amazon.Sdk.S3.Transfer;
 
 /// <summary>
 /// Encapsulates the information needed to provide
 /// transfer progress to subscribers of the <c>UploadDirectory</c>
 /// event.
 /// </summary>
+[SuppressMessage("ReSharper", "ClassWithVirtualMembersNeverInherited.Global")]
 [SuppressMessage("ReSharper", "UnusedMember.Global")]
-[AmazonSdkFork("sdk/src/Services/S3/Custom/Transfer/TransferUtilityUploadDirectoryRequest.cs", "Amazon.S3.Transfer")]
 [SuppressMessage("ReSharper", "AutoPropertyCanBeMadeGetOnly.Global")]
+[DebuggerDisplay("{DebuggerDisplay}")]
+[AmazonSdkFork("sdk/src/Services/S3/Custom/Transfer/TransferUtilityUploadDirectoryRequest.cs", "Amazon.S3.Transfer")]
 public class UploadDirectoryProgressArgs : EventArgs
 {
     /// <summary>
@@ -157,4 +159,6 @@ public class UploadDirectoryProgressArgs : EventArgs
         }
         return $"Uploaded {NumberOfFilesUploaded} of {TotalNumberOfFiles}, {TransferredBytes} bytes transferred";
     }
+    
+    internal virtual string DebuggerDisplay => ToString();
 }

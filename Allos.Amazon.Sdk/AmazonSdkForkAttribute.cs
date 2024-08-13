@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 
-namespace Amazon.Sdk.Fork;
+namespace Allos.Amazon.Sdk.Fork;
 
 /// <summary>
 /// Annotation for declarations indicating the source code was forked from the AWS SDK for .NET
@@ -106,12 +106,12 @@ public sealed class AmazonSdkForkAttribute : Attribute
     /// <summary>
     /// http://aws.amazon.com/apache2.0
     /// </summary>
-    public Uri Apache2LicenseUrl => new("http://aws.amazon.com/apache2.0");
+    public Uri Apache2LicenseUrl => new Uri("http://aws.amazon.com/apache2.0");
     
     /// <summary>
     /// https://www.apache.org/licenses/LICENSE-2.0
     /// </summary>
-    public Uri AwsApache2LicenseUrl => new("https://www.apache.org/licenses/LICENSE-2.0");
+    public Uri AwsApache2LicenseUrl => new Uri("https://www.apache.org/licenses/LICENSE-2.0");
 
     /// <summary>
     /// Apache License, Version 2.0, January 2004

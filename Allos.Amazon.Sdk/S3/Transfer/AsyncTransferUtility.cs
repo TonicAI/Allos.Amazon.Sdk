@@ -1,25 +1,27 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+using Allos.Amazon.Sdk.Fork;
+using Allos.Amazon.Sdk.S3.Transfer.Internal;
+using Amazon;
 using Amazon.S3;
-using Amazon.Sdk.Fork;
-using Amazon.Sdk.S3.Transfer.Internal;
 using Serilog;
 
-namespace Amazon.Sdk.S3.Transfer
+namespace Allos.Amazon.Sdk.S3.Transfer
 {
     /// <summary>
     /// 	<para>
     /// 	Provides a high level utility for managing transfers to and from Amazon S3.
     /// 	</para>
     /// 	<para>
-    /// 	<c>TransferUtility</c> provides a simple API for 
+    /// 	<see cref="AsyncTransferUtility"/> provides a simple API for 
     /// 	uploading content to and downloading content
     /// 	from Amazon S3. It makes extensive use of Amazon S3 multipart uploads to
     /// 	achieve enhanced throughput, performance, and reliability. 
     /// 	</para>
     /// 	<para>
     /// 	When uploading large files by specifying file paths instead of a stream, 
-    /// 	<c>TransferUtility</c> uses multiple threads to upload
+    /// 	<see cref="AsyncTransferUtility"/> uses multiple threads to upload
     /// 	multiple parts of a single upload at once. When dealing with large content
     /// 	sizes and high bandwidth, this can increase throughput significantly.
     /// 	</para>
@@ -32,22 +34,25 @@ namespace Amazon.Sdk.S3.Transfer
     /// 	</para>
     /// </remarks>
     [SuppressMessage("ReSharper", "ClassWithVirtualMembersNeverInherited.Global")]
+    [SuppressMessage("ReSharper", "UnusedMember.Global")]
+    [DebuggerDisplay("{DebuggerDisplay}")]
     [AmazonSdkFork("sdk/src/Services/S3/Custom/Transfer/TransferUtility.cs", "Amazon.S3.Transfer")]
     [AmazonSdkFork("sdk/src/Services/S3/Custom/Transfer/_async/TransferUtility.async.cs", "Amazon.S3.Transfer")]
     [AmazonSdkFork("sdk/src/Services/S3/Custom/Transfer/_bcl45%2Bnetstandard/TransferUtility.async.cs", "Amazon.S3.Transfer")]
-    [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public class AsyncTransferUtility : IAsyncTransferUtility
     {
-        private readonly TransferUtilityConfig _config;
+        private readonly AsyncTransferConfig _config;
         private readonly bool _shouldDispose;
         private bool _isDisposed;
-        private readonly HashSet<string> _blockedServiceNames = new()
+        private readonly HashSet<string> _blockedServiceNames = new HashSet<string>
         {
             "s3-object-lambda"
         };
-
-        [SuppressMessage("ReSharper", "UnusedMember.Local")] 
-        private static ILogger Logger => TonicLogger.ForContext<AsyncTransferUtility>();
+        
+        private static readonly Lazy<ILogger> _logger =
+            new Lazy<ILogger>(() => TonicLogger.ForContext(typeof(AsyncTransferUtility)));
+        [SuppressMessage("ReSharper", "UnusedMember.Local")]
+        protected virtual ILogger Logger => _logger.Value;
         
         /// <summary>
         /// 	Constructs a new <see cref="AsyncTransferUtility"/> class.
@@ -60,7 +65,7 @@ namespace Amazon.Sdk.S3.Transfer
         /// </param>
         /// <remarks>
         /// <para>
-        /// If a Timeout needs to be specified, use the constructor which takes an <see cref="AmazonS3Client"/> as a paramater.
+        /// If a Timeout needs to be specified, use the constructor which takes an <see cref="AmazonS3Client"/> as a parameter.
         /// Use an instance of <see cref="AmazonS3Client"/> constructed with an <see cref="AmazonS3Config"/> object with the Timeout specified. 
         /// </para>        
         /// </remarks>
@@ -84,7 +89,7 @@ namespace Amazon.Sdk.S3.Transfer
         /// </param>
         /// <remarks>
         /// <para>
-        /// If a Timeout needs to be specified, use the constructor which takes an <see cref="AmazonS3Client"/> as a paramater.
+        /// If a Timeout needs to be specified, use the constructor which takes an <see cref="AmazonS3Client"/> as a parameter.
         /// Use an instance of <see cref="AmazonS3Client"/> constructed with an <see cref="AmazonS3Config"/> object with the Timeout specified. 
         /// </para>        
         /// </remarks>
@@ -108,11 +113,11 @@ namespace Amazon.Sdk.S3.Transfer
         /// </param>
         /// <remarks>
         /// <para>
-        /// If a Timeout needs to be specified, use the constructor which takes an <see cref="AmazonS3Client"/> as a paramater.
+        /// If a Timeout needs to be specified, use the constructor which takes an <see cref="AmazonS3Client"/> as a parameter.
         /// Use an instance of <see cref="AmazonS3Client"/> constructed with an <see cref="AmazonS3Config"/> object with the Timeout specified. 
         /// </para>        
         /// </remarks>
-        public AsyncTransferUtility(string awsAccessKeyId, string awsSecretAccessKey, TransferUtilityConfig config)
+        public AsyncTransferUtility(string awsAccessKeyId, string awsSecretAccessKey, AsyncTransferConfig config)
             : this(new AmazonS3Client(awsAccessKeyId, awsSecretAccessKey), config)
         {
             _shouldDispose = true;
@@ -135,11 +140,15 @@ namespace Amazon.Sdk.S3.Transfer
         /// </param>
         /// <remarks>
         /// <para>
-        /// If a Timeout needs to be specified, use the constructor which takes an <see cref="AmazonS3Client"/> as a paramater.
+        /// If a Timeout needs to be specified, use the constructor which takes an <see cref="AmazonS3Client"/> as a parameter.
         /// Use an instance of <see cref="AmazonS3Client"/> constructed with an <see cref="AmazonS3Config"/> object with the Timeout specified. 
         /// </para>        
         /// </remarks>
-        public AsyncTransferUtility(string awsAccessKeyId, string awsSecretAccessKey, RegionEndpoint region, TransferUtilityConfig config)
+        public AsyncTransferUtility(
+            string awsAccessKeyId, 
+            string awsSecretAccessKey, 
+            RegionEndpoint region, 
+            AsyncTransferConfig config)
             : this(new AmazonS3Client(awsAccessKeyId, awsSecretAccessKey, region), config)
         {
             _shouldDispose = true;
@@ -153,12 +162,12 @@ namespace Amazon.Sdk.S3.Transfer
         /// </param>
         /// <remarks>
         /// <para>
-        /// If a Timeout needs to be specified, use the constructor which takes an <see cref="AmazonS3Client"/> as a paramater.
+        /// If a Timeout needs to be specified, use the constructor which takes an <see cref="AmazonS3Client"/> as a parameter.
         /// Use an instance of <see cref="AmazonS3Client"/> constructed with an <see cref="AmazonS3Config"/> object with the Timeout specified. 
         /// </para>        
         /// </remarks>
         public AsyncTransferUtility(IAmazonS3 s3Client)
-            : this(s3Client, new())
+            : this(s3Client, new AsyncTransferConfig())
         {
         }
 
@@ -173,11 +182,11 @@ namespace Amazon.Sdk.S3.Transfer
         /// </param>
         /// <remarks>
         /// <para>
-        /// If a Timeout needs to be specified, use the constructor which takes an <see cref="AmazonS3Client"/> as a paramater.
+        /// If a Timeout needs to be specified, use the constructor which takes an <see cref="AmazonS3Client"/> as a parameter.
         /// Use an instance of <see cref="AmazonS3Client"/> constructed with an <see cref="AmazonS3Config"/> object with the Timeout specified. 
         /// </para>        
         /// </remarks>
-        public AsyncTransferUtility(IAmazonS3 s3Client, TransferUtilityConfig config)
+        public AsyncTransferUtility(IAmazonS3 s3Client, AsyncTransferConfig config)
         {
             S3Client = s3Client;
             _config = config;
@@ -188,7 +197,7 @@ namespace Amazon.Sdk.S3.Transfer
         /// </summary>
         /// <remarks>
         /// <para>
-        /// If a Timeout needs to be specified, use the constructor which takes an <see cref="AmazonS3Client"/> as a paramater.
+        /// If a Timeout needs to be specified, use the constructor which takes an <see cref="AmazonS3Client"/> as a parameter.
         /// Use an instance of <see cref="AmazonS3Client"/> constructed with an <see cref="AmazonS3Config"/> object with the Timeout specified. 
         /// </para>        
         /// </remarks>
@@ -206,7 +215,7 @@ namespace Amazon.Sdk.S3.Transfer
         /// </param>
         /// <remarks>
         /// <para>
-        /// If a Timeout needs to be specified, use the constructor which takes an <see cref="AmazonS3Client"/> as a paramater.
+        /// If a Timeout needs to be specified, use the constructor which takes an <see cref="AmazonS3Client"/> as a parameter.
         /// Use an instance of <see cref="AmazonS3Client"/> constructed with an <see cref="AmazonS3Config"/> object with the Timeout specified. 
         /// </para>        
         /// </remarks>
@@ -224,7 +233,7 @@ namespace Amazon.Sdk.S3.Transfer
         /// </param>
         /// <remarks>
         /// </remarks>
-        public AsyncTransferUtility(TransferUtilityConfig config)
+        public AsyncTransferUtility(AsyncTransferConfig config)
             : this(new AmazonS3Client(), config)
         {
             _shouldDispose = true;
@@ -264,7 +273,7 @@ namespace Amazon.Sdk.S3.Transfer
         ///     A cancellation token that can be used by other objects or threads to receive notice of cancellation.
         /// </param>
         /// <returns>The task object representing the asynchronous operation.</returns>
-        public Task UploadAsync(string filePath, string bucketName, CancellationToken cancellationToken = default)
+        public virtual Task UploadAsync(string filePath, string bucketName, CancellationToken cancellationToken = default)
         {
             var request = ConstructUploadRequest(filePath, bucketName);
             return UploadAsync(request, cancellationToken);
@@ -305,7 +314,7 @@ namespace Amazon.Sdk.S3.Transfer
         ///     A cancellation token that can be used by other objects or threads to receive notice of cancellation.
         /// </param>
         /// <returns>The task object representing the asynchronous operation.</returns>
-        public Task UploadAsync(string filePath, string bucketName, string key, CancellationToken cancellationToken = default)
+        public virtual Task UploadAsync(string filePath, string bucketName, string key, CancellationToken cancellationToken = default)
         {
             var request = ConstructUploadRequest(filePath, bucketName,key);
             return UploadAsync(request, cancellationToken);            
@@ -345,7 +354,7 @@ namespace Amazon.Sdk.S3.Transfer
         ///     A cancellation token that can be used by other objects or threads to receive notice of cancellation.
         /// </param>
         /// <returns>The task object representing the asynchronous operation.</returns>
-        public Task UploadAsync(Stream stream, string bucketName, string key, CancellationToken cancellationToken = default)
+        public virtual Task UploadAsync(Stream stream, string bucketName, string key, CancellationToken cancellationToken = default)
         {
             var request = ConstructUploadRequest(stream, bucketName, key);
             return UploadAsync(request, cancellationToken);                    
@@ -382,7 +391,7 @@ namespace Amazon.Sdk.S3.Transfer
         ///     A cancellation token that can be used by other objects or threads to receive notice of cancellation.
         /// </param>
         /// <returns>The task object representing the asynchronous operation.</returns>
-        public Task UploadAsync(TransferUtilityUploadRequest request, CancellationToken cancellationToken = default)
+        public virtual async Task UploadAsync(UploadRequest request, CancellationToken cancellationToken = default)
         {
             if (!request.IsSetBucketName())
             {
@@ -391,7 +400,29 @@ namespace Amazon.Sdk.S3.Transfer
                 
             CheckForBlockedArn(request.BucketName);
             var command = GetUploadCommand(request, null);
-            return command.ExecuteAsync(cancellationToken);
+            await command.ExecuteAsync(cancellationToken);
+
+            if (command is MultipartUploadCommand)
+            {
+                var metadata = await S3Client.GetObjectMetadataAsync(
+                        new()
+                        {
+                            BucketName = request.BucketName,
+                            Key = request.Key
+                        },
+                        cancellationToken)
+                    .ConfigureAwait(false);
+
+                var progressArgs = new UploadProgressArgs(
+                    0,
+                    metadata.ContentLength.ToUInt64(),
+                    request.ContentLength,
+                    0,
+                    request.FilePath
+                );
+
+                request.OnRaiseProgressEvent(progressArgs);
+            }
         }
 
         /// <summary>
@@ -407,7 +438,7 @@ namespace Amazon.Sdk.S3.Transfer
         ///     A cancellation token that can be used by other objects or threads to receive notice of cancellation.
         /// </param>
         /// <returns>The task object representing the asynchronous operation.</returns>
-        public Task AbortMultipartUploadsAsync(string bucketName, DateTime initiatedDate, CancellationToken cancellationToken = default)
+        public virtual Task AbortMultipartUploadsAsync(string bucketName, DateTime initiatedDate, CancellationToken cancellationToken = default)
         {
             CheckForBlockedArn(bucketName);
             var command = new AbortMultipartUploadsCommand(S3Client, bucketName, initiatedDate, _config);
@@ -426,7 +457,7 @@ namespace Amazon.Sdk.S3.Transfer
         ///     A cancellation token that can be used by other objects or threads to receive notice of cancellation.
         /// </param>
         /// <returns>The task object representing the asynchronous operation.</returns>
-        public Task DownloadAsync(TransferUtilityDownloadRequest request, CancellationToken cancellationToken = default)
+        public virtual Task DownloadAsync(DownloadRequest request, CancellationToken cancellationToken = default)
         {
             if (!request.IsSetBucketName())
             {
@@ -453,9 +484,9 @@ namespace Amazon.Sdk.S3.Transfer
         ///     A cancellation token that can be used by other objects or threads to receive notice of cancellation.
         /// </param>
         /// <returns>The task object representing the asynchronous operation.</returns>
-        public Task<Stream> OpenStreamAsync(string bucketName, string key, CancellationToken cancellationToken = default)
+        public virtual Task<Stream> OpenStreamAsync(string bucketName, string key, CancellationToken cancellationToken = default)
         {
-            TransferUtilityOpenStreamRequest request = new()
+            OpenStreamRequest request = new OpenStreamRequest
             {
                 BucketName = bucketName,
                 Key = key
@@ -465,7 +496,7 @@ namespace Amazon.Sdk.S3.Transfer
 
         /// <summary>
         /// 	Returns a stream to read the contents from Amazon S3 as 
-        /// 	specified by the <c>TransferUtilityOpenStreamRequest</c>.
+        /// 	specified by the <see cref="OpenStreamRequest"/>.
         /// 	The caller of this method is responsible for closing the stream.
         /// </summary>
         /// <param name="request">
@@ -475,7 +506,7 @@ namespace Amazon.Sdk.S3.Transfer
         ///     A cancellation token that can be used by other objects or threads to receive notice of cancellation.
         /// </param>
         /// <returns>The task object representing the asynchronous operation.</returns>
-        public async Task<Stream> OpenStreamAsync(TransferUtilityOpenStreamRequest request, CancellationToken cancellationToken = default)
+        public virtual async Task<Stream> OpenStreamAsync(OpenStreamRequest request, CancellationToken cancellationToken = default)
         {
             if (!request.IsSetBucketName())
             {
@@ -483,19 +514,19 @@ namespace Amazon.Sdk.S3.Transfer
             }
             
             CheckForBlockedArn(request.BucketName);
-            OpenStreamCommand command = new(S3Client, request);
+            OpenStreamCommand command = new OpenStreamCommand(S3Client, request);
             await command.ExecuteAsync(cancellationToken).ConfigureAwait(continueOnCapturedContext: false);
             
             ArgumentNullException.ThrowIfNull(command.ResponseStream);
             return command.ResponseStream;
         }
 
-        internal BaseCommand GetUploadCommand(TransferUtilityUploadRequest request, SemaphoreSlim? asyncThrottler)
+        internal virtual BaseCommand GetUploadCommand(UploadRequest request, SemaphoreSlim? asyncThrottler)
         {
             Validate(request);
             if (IsMultipartUpload(request))
             {
-                var command = new MultipartUploadCommand(S3Client, _config, request);
+                var command = new MultipartUploadCommand(S3Client, _config, request, Logger);
                 command.AsyncThrottler = asyncThrottler;
                 return command;
             }
@@ -534,7 +565,7 @@ namespace Amazon.Sdk.S3.Transfer
         ///     A cancellation token that can be used by other objects or threads to receive notice of cancellation.
         /// </param>
         /// <returns>The task object representing the asynchronous operation.</returns>
-        public Task UploadDirectoryAsync(string directory, string bucketName, CancellationToken cancellationToken = default)
+        public virtual Task UploadDirectoryAsync(string directory, string bucketName, CancellationToken cancellationToken = default)
         {
             var request = ConstructUploadDirectoryRequest(directory, bucketName);
             return UploadDirectoryAsync(request, cancellationToken);
@@ -574,7 +605,12 @@ namespace Amazon.Sdk.S3.Transfer
         ///     A cancellation token that can be used by other objects or threads to receive notice of cancellation.
         /// </param>
         /// <returns>The task object representing the asynchronous operation.</returns>
-        public Task UploadDirectoryAsync(string directory, string bucketName, string searchPattern, SearchOption searchOption, CancellationToken cancellationToken = default)
+        public virtual Task UploadDirectoryAsync(
+            string directory, 
+            string bucketName, 
+            string searchPattern, 
+            SearchOption searchOption, 
+            CancellationToken cancellationToken = default)
         {
             var request = ConstructUploadDirectoryRequest(directory, bucketName, searchPattern, searchOption);
             return UploadDirectoryAsync(request, cancellationToken);
@@ -604,7 +640,9 @@ namespace Amazon.Sdk.S3.Transfer
         ///     A cancellation token that can be used by other objects or threads to receive notice of cancellation.
         /// </param>
         /// <returns>The task object representing the asynchronous operation.</returns>
-        public Task UploadDirectoryAsync(TransferUtilityUploadDirectoryRequest request, CancellationToken cancellationToken = default)
+        public virtual Task UploadDirectoryAsync(
+            UploadDirectoryRequest request, 
+            CancellationToken cancellationToken = default)
         {
             if (!request.IsSetBucketName())
             {
@@ -612,7 +650,7 @@ namespace Amazon.Sdk.S3.Transfer
             }
             CheckForBlockedArn(request.BucketName);
             Validate(request);
-            UploadDirectoryCommand command = new(this, _config, request);
+            UploadDirectoryCommand command = new UploadDirectoryCommand(this, _config, request);
             command.UploadFilesConcurrently = request.UploadFilesConcurrently;
             return command.ExecuteAsync(cancellationToken);
         }
@@ -634,7 +672,11 @@ namespace Amazon.Sdk.S3.Transfer
         ///     A cancellation token that can be used by other objects or threads to receive notice of cancellation.
         /// </param>
         /// <returns>The task object representing the asynchronous operation.</returns>
-        public Task DownloadDirectoryAsync(string bucketName, string s3Directory, string localDirectory, CancellationToken cancellationToken = default)
+        public virtual Task DownloadDirectoryAsync(
+            string bucketName, 
+            string s3Directory, 
+            string localDirectory, 
+            CancellationToken cancellationToken = default)
         {
             var request = ConstructDownloadDirectoryRequest(bucketName, s3Directory, localDirectory);
             return DownloadDirectoryAsync(request, cancellationToken);
@@ -643,7 +685,7 @@ namespace Amazon.Sdk.S3.Transfer
         /// <summary>
         /// 	Downloads the objects in Amazon S3 that have a key that starts with the value 
         /// 	specified by the <c>S3Directory</c>
-        /// 	property of the passed in <c>TransferUtilityDownloadDirectoryRequest</c> object.
+        /// 	property of the passed in <see cref="DownloadDirectoryRequest"/> object.
         /// </summary>
         /// <param name="request">
         /// 	Contains all the parameters required to download objects from Amazon S3 
@@ -653,7 +695,9 @@ namespace Amazon.Sdk.S3.Transfer
         ///     A cancellation token that can be used by other objects or threads to receive notice of cancellation.
         /// </param>
         /// <returns>The task object representing the asynchronous operation.</returns>
-        public Task DownloadDirectoryAsync(TransferUtilityDownloadDirectoryRequest request, CancellationToken cancellationToken = default)
+        public virtual Task DownloadDirectoryAsync(
+            DownloadDirectoryRequest request, 
+            CancellationToken cancellationToken = default)
         {
             if (!request.IsSetBucketName())
             {
@@ -681,7 +725,7 @@ namespace Amazon.Sdk.S3.Transfer
         ///     A cancellation token that can be used by other objects or threads to receive notice of cancellation.
         /// </param>
         /// <returns>The task object representing the asynchronous operation.</returns>
-        public Task DownloadAsync(string filePath, string bucketName, string key, CancellationToken cancellationToken = default)
+        public virtual Task DownloadAsync(string filePath, string bucketName, string key, CancellationToken cancellationToken = default)
         {
             var request = ConstructDownloadRequest(filePath, bucketName, key);
             return DownloadAsync(request, cancellationToken);
@@ -722,7 +766,7 @@ namespace Amazon.Sdk.S3.Transfer
             GC.SuppressFinalize(this);
         }
 
-        private void CheckForBlockedArn(string bucketName, [CallerMemberName] string? command = null)
+        protected virtual void CheckForBlockedArn(string bucketName, [CallerMemberName] string? command = null)
         {
             ArgumentNullException.ThrowIfNull(command);
             
@@ -737,21 +781,21 @@ namespace Amazon.Sdk.S3.Transfer
             }
         }
 
-        private static TransferUtilityUploadRequest ConstructUploadRequest(string filePath, string bucketName)
+        protected virtual UploadRequest ConstructUploadRequest(string filePath, string bucketName)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
             if (!File.Exists(filePath))
             {
                 throw new FileNotFoundException($"The file `{nameof(filePath)}` does not exist", filePath);
             }
-            return new()
+            return new UploadRequest
             {
                 BucketName = bucketName,
                 FilePath = filePath
             };
         }
 
-        private static TransferUtilityUploadRequest ConstructUploadRequest(string filePath, string bucketName, string key)
+        protected virtual UploadRequest ConstructUploadRequest(string filePath, string bucketName, string key)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
 
@@ -759,7 +803,7 @@ namespace Amazon.Sdk.S3.Transfer
             {
                 throw new FileNotFoundException($"The file `{nameof(filePath)}` does not exist", filePath);
             }
-            return new()
+            return new UploadRequest
             {
                 BucketName = bucketName,
                 Key = key,
@@ -767,12 +811,12 @@ namespace Amazon.Sdk.S3.Transfer
             };
         }
 
-        private static TransferUtilityUploadRequest ConstructUploadRequest(Stream stream, string bucketName, string key)
+        protected virtual UploadRequest ConstructUploadRequest(Stream stream, string bucketName, string key)
         {
             ArgumentNullException.ThrowIfNull(stream);
             ArgumentException.ThrowIfNullOrWhiteSpace(key);
 
-            return new()
+            return new UploadRequest
             {
                 BucketName = bucketName,
                 Key = key,
@@ -780,23 +824,23 @@ namespace Amazon.Sdk.S3.Transfer
             };
         }
 
-        internal BaseCommand GetUploadCommand(TransferUtilityUploadRequest request)
+        internal virtual BaseCommand GetUploadCommand(UploadRequest request)
         {
             Validate(request);
 
             if (IsMultipartUpload(request))
             {
-                return new MultipartUploadCommand(S3Client, _config, request);
+                return new MultipartUploadCommand(S3Client, _config, request, Logger);
             }
 
             return new SimpleUploadCommand(S3Client, request);
         }
 
-        private bool IsMultipartUpload(TransferUtilityUploadRequest request)
+        protected virtual bool IsMultipartUpload(UploadRequest request)
         {
             if (request.ContentLength.HasValue)
             {
-                return request.ContentLength.Value >= (ulong) _config.MinSizeBeforePartUpload;
+                return request.ContentLength.Value >= _config.MinSizeBeforePartUpload.ToUInt64();
             }
             //If the length is null that means when we tried to get the ContentLength, we caught a NotSupportedException,
             //or it means the length is unknown. In this case we do a MultiPartUpload. If we are uploading
@@ -804,7 +848,7 @@ namespace Amazon.Sdk.S3.Transfer
             return true;
         }
 
-        private static void Validate(TransferUtilityUploadRequest request)
+        protected virtual void Validate(UploadRequest request)
         {
             ArgumentNullException.ThrowIfNull(request);
 
@@ -840,9 +884,9 @@ namespace Amazon.Sdk.S3.Transfer
             }
         }
 
-        private static TransferUtilityDownloadRequest ConstructDownloadRequest(string filePath, string bucketName, string key)
+        protected virtual DownloadRequest ConstructDownloadRequest(string filePath, string bucketName, string key)
         {
-            return new()
+            return new DownloadRequest
             {
                 BucketName = bucketName,
                 Key = key,
@@ -850,9 +894,9 @@ namespace Amazon.Sdk.S3.Transfer
             };
         }
 
-        private static TransferUtilityDownloadDirectoryRequest ConstructDownloadDirectoryRequest(string bucketName, string s3Directory, string localDirectory)
+        protected virtual DownloadDirectoryRequest ConstructDownloadDirectoryRequest(string bucketName, string s3Directory, string localDirectory)
         {
-            return new()
+            return new DownloadDirectoryRequest
             {
                 BucketName = bucketName,
                 S3Directory = s3Directory,
@@ -860,7 +904,7 @@ namespace Amazon.Sdk.S3.Transfer
             };
         }
 
-        private static void Validate(TransferUtilityUploadDirectoryRequest request)
+        protected virtual void Validate(UploadDirectoryRequest request)
         {
             if (!request.IsSetDirectory())
             {
@@ -876,18 +920,18 @@ namespace Amazon.Sdk.S3.Transfer
             }
         }
 
-        private static TransferUtilityUploadDirectoryRequest ConstructUploadDirectoryRequest(string directory, string bucketName)
+        protected virtual UploadDirectoryRequest ConstructUploadDirectoryRequest(string directory, string bucketName)
         {
-            return new()
+            return new UploadDirectoryRequest
             {
                 BucketName = bucketName,
                 Directory = directory
             };
         }
 
-        private static TransferUtilityUploadDirectoryRequest ConstructUploadDirectoryRequest(string directory, string bucketName, string searchPattern, SearchOption searchOption)
+        protected virtual UploadDirectoryRequest ConstructUploadDirectoryRequest(string directory, string bucketName, string searchPattern, SearchOption searchOption)
         {
-            return new()
+            return new UploadDirectoryRequest
             {
                 BucketName = bucketName,
                 Directory = directory,
@@ -895,5 +939,7 @@ namespace Amazon.Sdk.S3.Transfer
                 SearchOption = searchOption
             };
         }
+        
+        internal virtual string DebuggerDisplay => ToString() ?? GetType().Name;
     }
 }

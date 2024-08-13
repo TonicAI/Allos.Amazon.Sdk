@@ -1,42 +1,50 @@
-﻿using System.Net;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Net;
+using Allos.Amazon.S3.Model;
+using Allos.Amazon.Sdk.Fork;
+using Allos.Amazon.Sdk.S3.Util;
 using Amazon.Runtime;
 using Amazon.S3;
 using Amazon.S3.Internal;
 using Amazon.S3.Model;
-using Amazon.Sdk.Fork;
-using Amazon.Sdk.S3.Util;
 using Amazon.Util.Internal;
 
-namespace Amazon.Sdk.S3.Transfer.Internal
+namespace Allos.Amazon.Sdk.S3.Transfer.Internal
 {
+    [SuppressMessage("ReSharper", "InconsistentNaming")]
+    [SuppressMessage("ReSharper", "MemberCanBePrivate.Global")]
+    [SuppressMessage("ReSharper", "ClassWithVirtualMembersNeverInherited.Global")]
     [AmazonSdkFork("sdk/src/Services/S3/Custom/Transfer/Internal/DownloadDirectoryCommand.cs", "Amazon.S3.Transfer.Internal")]
     [AmazonSdkFork("sdk/src/Services/S3/Custom/Transfer/Internal/_bcl45+netstandard/DownloadDirectoryCommand.cs", "Amazon.S3.Transfer.Internal")]
     internal class DownloadDirectoryCommand : BaseCommand
     {
-        private readonly TransferUtilityConfig _config;
+        protected readonly AsyncTransferConfig _config;
         
-        private readonly IAmazonS3 _s3Client;
-        private readonly TransferUtilityDownloadDirectoryRequest _request;
-        private readonly bool _skipEncryptionInstructionFiles;
-        private uint _totalNumberOfFilesToDownload;
-        private uint _numberOfFilesDownloaded;
-        private ulong _totalBytes;
-        private ulong _transferredBytes;
-        private string? _currentFile;
+        protected readonly IAmazonS3 _s3Client;
+        protected readonly DownloadDirectoryRequest _request;
+        protected readonly bool _skipEncryptionInstructionFiles;
+        protected uint _totalNumberOfFilesToDownload;
+        protected uint _numberOfFilesDownloaded;
+        protected ulong _totalBytes;
+        protected ulong _transferredBytes;
+        protected string? _currentFile;
 
-        internal DownloadDirectoryCommand(IAmazonS3 s3Client, TransferUtilityDownloadDirectoryRequest request)
+        internal DownloadDirectoryCommand(IAmazonS3 s3Client, DownloadDirectoryRequest request)
         {
             ArgumentNullException.ThrowIfNull(s3Client);
 
             _s3Client = s3Client;
             _request = request;
             _skipEncryptionInstructionFiles = s3Client is IAmazonS3Encryption;
-            _config = new TransferUtilityConfig();
+            _config = new AsyncTransferConfig();
         }
         
         public bool DownloadFilesConcurrently { get; set; }
 
-        internal DownloadDirectoryCommand(IAmazonS3 s3Client, TransferUtilityDownloadDirectoryRequest request, TransferUtilityConfig config)
+        internal DownloadDirectoryCommand(
+            IAmazonS3 s3Client, 
+            DownloadDirectoryRequest request, 
+            AsyncTransferConfig config)
             : this(s3Client, request)
         {
             _config = config;
@@ -64,7 +72,7 @@ namespace Amazon.Sdk.S3.Transfer.Internal
             }
             //\
             
-            EnsureDirectoryExists(new(_request.LocalDirectory));
+            EnsureDirectoryExists(new DirectoryInfo(_request.LocalDirectory));
 
             List<S3Object> objs;
             string listRequestPrefix;
@@ -84,7 +92,7 @@ namespace Amazon.Sdk.S3.Transfer.Internal
                 objs = await GetS3ObjectsToDownloadV2Async(listRequestV2, cancellationToken).ConfigureAwait(false);
             }
 
-            _totalNumberOfFilesToDownload = (uint) objs.Count;
+            _totalNumberOfFilesToDownload = objs.Count.ToUInt32();
 
             SemaphoreSlim? asyncThrottler = null;
             CancellationTokenSource? internalCts = null;
@@ -92,7 +100,7 @@ namespace Amazon.Sdk.S3.Transfer.Internal
             try
             {
                 asyncThrottler = DownloadFilesConcurrently ?
-                    new(_config.ConcurrentServiceRequests) :
+                    new SemaphoreSlim(_config.ConcurrentServiceRequests.ToInt32()) :
                     new SemaphoreSlim(1);
 
                 internalCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -143,9 +151,11 @@ namespace Amazon.Sdk.S3.Transfer.Internal
             }
         }
 
-        private async Task<List<S3Object>> GetS3ObjectsToDownloadAsync(ListObjectsRequest listRequest, CancellationToken cancellationToken)
+        protected virtual async Task<List<S3Object>> GetS3ObjectsToDownloadAsync(
+            ListObjectsRequest listRequest, 
+            CancellationToken cancellationToken)
         {
-            List<S3Object> objs = new();
+            List<S3Object> objs = new List<S3Object>();
             do
             {
                 ListObjectsResponse listResponse = await _s3Client.ListObjectsAsync(listRequest, cancellationToken)
@@ -157,7 +167,7 @@ namespace Amazon.Sdk.S3.Transfer.Internal
                     {
                         if (ShouldDownload(s3O))
                         {
-                            _totalBytes += (ulong) s3O.Size;
+                            _totalBytes += s3O.Size.ToUInt64();
                             objs.Add(s3O);
                         }
                     }
@@ -167,9 +177,9 @@ namespace Amazon.Sdk.S3.Transfer.Internal
             return objs;
         }
 
-        private async Task<List<S3Object>> GetS3ObjectsToDownloadV2Async(ListObjectsV2Request listRequestV2, CancellationToken cancellationToken)
+        protected virtual async Task<List<S3Object>> GetS3ObjectsToDownloadV2Async(ListObjectsV2Request listRequestV2, CancellationToken cancellationToken)
         {
-            List<S3Object> objs = new();
+            List<S3Object> objs = new List<S3Object>();
             do
             {
                 ListObjectsV2Response listResponse = await _s3Client.ListObjectsV2Async(listRequestV2, cancellationToken)
@@ -181,7 +191,7 @@ namespace Amazon.Sdk.S3.Transfer.Internal
                     {
                         if (ShouldDownload(s3O))
                         {
-                            _totalBytes += (ulong) s3O.Size;
+                            _totalBytes += s3O.Size.ToUInt64();
                             objs.Add(s3O);
                         }
                     }
@@ -191,7 +201,7 @@ namespace Amazon.Sdk.S3.Transfer.Internal
             return objs;
         }
 
-        private void DownloadedProgressEventCallback(object? sender, WriteObjectProgressArgs e)
+        protected virtual void DownloadedProgressEventCallback(object? sender, WriteObjectProgressArgs e)
         {
             var transferredBytes = Interlocked.Add(ref _transferredBytes, e.IncrementTransferred());
 
@@ -206,26 +216,26 @@ namespace Amazon.Sdk.S3.Transfer.Internal
             {
                 // If concurrent download is enabled, values for current file, 
                 // transferred and total bytes for current file are not set.
-                downloadDirectoryProgress = new(numberOfFilesDownloaded, _totalNumberOfFilesToDownload,
+                downloadDirectoryProgress = new DownloadDirectoryProgressArgs(numberOfFilesDownloaded, _totalNumberOfFilesToDownload,
                            transferredBytes, _totalBytes,
                            null, 0, 0);
             }
             else
             {
-                downloadDirectoryProgress = new(
+                downloadDirectoryProgress = new DownloadDirectoryProgressArgs(
                     numberOfFilesDownloaded, 
                     _totalNumberOfFilesToDownload,
                     transferredBytes, 
                     _totalBytes,
                     _currentFile, 
-                    (ulong) e.TransferredBytes, 
-                    (ulong) e.TotalBytes
+                    e.TransferredBytes.ToUInt64(), 
+                    e.TotalBytes.ToUInt64()
                     );
             }
             _request.OnRaiseProgressEvent(downloadDirectoryProgress);
         }
 
-        private void EnsureDirectoryExists(DirectoryInfo directory)
+        protected virtual void EnsureDirectoryExists(DirectoryInfo directory)
         {
             if (directory.Exists)
                 return;
@@ -237,9 +247,9 @@ namespace Amazon.Sdk.S3.Transfer.Internal
             directory.Create();
         }
 
-        private TransferUtilityDownloadRequest ConstructTransferUtilityDownloadRequest(S3Object s3Object, int prefixLength)
+        protected virtual DownloadRequest ConstructTransferUtilityDownloadRequest(S3Object s3Object, int prefixLength)
         {
-            var downloadRequest = new TransferUtilityDownloadRequest();
+            var downloadRequest = new DownloadRequest();
             downloadRequest.BucketName = _request.BucketName;
             downloadRequest.Key = s3Object.Key;
             var file = s3Object.Key.Substring(prefixLength).Replace('/', Path.DirectorySeparatorChar);
@@ -259,9 +269,9 @@ namespace Amazon.Sdk.S3.Transfer.Internal
             return downloadRequest;
         }
 
-        private ListObjectsV2Request ConstructListObjectRequestV2()
+        protected virtual ListObjectsV2Request ConstructListObjectRequestV2()
         {
-            ListObjectsV2Request listRequestV2 = new();
+            ListObjectsV2Request listRequestV2 = new ListObjectsV2Request();
             listRequestV2.BucketName = _request.BucketName;
             listRequestV2.Prefix = _request.S3Directory;
 
@@ -284,9 +294,9 @@ namespace Amazon.Sdk.S3.Transfer.Internal
             return listRequestV2;
         }
 
-        private ListObjectsRequest ConstructListObjectRequest()
+        protected virtual ListObjectsRequest ConstructListObjectRequest()
         {
-            ListObjectsRequest listRequest = new();
+            ListObjectsRequest listRequest = new ListObjectsRequest();
             listRequest.BucketName = _request.BucketName;
             listRequest.Prefix = _request.S3Directory;
 
@@ -309,13 +319,10 @@ namespace Amazon.Sdk.S3.Transfer.Internal
             return listRequest;
         }
 
+        protected virtual bool IsInstructionFile(string key) => 
+            (_skipEncryptionInstructionFiles && AmazonS3Util.IsInstructionFile(key));
 
-        private bool IsInstructionFile(string key)
-        {
-            return (_skipEncryptionInstructionFiles && AmazonS3Util.IsInstructionFile(key));
-        }
-
-        private bool ShouldDownload(S3Object s3O)
+        protected virtual bool ShouldDownload(S3Object s3O)
         {
             // skip objects based on ModifiedSinceDateUtc
             if (_request.IsSetModifiedSinceDateUtc() && s3O.LastModified.ToUniversalTime() <= _request.ModifiedSinceDateUtc.ToUniversalTime())

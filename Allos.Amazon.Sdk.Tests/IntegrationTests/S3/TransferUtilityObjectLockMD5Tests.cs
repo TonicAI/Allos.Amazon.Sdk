@@ -1,15 +1,15 @@
 using System.Text;
+using Allos.Amazon.Sdk.Fork;
+using Allos.Amazon.Sdk.S3.Transfer;
+using Allos.Amazon.Sdk.Tests.IntegrationTests.Utils;
 using Amazon.S3;
 using Amazon.S3.Model;
 using Amazon.S3.Util;
-using Amazon.Sdk.Fork;
 using Amazon.Util;
-using Amazon.Sdk.S3.Transfer;
-using AWSSDK_DotNet.IntegrationTests.Utils;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using AmazonS3Client = Amazon.S3.AmazonS3Client;
 
-namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
+namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
 {
     /// <summary>
     /// Integration tests for the TransferUtility upload operations on S3 bucket with object lock and data governance enabled.
@@ -43,12 +43,12 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
         [TestCategory("S3")]
         public async Task TestMultipartUploadStreamViaTransferUtility()
         {
-            var transferConfig = new TransferUtilityConfig { MinSizeBeforePartUpload = 6000000 };
+            var transferConfig = new AsyncTransferConfig { MinSizeBeforePartUpload = 6000000 };
             var transfer = new AsyncTransferUtility(Client, transferConfig);
             var content = new string('a', 7000000);
             var contentStream = new MemoryStream(Encoding.UTF8.GetBytes(content));
 
-            var uploadRequest = new TransferUtilityUploadRequest
+            var uploadRequest = new UploadRequest
             {
                 BucketName = _bucketName,
                 Key = UtilityMethods.GenerateName(nameof(TransferUtilityObjectLockMd5Tests)),
@@ -69,7 +69,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
         [TestCategory("S3")]
         public async Task TestMultipartUploadFileViaTransferUtility()
         {
-            var transferConfig = new TransferUtilityConfig { MinSizeBeforePartUpload = 6000000 };
+            var transferConfig = new AsyncTransferConfig { MinSizeBeforePartUpload = 6000000 };
             var transfer = new AsyncTransferUtility(Client, transferConfig);
             var content = new string('a', 7000000);
             var key = UtilityMethods.GenerateName(nameof(TransferUtilityObjectLockMd5Tests));
@@ -81,7 +81,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
                 await writer.WriteAsync(content).ConfigureAwait(false);
             }
 
-            var uploadRequest = new TransferUtilityUploadRequest
+            var uploadRequest = new UploadRequest
             {
                 BucketName = _bucketName,
                 Key = key,
@@ -103,7 +103,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
         [ExpectedException(typeof(AmazonS3Exception), "Content-MD5 HTTP header is required for Put Part requests with Object Lock parameters")]
         public async Task TestMultipartUploadFileFailViaTransferUtility()
         {
-            var transferConfig = new TransferUtilityConfig { MinSizeBeforePartUpload = 6000000 };
+            var transferConfig = new AsyncTransferConfig { MinSizeBeforePartUpload = 6000000 };
 
             var transfer = new AsyncTransferUtility(Client, transferConfig);
             var content = new string('a', 7000000);
@@ -117,7 +117,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             }
 
             // Do not set CalculateContentMD5Header as true which should cause upload to fail.
-            var uploadRequest = new TransferUtilityUploadRequest
+            var uploadRequest = new UploadRequest
             {
                 BucketName = _bucketName,
                 Key = key,
@@ -132,7 +132,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
         [ExpectedException(typeof(AmazonS3Exception), "Content-MD5 HTTP header is required for Put Part requests with Object Lock parameters")]
         public async Task TestSimpleUploadFileFailViaTransferUtility()
         {
-            var transferConfig = new TransferUtilityConfig { MinSizeBeforePartUpload = 6000000 };
+            var transferConfig = new AsyncTransferConfig { MinSizeBeforePartUpload = 6000000 };
 
             var transfer = new AsyncTransferUtility(Client, transferConfig);
             var content = new string('a', 2000000);
@@ -146,7 +146,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             }
 
             // Do not set CalculateContentMD5Header as true which should cause upload to fail.
-            var uploadRequest = new TransferUtilityUploadRequest
+            var uploadRequest = new UploadRequest
             {
                 BucketName = _bucketName,
                 Key = key,
@@ -161,13 +161,13 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
         [ExpectedException(typeof(AmazonS3Exception), "Content-MD5 HTTP header is required for Put Part requests with Object Lock parameters")]
         public async Task TestMultipartUploadStreamFailViaTransferUtility()
         {
-            var transferConfig = new TransferUtilityConfig { MinSizeBeforePartUpload = 6000000 };
+            var transferConfig = new AsyncTransferConfig { MinSizeBeforePartUpload = 6000000 };
             var transfer = new AsyncTransferUtility(Client, transferConfig);
             var content = new string('a', 7000000);
             var contentStream = new MemoryStream(Encoding.UTF8.GetBytes(content));
 
             // Do not set CalculateContentMD5Header as true which should cause upload to fail.
-            var uploadRequest = new TransferUtilityUploadRequest
+            var uploadRequest = new UploadRequest
             {
                 BucketName = _bucketName,
                 Key = UtilityMethods.GenerateName(nameof(TransferUtilityObjectLockMd5Tests)),
@@ -182,13 +182,13 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
         [ExpectedException(typeof(AmazonS3Exception), "Content-MD5 HTTP header is required for Put Part requests with Object Lock parameters")]
         public async Task TestSimpleUploadStreamFailViaTransferUtility()
         {
-            var transferConfig = new TransferUtilityConfig { MinSizeBeforePartUpload = 6000000 };
+            var transferConfig = new AsyncTransferConfig { MinSizeBeforePartUpload = 6000000 };
             var transfer = new AsyncTransferUtility(Client, transferConfig);
             var content = new string('a', 2000000);
             var contentStream = new MemoryStream(Encoding.UTF8.GetBytes(content));
 
             // Do not set CalculateContentMD5Header as true which should cause upload to fail.
-            var uploadRequest = new TransferUtilityUploadRequest
+            var uploadRequest = new UploadRequest
             {
                 BucketName = _bucketName,
                 Key = UtilityMethods.GenerateName(nameof(TransferUtilityObjectLockMd5Tests)),
@@ -202,12 +202,12 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
         [TestCategory("S3")]
         public async Task TestSimpleUploadStreamViaTransferUtility()
         {
-            var transferConfig = new TransferUtilityConfig { MinSizeBeforePartUpload = 6000000 };
+            var transferConfig = new AsyncTransferConfig { MinSizeBeforePartUpload = 6000000 };
             var transfer = new AsyncTransferUtility(Client, transferConfig);
             var content = new string('a', 2000000);
             var contentStream = new MemoryStream(Encoding.UTF8.GetBytes(content));
 
-            var uploadRequest = new TransferUtilityUploadRequest
+            var uploadRequest = new UploadRequest
             {
                 BucketName = _bucketName,
                 Key = UtilityMethods.GenerateName(nameof(TransferUtilityObjectLockMd5Tests)),
@@ -228,12 +228,12 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
         [TestCategory("S3")]
         public async Task TestSimpleUploadStreamViaTransferUtility_ExplicitMD5()
         {
-            var transferConfig = new TransferUtilityConfig { MinSizeBeforePartUpload = 6000000 };
+            var transferConfig = new AsyncTransferConfig { MinSizeBeforePartUpload = 6000000 };
             var transfer = new AsyncTransferUtility(Client, transferConfig);
             var content = new string('a', 2000000);
             var contentStream = new MemoryStream(Encoding.UTF8.GetBytes(content));
 
-            var uploadRequest = new TransferUtilityUploadRequest
+            var uploadRequest = new UploadRequest
             {
                 BucketName = _bucketName,
                 Key = UtilityMethods.GenerateName(nameof(TransferUtilityObjectLockMd5Tests)),
@@ -255,7 +255,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
         [TestCategory("S3")]
         public async Task TestSimpleUploadFileViaTransferUtility()
         {
-            var transferConfig = new TransferUtilityConfig { MinSizeBeforePartUpload = 6000000 };
+            var transferConfig = new AsyncTransferConfig { MinSizeBeforePartUpload = 6000000 };
             var transfer = new AsyncTransferUtility(Client, transferConfig);
             var content = new string('a', 2000000);
             var key = UtilityMethods.GenerateName(nameof(TransferUtilityObjectLockMd5Tests));
@@ -267,7 +267,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
                 await writer.WriteAsync(content).ConfigureAwait(false);
             }
 
-            var uploadRequest = new TransferUtilityUploadRequest
+            var uploadRequest = new UploadRequest
             {
                 BucketName = _bucketName,
                 Key = key,
@@ -288,7 +288,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
         [TestCategory("S3")]
         public async Task TestSimpleUploadFileViaTransferUtility_ExplicitMD5()
         {
-            var transferConfig = new TransferUtilityConfig { MinSizeBeforePartUpload = 6000000 };
+            var transferConfig = new AsyncTransferConfig { MinSizeBeforePartUpload = 6000000 };
             var transfer = new AsyncTransferUtility(Client, transferConfig);
             var content = new string('a', 2000000);
             var key = UtilityMethods.GenerateName(nameof(TransferUtilityObjectLockMd5Tests));
@@ -300,7 +300,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
                 await writer.WriteAsync(content).ConfigureAwait(false);
             }
 
-            var uploadRequest = new TransferUtilityUploadRequest
+            var uploadRequest = new UploadRequest
             {
                 BucketName = _bucketName,
                 Key = key,
@@ -326,7 +326,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
         [TestCategory("S3")]
         public async Task TestUploadDirectoryViaTransferUtility()
         {
-            var transferConfig = new TransferUtilityConfig { MinSizeBeforePartUpload = 6000000 };
+            var transferConfig = new AsyncTransferConfig { MinSizeBeforePartUpload = 6000000 };
             var transfer = new AsyncTransferUtility(Client, transferConfig);
             var directoryKey = UtilityMethods.GenerateName(nameof(TransferUtilityObjectLockMd5Tests));
             var directoryPath = Path.Combine(Path.GetTempPath(), directoryKey);
@@ -350,7 +350,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
                 }
             }
 
-            var uploadDirectoryRequest = new TransferUtilityUploadDirectoryRequest
+            var uploadDirectoryRequest = new UploadDirectoryRequest
             {
                 BucketName = _bucketName,
                 Directory = directoryPath,
@@ -374,7 +374,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
         [TestCategory("S3")]
         public async Task TestSimpleUploadFileWithObjectLockViaTransferUtility()
         {
-            var transferConfig = new TransferUtilityConfig { MinSizeBeforePartUpload = 6000000 };
+            var transferConfig = new AsyncTransferConfig { MinSizeBeforePartUpload = 6000000 };
             var transfer = new AsyncTransferUtility(Client, transferConfig);
             var content = new string('a', 2000000);
             var key = UtilityMethods.GenerateName(nameof(TransferUtilityObjectLockMd5Tests));
@@ -391,7 +391,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
                 await writer.WriteAsync(content).ConfigureAwait(false);
             }
 
-            var uploadRequest = new TransferUtilityUploadRequest
+            var uploadRequest = new UploadRequest
             {
                 BucketName = _bucketName,
                 Key = key,
@@ -418,7 +418,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
         [TestCategory("S3")]
         public async Task TestUploadDirectoryWithObjectLockViaTransferUtility()
         {
-            var transferConfig = new TransferUtilityConfig { MinSizeBeforePartUpload = 6000000 };
+            var transferConfig = new AsyncTransferConfig { MinSizeBeforePartUpload = 6000000 };
             var transfer = new AsyncTransferUtility(Client, transferConfig);
             var directoryKey = UtilityMethods.GenerateName(nameof(TransferUtilityObjectLockMd5Tests));
             var directoryPath = Path.Combine(Path.GetTempPath(), directoryKey);
@@ -447,7 +447,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
                 }
             }
 
-            var uploadDirectoryRequest = new TransferUtilityUploadDirectoryRequest
+            var uploadDirectoryRequest = new UploadDirectoryRequest
             {
                 BucketName = _bucketName,
                 Directory = directoryPath,
@@ -477,7 +477,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
         [TestCategory("S3")]
         public async Task TestMultipartUploadFileWithObjectLockViaTransferUtility()
         {
-            var transferConfig = new TransferUtilityConfig { MinSizeBeforePartUpload = 6000000 };
+            var transferConfig = new AsyncTransferConfig { MinSizeBeforePartUpload = 6000000 };
             var transfer = new AsyncTransferUtility(Client, transferConfig);
             var content = new string('a', 7000000);
             var key = UtilityMethods.GenerateName(nameof(TransferUtilityObjectLockMd5Tests));
@@ -494,7 +494,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
                 await writer.WriteAsync(content).ConfigureAwait(false);
             }
 
-            var uploadRequest = new TransferUtilityUploadRequest
+            var uploadRequest = new UploadRequest
             {
                 BucketName = _bucketName,
                 Key = key,
@@ -587,7 +587,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
                         BypassGovernanceRetention = true
                     }).ConfigureAwait(false);
                 }
-                catch (AmazonS3Exception s3Ex) when (s3Ex.IsSenderException())
+                catch (AmazonS3Exception s3Ex) when (s3Ex.IsSenderException(Logger))
                 {
                     throw;
                 }

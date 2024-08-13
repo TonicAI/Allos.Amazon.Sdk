@@ -1,13 +1,13 @@
-﻿using Amazon.Runtime;
+﻿using Allos.Amazon.Sdk.Fork;
+using Allos.Amazon.Sdk.Tests.IntegrationTests.Utils;
+using Amazon.Runtime;
 using Amazon.S3;
 using Amazon.S3.Model;
 using Amazon.S3.Transfer;
 using Amazon.S3.Util;
-using Amazon.Sdk.Fork;
-using AWSSDK_DotNet.IntegrationTests.Utils;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
+namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
 {
     /// <summary>
     /// Integration tests for putting flexible checksums to S3

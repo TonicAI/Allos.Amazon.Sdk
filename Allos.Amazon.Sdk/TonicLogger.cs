@@ -1,8 +1,15 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using Serilog;
+using Logger = Amazon.Runtime.Internal.Util.Logger;
 
-namespace Amazon.Sdk;
+namespace Allos.Amazon.Sdk;
 
+/// <summary>
+/// Factory used to create <see cref="ILogger"/>
+/// </summary>
+/// <remarks>
+/// <see cref="ILogger"/> replaces usages of <see cref="Logger"/> in this fork
+/// </remarks>
 public static class TonicLogger
 {
     /// <summary>

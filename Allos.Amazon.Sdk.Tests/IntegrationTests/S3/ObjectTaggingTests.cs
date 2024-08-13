@@ -1,11 +1,11 @@
+using Allos.Amazon.Sdk.Fork;
+using Allos.Amazon.Sdk.S3.Transfer;
+using Allos.Amazon.Sdk.Tests.IntegrationTests.Utils;
 using Amazon.S3.Util;
-using Amazon.Sdk.Fork;
-using Amazon.Sdk.S3.Transfer;
-using AWSSDK_DotNet.IntegrationTests.Utils;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using AmazonS3Client = Amazon.S3.AmazonS3Client;
 
-namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
+namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
 {
     [TestClass]
     [AmazonSdkFork("sdk/test/Services/S3/IntegrationTests/ObjectTaggingTests.cs", "AWSSDK_DotNet.IntegrationTests.Tests.S3")]

@@ -1,23 +1,26 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using Allos.Amazon.Sdk.Fork;
 using Amazon.Runtime.Internal;
 using Amazon.S3;
 using Amazon.S3.Model;
 using Amazon.S3.Transfer;
-using Amazon.Sdk.Fork;
 using Amazon.Util;
 
-namespace Amazon.Sdk.S3.Transfer
+namespace Allos.Amazon.Sdk.S3.Transfer
 {
     /// <summary>
-    /// Contains all the parameters that can be set when making a request with the <c>TransferUtility</c> method.
+    /// Contains all the parameters that can be set when making a request with the <see cref="AsyncTransferUtility"/> method.
     /// </summary>
+    [SuppressMessage("ReSharper", "ClassWithVirtualMembersNeverInherited.Global")]
     [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
     [SuppressMessage("ReSharper", "PropertyCanBeMadeInitOnly.Global")]
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
     [SuppressMessage("ReSharper", "AutoPropertyCanBeMadeGetOnly.Global")]
     [SuppressMessage("ReSharper", "MemberCanBePrivate.Global")]
+    [DebuggerDisplay("{DebuggerDisplay}")]
     [AmazonSdkFork("sdk/src/Services/S3/Custom/Transfer/TransferUtilityUploadRequest.cs", "Amazon.S3.Transfer")]
-    public class TransferUtilityUploadRequest : BaseUploadRequest
+    public class UploadRequest : BaseUploadRequest
     {
         private long? _partSize;
 
@@ -218,7 +221,7 @@ namespace Amazon.Sdk.S3.Transfer
         /// </summary>
         public HeadersCollection Headers
         {
-            get => _headersCollection ??= new();
+            get => _headersCollection ??= new HeadersCollection();
             internal set => _headersCollection = value;
         }
 
@@ -227,7 +230,7 @@ namespace Amazon.Sdk.S3.Transfer
         /// </summary>
         public MetadataCollection Metadata
         {
-            get => _metadataCollection ??= new();
+            get => _metadataCollection ??= new MetadataCollection();
             internal set => _metadataCollection = value;
         }
 
@@ -288,12 +291,12 @@ namespace Amazon.Sdk.S3.Transfer
                     if (IsSetFilePath())
                     {
                         //System.IO.
-                        FileInfo fileInfo = new(FilePath);
-                        length = (ulong) fileInfo.Length;
+                        FileInfo fileInfo = new FileInfo(FilePath);
+                        length = fileInfo.Length.ToUInt64();
                     }
                     else if (IsSetInputStream())
                     {
-                        length = (ulong) (InputStream.Length - InputStream.Position);
+                        length = (InputStream.Length - InputStream.Position).ToUInt64();
                     }
                     else
                     {
@@ -342,7 +345,7 @@ namespace Amazon.Sdk.S3.Transfer
         /// <returns>
         /// 	This object instance, enabling additional method calls to be chained together.
         /// </returns>
-        public TransferUtilityUploadRequest WithAutoCloseStream(bool autoCloseStream)
+        public UploadRequest WithAutoCloseStream(bool autoCloseStream)
         {
             AutoCloseStream = autoCloseStream;
             return this;
@@ -356,7 +359,7 @@ namespace Amazon.Sdk.S3.Transfer
         /// DisableMD5Stream to the same value. The default value is false. Set this value to true to 
         /// disable the default checksum validation used in all S3 upload requests or override this value per
         /// request by setting the DisableDefaultChecksumValidation property on <see cref="PutObjectRequest"/>,
-        /// <see cref="UploadPartRequest"/>, or <see cref="S3.Transfer.TransferUtilityUploadRequest"/>.</para>
+        /// <see cref="UploadPartRequest"/>, or <see cref="UploadRequest"/>.</para>
         /// <para>Checksums, SigV4 payload signing, and HTTPS each provide some data integrity 
         /// verification. If DisableDefaultChecksumValidation is true and DisablePayloadSigning is true, then the 
         /// possibility of data corruption is completely dependent on HTTPS being the only remaining 
@@ -437,5 +440,7 @@ namespace Amazon.Sdk.S3.Transfer
         /// </para>
         /// </summary>
         public ChecksumAlgorithm? ChecksumAlgorithm { get; set; }
+        
+        internal virtual string DebuggerDisplay => ToString() ?? GetType().Name;
     }
 }

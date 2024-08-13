@@ -1,17 +1,17 @@
+using Allos.Amazon.Sdk.Fork;
+using Allos.Amazon.Sdk.S3.Transfer;
+using Allos.Amazon.Sdk.Tests.IntegrationTests.Utils;
 using Amazon.S3;
 using Amazon.S3.Util;
-using Amazon.Sdk.Fork;
-using Amazon.Sdk.S3.Transfer;
-using AWSSDK_DotNet.IntegrationTests.Utils;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
+namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
 {
     [TestClass]
     [AmazonSdkFork("sdk/test/Services/S3/IntegrationTests/S3ExpressTests.cs", "AWSSDK_DotNet.IntegrationTests.Tests.S3")]
     public class S3ExpressTests : TestBase<AmazonS3Client>
     {
-        public static readonly int MegSize = (int)Math.Pow(2, 20);
+        public static readonly uint MegSize = (uint)Math.Pow(2, 20);
         private const string Content = "Test content";
         private static string? _bucketName;
         private static readonly List<string> _keys = new()
@@ -66,7 +66,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             var retrievedFilepath = filePath + ".download";
             var totalSize = MegSize * 15;
 
-            UtilityMethods.GenerateFile(filePath, (ulong) totalSize);
+            UtilityMethods.GenerateFile(filePath, totalSize);
 
             try
             {
@@ -81,7 +81,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
                     }).ConfigureAwait(false);
                     Assert.IsTrue(getObjectMetadataResponse.ETag.Length > 0);
 
-                    var downloadRequest = new TransferUtilityDownloadRequest
+                    var downloadRequest = new DownloadRequest
                     {
                         BucketName = _bucketName,
                         Key = key,
@@ -124,7 +124,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             for (int i = 0; i < 5; i++)
             {
                 var filePath = Path.Combine(Path.Combine(directoryPath, i.ToString()), "file.txt");
-                UtilityMethods.GenerateFile(filePath, (ulong) size);
+                UtilityMethods.GenerateFile(filePath, size);
             }
 
             var retrievedDirectoryPath = directoryPath + "download";
@@ -136,7 +136,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
 
                 using (var tu = new AsyncTransferUtility(Client))
                 {
-                    var uploadDirectoryRequest = new TransferUtilityUploadDirectoryRequest
+                    var uploadDirectoryRequest = new UploadDirectoryRequest
                     {
                         BucketName = _bucketName,
                         Directory = directoryPath,
@@ -157,7 +157,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
                     Assert.AreEqual(5, files.Count);
 
                     var transferUtility = new AsyncTransferUtility(Client);
-                    var request = new TransferUtilityDownloadDirectoryRequest
+                    var request = new DownloadDirectoryRequest
                     {
                         BucketName = _bucketName,
                         LocalDirectory = retrievedDirectoryPath,

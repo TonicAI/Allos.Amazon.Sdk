@@ -1,33 +1,38 @@
-﻿using Amazon.Runtime.Internal;
+﻿using System.Diagnostics.CodeAnalysis;
+using Allos.Amazon.Sdk.Fork;
+using Amazon.Runtime.Internal;
 using Amazon.S3;
 using Amazon.S3.Model;
-using Amazon.Sdk.Fork;
 
-namespace Amazon.Sdk.S3.Transfer.Internal
+namespace Allos.Amazon.Sdk.S3.Transfer.Internal
 {
+    [SuppressMessage("ReSharper", "InconsistentNaming")]
+    [SuppressMessage("ReSharper", "UnusedMember.Global")]
+    [SuppressMessage("ReSharper", "MemberCanBePrivate.Global")]
+    [SuppressMessage("ReSharper", "ClassWithVirtualMembersNeverInherited.Global")]
     [AmazonSdkFork("sdk/src/Services/S3/Custom/Transfer/Internal/AbortMultipartUploadsCommand.cs", "Amazon.S3.Transfer.Internal")]
     [AmazonSdkFork("sdk/src/Services/S3/Custom/Transfer/Internal/_async/AbortMultipartUploadsCommand.async.cs", "Amazon.S3.Transfer.Internal")]
-    internal  class AbortMultipartUploadsCommand : BaseCommand
+    internal class AbortMultipartUploadsCommand : BaseCommand
     {
-        private readonly TransferUtilityConfig _config;
+        protected readonly AsyncTransferConfig _config;
         
-        private readonly IAmazonS3 _s3Client;
-        private readonly string _bucketName;
-        private readonly DateTime _initiatedDate;
+        protected readonly IAmazonS3 _s3Client;
+        protected readonly string _bucketName;
+        protected readonly DateTime _initiatedDate;
 
         internal AbortMultipartUploadsCommand(IAmazonS3 s3Client, string bucketName, DateTime initiateDate)
         {
             _s3Client = s3Client;
             _bucketName = bucketName;
             _initiatedDate = initiateDate;
-            _config = new TransferUtilityConfig();
+            _config = new AsyncTransferConfig();
         }
         
         internal AbortMultipartUploadsCommand(
             IAmazonS3 s3Client, 
             string bucketName, 
             DateTime initiateDate, 
-            TransferUtilityConfig config)
+            AsyncTransferConfig config)
         {
             _s3Client = s3Client;
             _bucketName = bucketName;
@@ -43,11 +48,11 @@ namespace Amazon.Sdk.S3.Transfer.Internal
             CancellationTokenSource? internalCts = null;
             try
             {
-                asyncThrottler = new(_config.ConcurrentServiceRequests);
-                internalCts = new();
+                asyncThrottler = new SemaphoreSlim(_config.ConcurrentServiceRequests.ToInt32());
+                internalCts = new CancellationTokenSource();
                 var internalCancellationToken = internalCts.Token;
 
-                ListMultipartUploadsResponse listResponse = new();
+                ListMultipartUploadsResponse listResponse = new ListMultipartUploadsResponse();
                 var pendingTasks = new List<Task<AbortMultipartUploadResponse>>();
                 do
                 {
@@ -95,7 +100,7 @@ namespace Amazon.Sdk.S3.Transfer.Internal
             }
         }
 
-        private async Task<AbortMultipartUploadResponse> AbortAsync(
+        protected virtual async Task<AbortMultipartUploadResponse> AbortAsync(
             AbortMultipartUploadRequest abortRequest, 
             CancellationTokenSource internalCts,
             CancellationToken cancellationToken, 
@@ -121,9 +126,9 @@ namespace Amazon.Sdk.S3.Transfer.Internal
             }
         }
 
-        private ListMultipartUploadsRequest ConstructListMultipartUploadsRequest(ListMultipartUploadsResponse listResponse)
+        protected virtual ListMultipartUploadsRequest ConstructListMultipartUploadsRequest(ListMultipartUploadsResponse listResponse)
             {
-                ListMultipartUploadsRequest listRequest = new()
+                ListMultipartUploadsRequest listRequest = new ListMultipartUploadsRequest
                 {
                     BucketName = _bucketName,
                     KeyMarker = listResponse.KeyMarker,
@@ -133,7 +138,7 @@ namespace Amazon.Sdk.S3.Transfer.Internal
             return listRequest;
         }
 
-        private AbortMultipartUploadRequest ConstructAbortMultipartUploadRequest(MultipartUpload upload)
+        protected virtual AbortMultipartUploadRequest ConstructAbortMultipartUploadRequest(MultipartUpload upload)
                     {
                         var abortRequest = new AbortMultipartUploadRequest
                         {

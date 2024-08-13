@@ -1,21 +1,30 @@
-﻿using Amazon.Runtime;
+﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using Allos.Amazon.Sdk.Fork;
+using Amazon.Runtime;
 using Amazon.Runtime.Internal;
 using Amazon.S3.Model;
-using Amazon.Sdk.Fork;
 using Amazon.Util;
+using Serilog;
 
-namespace Amazon.Sdk.S3.Transfer.Internal
+namespace Allos.Amazon.Sdk.S3.Transfer.Internal
 {
+    [SuppressMessage("ReSharper", "VirtualMemberNeverOverridden.Global")]
+    [DebuggerDisplay("{DebuggerDisplay}")]
     [AmazonSdkFork("sdk/src/Services/S3/Custom/Transfer/Internal/BaseCommand.cs", "Amazon.S3.Transfer.Internal")]
     [AmazonSdkFork("sdk/src/Services/S3/Custom/Transfer/Internal/_async/BaseCommand.async.cs", "Amazon.S3.Transfer.Internal")]
     internal abstract class BaseCommand
     {
+        private static readonly Lazy<ILogger> _logger =
+            new Lazy<ILogger>(() => TonicLogger.ForContext(typeof(AsyncTransferUtility)));
+        protected virtual ILogger Logger => _logger.Value;
+        
         public abstract Task ExecuteAsync(CancellationToken cancellationToken);
 
         /// <summary>
         ///  Waits for all the tasks to complete or till any task fails or is canceled.
         /// </summary>        
-        protected static async Task<List<T>> WhenAllOrFirstExceptionAsync<T>(
+        protected virtual async Task<List<T>> WhenAllOrFirstExceptionAsync<T>(
             List<Task<T>> pendingTasks, 
             CancellationToken cancellationToken)
         {
@@ -45,7 +54,7 @@ namespace Amazon.Sdk.S3.Transfer.Internal
         /// <summary>
         /// Waits for all the tasks to complete or till any task fails or is canceled.
         /// </summary>        
-        protected static async Task WhenAllOrFirstExceptionAsync(List<Task> pendingTasks, CancellationToken cancellationToken)
+        protected virtual async Task WhenAllOrFirstExceptionAsync(List<Task> pendingTasks, CancellationToken cancellationToken)
         {
             int processed = 0;
             int total = pendingTasks.Count;            
@@ -66,7 +75,7 @@ namespace Amazon.Sdk.S3.Transfer.Internal
             }
         }
 
-        protected static async Task ExecuteCommandAsync(BaseCommand command, CancellationTokenSource internalCts, SemaphoreSlim throttler)
+        protected virtual async Task ExecuteCommandAsync(BaseCommand command, CancellationTokenSource internalCts, SemaphoreSlim throttler)
         {
             try
             {
@@ -89,9 +98,9 @@ namespace Amazon.Sdk.S3.Transfer.Internal
             }
         }
         
-        protected GetObjectRequest ConvertToGetObjectRequest(BaseDownloadRequest request)
+        protected virtual GetObjectRequest ConvertToGetObjectRequest(BaseDownloadRequest request)
         {
-            GetObjectRequest getRequest = new()
+            GetObjectRequest getRequest = new GetObjectRequest
             {
                 BucketName = request.BucketName,
                 Key = request.Key,
@@ -117,7 +126,7 @@ namespace Amazon.Sdk.S3.Transfer.Internal
             return getRequest;
         }
 
-        protected void RequestEventHandler(object? sender, RequestEventArgs args)
+        protected virtual void RequestEventHandler(object? sender, RequestEventArgs args)
         {
             if (args is WebServiceRequestEventArgs wsArgs)
             {
@@ -126,5 +135,7 @@ namespace Amazon.Sdk.S3.Transfer.Internal
                     currentUserAgent + " ft/s3-transfer md/" + GetType().Name;
             }
         }
+
+        internal virtual string DebuggerDisplay => ToString() ?? GetType().Name;
     }
 }

@@ -1,11 +1,11 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Net;
+using Allos.Amazon.Sdk.Fork;
 using Amazon.Runtime.Internal;
 using Amazon.S3;
 using Amazon.S3.Model;
-using Amazon.Sdk.Fork;
 
-namespace Amazon.Sdk.S3.Util
+namespace Allos.Amazon.Sdk.S3.Util
 {
     /// <summary>
     /// Provides utilities used by the Amazon S3 client implementation.
@@ -14,10 +14,12 @@ namespace Amazon.Sdk.S3.Util
     /// </summary>
     [SuppressMessage("ReSharper", "MemberCanBePrivate.Global")]
     [AmazonSdkFork("sdk/src/Services/S3/Custom/Util/AmazonS3Util.cs", "Amazon.S3.Util")]
+    [SuppressMessage("ReSharper", "UnusedMember.Global")]
     [AmazonSdkFork("sdk/src/Services/S3/Custom/Util/_async/AmazonS3Util.Operations.cs", "Amazon.S3.Util")]
     public static class AmazonS3Util
     {
-        private static readonly Dictionary<string, string> _extensionToMime = new(200, StringComparer.OrdinalIgnoreCase)
+        private static readonly Dictionary<string, string> _extensionToMime =
+            new Dictionary<string, string>(200, StringComparer.OrdinalIgnoreCase)
         {
             { ".ai", "application/postscript" },
             { ".aif", "audio/x-aiff" },
@@ -294,7 +296,7 @@ namespace Amazon.Sdk.S3.Util
             CancellationToken token)
         {
             return DeleteS3BucketWithObjectsAsync(s3Client, bucketName,
-                new()
+                new S3DeleteBucketWithObjectsOptions
                 {
                     ContinueOnError = false,
                     QuietMode = true,
@@ -387,8 +389,11 @@ namespace Amazon.Sdk.S3.Util
         /// <param name="deleteOptions">Options to control the behavior of the delete operation.</param>
         /// <param name="updateCallback">The callback which is used to send updates about the delete operation.</param>
         /// <param name="token">token to check if the operation has been request to cancel.</param>
-        private static async Task DeleteS3BucketWithObjectsInternalAsync(IAmazonS3 s3Client, string bucketName,
-            S3DeleteBucketWithObjectsOptions deleteOptions, Action<S3DeleteBucketWithObjectsUpdate>? updateCallback,
+        private static async Task DeleteS3BucketWithObjectsInternalAsync(
+            IAmazonS3 s3Client, 
+            string bucketName,
+            S3DeleteBucketWithObjectsOptions deleteOptions, 
+            Action<S3DeleteBucketWithObjectsUpdate>? updateCallback,
             CancellationToken token)
         {
             // Validations.
@@ -428,10 +433,10 @@ namespace Amazon.Sdk.S3.Util
                         break;
                     }
 
-                    keyVersionList = new(listVersionsResponse.Versions.Count);
+                    keyVersionList = new List<KeyVersion>(listVersionsResponse.Versions.Count);
                     for (int index = 0; index < listVersionsResponse.Versions.Count; index++)
                     {
-                        keyVersionList.Add(new()
+                        keyVersionList.Add(new KeyVersion
                         {
                             Key = listVersionsResponse.Versions[index].Key,
                             VersionId = listVersionsResponse.Versions[index].VersionId
@@ -448,10 +453,10 @@ namespace Amazon.Sdk.S3.Util
                         // If the bucket has no objects break the loop.
                         break;
                     }
-                    keyVersionList = new(listObjectsV2Response.S3Objects.Count);
+                    keyVersionList = new List<KeyVersion>(listObjectsV2Response.S3Objects.Count);
                     for (int index = 0; index < listObjectsV2Response.S3Objects.Count; index++)
                     {
-                        keyVersionList.Add(new()
+                        keyVersionList.Add(new KeyVersion
                         {
                             Key = listObjectsV2Response.S3Objects[index].Key,
                         });
@@ -460,7 +465,7 @@ namespace Amazon.Sdk.S3.Util
                 try
                 {
                     // Delete the current set of objects.
-                    var deleteObjectsResponse = await s3Client.DeleteObjectsAsync(new()
+                    var deleteObjectsResponse = await s3Client.DeleteObjectsAsync(new DeleteObjectsRequest
                     {
                         BucketName = bucketName,
                         Objects = keyVersionList,
@@ -472,7 +477,7 @@ namespace Amazon.Sdk.S3.Util
                         // If quiet mode is not set, update the client with list of deleted objects.
                         InvokeS3DeleteBucketWithObjectsUpdateCallback(
                                         updateCallback,
-                                        new()
+                                        new S3DeleteBucketWithObjectsUpdate
                                         {
                                             DeletedObjects = deleteObjectsResponse.DeletedObjects
                                         }
@@ -488,7 +493,7 @@ namespace Amazon.Sdk.S3.Util
                         // list of objects on which the delete failed.
                         InvokeS3DeleteBucketWithObjectsUpdateCallback(
                                 updateCallback,
-                                new()
+                                new S3DeleteBucketWithObjectsUpdate
                                 {
                                     DeletedObjects = deleteObjectsException.Response.DeletedObjects,
                                     DeleteErrors = deleteObjectsException.Response.DeleteErrors
@@ -518,7 +523,7 @@ namespace Amazon.Sdk.S3.Util
             // Continue listing objects and deleting them until the bucket is empty.
             while (isTruncated);
 
-            const int maxRetries = 10;
+            const uint maxRetries = 10;
             for (int retries = 1; retries <= maxRetries; retries++)
             {
                 try

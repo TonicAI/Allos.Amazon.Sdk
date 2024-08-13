@@ -1,14 +1,17 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using Allos.Amazon.Sdk.Fork;
 using Amazon.Runtime.Internal;
 using Amazon.S3;
-using Amazon.Sdk.Fork;
 
-namespace Amazon.Sdk.S3.Transfer
+namespace Allos.Amazon.Sdk.S3.Transfer
 {
     /// <summary>
     /// The base class for requests that return Amazon S3 objects.
     /// </summary>
+    [SuppressMessage("ReSharper", "VirtualMemberNeverOverridden.Global")]
     [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
+    [DebuggerDisplay("{DebuggerDisplay}")]
     [AmazonSdkFork("sdk/src/Services/S3/Custom/Transfer/BaseDownloadRequest.cs", "Amazon.S3.Transfer")]
     public abstract class BaseDownloadRequest
     {
@@ -143,5 +146,7 @@ namespace Amazon.Sdk.S3.Transfer
         /// Bucket owners need not specify this parameter in their requests.
         /// </summary>
         public RequestPayer? RequestPayer { get; set; }
+        
+        internal virtual string DebuggerDisplay => ToString() ?? GetType().Name;
     }
 }
