@@ -27,7 +27,7 @@ public abstract class TestBase
     {
         get
         {
-            string testAwsCredentialsProfileName = null!;
+            string testAwsCredentialsProfileName = "543337415716_AWSAdministratorAccess";
          
             // NOTE replace `null!` above with a valid `profile name` from the local AWS credentials file.
             // It should look something like this (without enclosing `[]`):

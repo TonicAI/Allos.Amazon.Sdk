@@ -33,11 +33,11 @@ public class UploadDirectoryProgressArgs : EventArgs
     /// The size of the current file in bytes.
     /// </param>
     public UploadDirectoryProgressArgs(
-        int numberOfFilesUploaded, 
-        int totalNumberOfFiles, 
+        uint numberOfFilesUploaded, 
+        uint totalNumberOfFiles, 
         string? currentFile, 
-        long transferredBytesForCurrentFile, 
-        long totalNumberOfBytesForCurrentFile)
+        ulong transferredBytesForCurrentFile, 
+        ulong totalNumberOfBytesForCurrentFile)
     {
         NumberOfFilesUploaded = numberOfFilesUploaded;
         TotalNumberOfFiles = totalNumberOfFiles;
@@ -59,7 +59,7 @@ public class UploadDirectoryProgressArgs : EventArgs
     /// The bytes transferred across all files being uploaded.
     /// </param>
     /// <param name="totalBytes">
-    /// The total number of bytes across all files being uploaded.
+    /// The total number of bytes across all files being uploaded, if available.
     /// </param>
     /// <param name="currentFile">
     /// The current file being uploaded.
@@ -68,16 +68,16 @@ public class UploadDirectoryProgressArgs : EventArgs
     /// The number of transferred bytes for current file.
     /// </param>
     /// <param name="totalNumberOfBytesForCurrentFile">
-    /// The size of the current file in bytes.
+    /// The size of the current file in bytes, if available.
     /// </param>
     public UploadDirectoryProgressArgs(
-        int numberOfFilesUploaded, 
-        int totalNumberOfFiles, 
-        long transferredBytes, 
-        long totalBytes,
+        uint numberOfFilesUploaded, 
+        uint totalNumberOfFiles, 
+        ulong transferredBytes, 
+        ulong? totalBytes,
         string? currentFile, 
-        long transferredBytesForCurrentFile, 
-        long totalNumberOfBytesForCurrentFile)
+        ulong transferredBytesForCurrentFile, 
+        ulong? totalNumberOfBytesForCurrentFile)
     {
         NumberOfFilesUploaded = numberOfFilesUploaded;
         TotalNumberOfFiles = totalNumberOfFiles;
@@ -92,25 +92,25 @@ public class UploadDirectoryProgressArgs : EventArgs
     /// Gets or sets the total number of files.
     /// </summary>
     /// <value>The total number of files.</value>
-    public int TotalNumberOfFiles { get; set; }
+    public uint TotalNumberOfFiles { get; set; }
 
     /// <summary>
     /// Gets or sets the number of files uploaded.
     /// </summary>
     /// <value>The number of files uploaded.</value>
-    public int NumberOfFilesUploaded { get; set; }
+    public uint NumberOfFilesUploaded { get; set; }
 
     /// <summary>
-    /// Gets or sets the total number of bytes across all files being uploaded.
+    /// Gets or sets the total number of bytes across all files being uploaded, if available.
     /// </summary>
-    /// <value>The total number of bytes across all files being uploaded.</value>
-    public long TotalBytes { get; set; }
+    /// <value>The total number of bytes across all files being uploaded, if available.</value>
+    public ulong? TotalBytes { get; set; }
 
     /// <summary>
     /// Gets or sets the bytes transferred across all files being uploaded.
     /// </summary>
     /// <value>The bytes transferred across all files being uploaded.</value>
-    public long TransferredBytes { get; set; }
+    public ulong TransferredBytes { get; set; }
 
     /// <summary>
     /// Gets or sets the current file.
@@ -132,7 +132,7 @@ public class UploadDirectoryProgressArgs : EventArgs
     /// will return 0.
     /// </remarks>
     /// <value>The transferred bytes for current file.</value>
-    public long TransferredBytesForCurrentFile { get; set; }
+    public ulong TransferredBytesForCurrentFile { get; set; }
 
     /// <summary>
     /// Gets or sets the total number of bytes for current file.
@@ -142,20 +142,19 @@ public class UploadDirectoryProgressArgs : EventArgs
     /// If concurrent file uploads are enabled by setting TransferUtilityUploadDirectoryRequest.UploadFilesConcurrently to true, this property
     /// will return 0.
     /// </remarks>
-    /// <value>The total number of bytes for current file.</value>
-    public long TotalNumberOfBytesForCurrentFile { get; set; }
-
+    /// <value>The total number of bytes for current file, if available.</value>
+    public ulong? TotalNumberOfBytesForCurrentFile { get; set; }
+    
     /// <summary>
     /// The string representation of this instance of UploadDirectoryProgressArgs.
     /// </summary>
     /// <returns>The string representation of this instance of UploadDirectoryProgressArgs.</returns>
     public override string ToString()
     {
-        return string.Format(CultureInfo.InvariantCulture, 
-            "Total Files: {0}, Uploaded Files {1}, Total Bytes: {2}, Transferred Bytes: {3}",
-            TotalNumberOfFiles, 
-            NumberOfFilesUploaded, 
-            TotalBytes, 
-            TransferredBytes);
+        if (TotalBytes.HasValue)
+        {
+            return $"Uploaded {NumberOfFilesUploaded} of {TotalNumberOfFiles}, {TransferredBytes} bytes transferred of {TotalBytes} total bytes";
+        }
+        return $"Uploaded {NumberOfFilesUploaded} of {TotalNumberOfFiles}, {TransferredBytes} bytes transferred";
     }
 }

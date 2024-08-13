@@ -14,6 +14,9 @@ namespace Amazon.Sdk.S3.Transfer.Internal
     {
         private readonly IAmazonS3 _s3Client;
         private readonly TransferUtilityUploadRequest _fileTransporterRequest;
+        
+        // this 
+        private FileStream? _inputStream;
 
         internal SimpleUploadCommand(IAmazonS3 s3Client, TransferUtilityUploadRequest fileTransporterRequest)
         {
@@ -25,6 +28,7 @@ namespace Amazon.Sdk.S3.Transfer.Internal
 
         public override async Task ExecuteAsync(CancellationToken cancellationToken)
         {
+            PutObjectRequest? putRequest = null;
             try
             {
                 if (AsyncThrottler != null)
@@ -33,7 +37,7 @@ namespace Amazon.Sdk.S3.Transfer.Internal
                         .ConfigureAwait(continueOnCapturedContext: false);
                 }
 
-                var putRequest = ConstructRequest();
+                putRequest = ConstructRequest();
                 await _s3Client.PutObjectAsync(putRequest, cancellationToken)
                     .ConfigureAwait(continueOnCapturedContext: false);
             }
@@ -43,11 +47,26 @@ namespace Amazon.Sdk.S3.Transfer.Internal
                 {
                     AsyncThrottler.Release();
                 }
+
+                if (putRequest != null &&
+                    putRequest.InputStream != null)
+                {
+                    //a stream was created and swapped in for file path
+                    //so it needs to be disposed and the file path put back on the request
+                    await putRequest.InputStream.DisposeAsync().ConfigureAwait(false);
+                    putRequest.InputStream = null;
+                    putRequest.FilePath = _fileTransporterRequest.FilePath;
+                }
             }
         }
 
         private PutObjectRequest ConstructRequest()
         {
+            if (!_fileTransporterRequest.IsSetFilePath())
+            {
+                ArgumentException.ThrowIfNullOrWhiteSpace(_fileTransporterRequest.FilePath);   
+            }
+            
             PutObjectRequest putRequest = new()
             {
                 BucketName = _fileTransporterRequest.BucketName,
@@ -69,15 +88,30 @@ namespace Amazon.Sdk.S3.Transfer.Internal
             
             putRequest.Headers.AddRange(_fileTransporterRequest.Headers);
             putRequest.Metadata.AddRange(_fileTransporterRequest.Metadata);
-
+            
             // Avoid setting ContentType to null, as that may clear
             // out an existing value in Headers collection
             if (!string.IsNullOrWhiteSpace(_fileTransporterRequest.ContentType))
                 putRequest.ContentType = _fileTransporterRequest.ContentType;
-
-            putRequest.FilePath = _fileTransporterRequest.FilePath;
-            var progressHandler = new ProgressHandler(PutObjectProgressEventCallback);
-            ((IAmazonWebServiceRequest)putRequest).StreamUploadProgressCallback += progressHandler.OnTransferProgress;
+            
+            _inputStream = File.OpenRead(_fileTransporterRequest.FilePath);
+            
+            putRequest.FilePath = null;
+            putRequest.InputStream = _inputStream;
+            
+            var progressHandler = new ProgressHandler(
+                (ulong) _s3Client.Config.ProgressUpdateInterval,
+                _fileTransporterRequest.ContentLength,
+                putRequest.FilePath, 
+                PutObjectProgressEventCallback
+                );
+                
+            var eventStream = new EventStream(putRequest.InputStream);
+            
+            eventStream.OnRead += progressHandler.OnBytesRead;
+            
+            putRequest.InputStream = eventStream;
+            
             ((IAmazonWebServiceRequest)putRequest).AddBeforeRequestHandler(RequestEventHandler);
 
             putRequest.InputStream = _fileTransporterRequest.InputStream;
@@ -93,8 +127,13 @@ namespace Amazon.Sdk.S3.Transfer.Internal
 
         private void PutObjectProgressEventCallback(object? sender, UploadProgressArgs e)
         {
-            var progressArgs = new UploadProgressArgs(e.IncrementTransferred(), e.TransferredBytes, e.TotalBytes, 
-                e.CompensationForRetry, _fileTransporterRequest.FilePath);
+            var progressArgs = new UploadProgressArgs(
+                e.IncrementTransferred, 
+                e.TransferredBytes, 
+                e.TotalBytes, 
+                e.CompensationForRetry, 
+                _fileTransporterRequest.FilePath);
+            
             _fileTransporterRequest.OnRaiseProgressEvent(progressArgs);
         }
     }

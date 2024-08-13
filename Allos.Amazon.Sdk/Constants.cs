@@ -1,4 +1,4 @@
-﻿namespace Amazon.Sdk.Fork;
+﻿namespace Amazon.Sdk;
 
 internal static class Constants
 {

@@ -23,7 +23,7 @@ namespace Amazon.S3.Model
             IncrementTransferredPropertyInfo = incrementTransferredPropertyInfo;
         }
 
-        public static long IncrementTransferred(this TransferProgressArgs transferProgressArgs) =>
-            (long?) IncrementTransferredPropertyInfo.GetValue(transferProgressArgs) ?? default;
+        public static ulong IncrementTransferred(this TransferProgressArgs transferProgressArgs) =>
+            (ulong?) (long?) IncrementTransferredPropertyInfo.GetValue(transferProgressArgs) ?? default;
     }
 }

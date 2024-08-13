@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using Serilog;
 
-namespace Amazon.Sdk.Fork;
+namespace Amazon.Sdk;
 
 public static class TonicLogger
 {

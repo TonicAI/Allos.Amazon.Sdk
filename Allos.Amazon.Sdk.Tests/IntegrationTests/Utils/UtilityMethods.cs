@@ -1,6 +1,7 @@
 ﻿using System.Text;
 using Amazon.Runtime;
 using Amazon.S3;
+using Amazon.Sdk;
 using Amazon.Sdk.Fork;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Serilog;
@@ -125,13 +126,13 @@ namespace AWSSDK_DotNet.IntegrationTests.Utils
             }
             File.WriteAllText(fullPath, contents);
         }
-        public static void GenerateFile(string path, long size)
+        public static void GenerateFile(string path, ulong size)
         {
-            string contents = GenerateTestContents(size);
+            string contents = GenerateTestContents(Convert.ToInt64(size));
             WriteFile(path, contents);
         }
 
-        public static string GenerateTestContents(long size)
+        private static string GenerateTestContents(long size)
         {
             StringBuilder sb = new();
             for (long i = 0; i < size; i++)

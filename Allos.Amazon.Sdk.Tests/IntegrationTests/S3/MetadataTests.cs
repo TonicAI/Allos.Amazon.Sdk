@@ -41,8 +41,8 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             { "Content-Disposition", "attachment; filename=\"fname.ext\"" }
         };
         private const string TempFile = "tempFile.txt";
-        private static readonly long _smallFileSize = AsyncTransferUtilityTests.KiloSize * 100;
-        private static readonly long _largeFileSize = AsyncTransferUtilityTests.MegSize * 20;
+        private static readonly ulong _smallFileSize = AsyncTransferUtilityTests.KiloSize * 100U;
+        private static readonly ulong _largeFileSize = AsyncTransferUtilityTests.MegSize * 20U;
         private static readonly string _basePath = Path.GetFullPath(@"\transferutility\");
 
         private static readonly List<string> _keysToValidate = new();
@@ -252,7 +252,10 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             }
         }
 
-        private async Task UploadDirectory(long size, AsyncTransferUtilityTests.DirectoryProgressValidator<UploadDirectoryProgressArgs> progressValidator, bool validate = true)
+        private async Task UploadDirectory(
+            ulong size, 
+            AsyncTransferUtilityTests.DirectoryProgressValidator<UploadDirectoryProgressArgs> progressValidator, 
+            bool validate = true)
         {
             ArgumentNullException.ThrowIfNull(_bucketName);
             

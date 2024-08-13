@@ -209,7 +209,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             var retrievedFilepath = Path.Combine(Path.GetTempPath(), "retreived-" + nextRandom + ".txt");
             var totalSize = MegSize * 15;
 
-            UtilityMethods.GenerateFile(filePath, totalSize);
+            UtilityMethods.GenerateFile(filePath, (ulong) totalSize);
             string key = "key-" + _random.Next();
 
             Stream inputStream = File.OpenRead(filePath);
@@ -395,7 +395,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             var retrievedFilepath = Path.Combine(BasePath, $"retreived-{nextRandom}.txt"); 
             var totalSize = MegSize * 15;
 
-            UtilityMethods.GenerateFile(filePath, totalSize);
+            UtilityMethods.GenerateFile(filePath, (ulong) totalSize);
             string key = "key-" + _random.Next();
 
             Stream inputStream = File.OpenRead(filePath);

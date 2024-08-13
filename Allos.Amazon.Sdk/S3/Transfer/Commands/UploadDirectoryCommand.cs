@@ -16,10 +16,10 @@ namespace Amazon.Sdk.S3.Transfer.Internal
         private readonly AsyncTransferUtility _utility;
         private readonly TransferUtilityConfig _config;
 
-        private int _totalNumberOfFiles;
-        private int _numberOfFilesUploaded;
-        private long _totalBytes;
-        private long _transferredBytes;        
+        private uint _totalNumberOfFiles;
+        private uint _numberOfFilesUploaded;
+        private ulong _totalBytes;
+        private ulong _transferredBytes;        
 
         internal UploadDirectoryCommand(
             AsyncTransferUtility utility, 
@@ -47,7 +47,7 @@ namespace Amazon.Sdk.S3.Transfer.Internal
                     _request.SearchOption, 
                     cancellationToken)
                 .ConfigureAwait(continueOnCapturedContext: false);                
-            _totalNumberOfFiles = filePaths.Length;
+            _totalNumberOfFiles = (uint) filePaths.Length;
 
             SemaphoreSlim? asyncThrottler = null;
             SemaphoreSlim? loopThrottler = null;
@@ -112,7 +112,7 @@ namespace Amazon.Sdk.S3.Transfer.Internal
                     var filePaths = Directory.GetFiles(path, searchPattern, searchOption);
                     foreach (var filePath in filePaths)
                     {
-                        _totalBytes += new FileInfo(filePath).Length;
+                        _totalBytes += (ulong) new FileInfo(filePath).Length;
                     }
                     return filePaths;
                 }, cancellationToken);
@@ -123,7 +123,7 @@ namespace Amazon.Sdk.S3.Transfer.Internal
         {
             string key = filepath.Substring(basePath.Length);
             key = key.Replace(@"\", "/");
-            if (key.StartsWith("/", StringComparison.Ordinal))
+            if (key.StartsWith('/'))
                 key = key.Substring(1);
             key = prefix + key;
 
@@ -166,10 +166,10 @@ namespace Amazon.Sdk.S3.Transfer.Internal
             {
                 prefix = _request.KeyPrefix;
                 prefix = prefix.Replace(@"\", "/");
-                if (prefix.StartsWith("/", StringComparison.Ordinal))
+                if (prefix.StartsWith('/'))
                     prefix = prefix.Substring(1);
 
-                if (!prefix.EndsWith("/", StringComparison.Ordinal))
+                if (!prefix.EndsWith('/'))
                 {
                     prefix += '/';
                 }
@@ -181,29 +181,26 @@ namespace Amazon.Sdk.S3.Transfer.Internal
         {
             var totalTransferredBytes = Interlocked.Add(
                 ref _transferredBytes, 
-                e.IncrementTransferred() - e.CompensationForRetry);
+                e.IncrementTransferred - e.CompensationForRetry);
 
-            int numberOfFilesUploaded = _numberOfFilesUploaded;
+            uint numberOfFilesUploaded = _numberOfFilesUploaded;
             if (e.TransferredBytes == e.TotalBytes)
             {
                 numberOfFilesUploaded = Interlocked.Increment(ref _numberOfFilesUploaded);
             }
 
-            UploadDirectoryProgressArgs uploadDirectoryProgressArgs;
-            if (_request.UploadFilesConcurrently)
-            {
-                // If concurrent upload is enabled, values for current file, 
-                // transferred and total bytes for current file are not set.
-                uploadDirectoryProgressArgs = new(numberOfFilesUploaded, _totalNumberOfFiles,
-                   totalTransferredBytes, _totalBytes,
-                   null, 0, 0);
-            }
-            else
-            {
-                uploadDirectoryProgressArgs = new(numberOfFilesUploaded, _totalNumberOfFiles,
-                  totalTransferredBytes, _totalBytes,
-                  e.FilePath, e.TransferredBytes, e.TotalBytes);
-            }
+            // If concurrent upload is enabled (i.e. _request.UploadFilesConcurrently),
+            // values for current file (including transferred, total bytes, and file path) may not be set.
+            UploadDirectoryProgressArgs uploadDirectoryProgressArgs = new(
+                numberOfFilesUploaded, 
+                _totalNumberOfFiles,
+                totalTransferredBytes, 
+                _totalBytes, 
+                e.FilePath, 
+                e.TransferredBytes, 
+                e.TotalBytes
+            );
+            
             _request.OnRaiseProgressEvent(uploadDirectoryProgressArgs);
         }
     }

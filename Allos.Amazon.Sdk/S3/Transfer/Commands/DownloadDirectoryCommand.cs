@@ -18,10 +18,10 @@ namespace Amazon.Sdk.S3.Transfer.Internal
         private readonly IAmazonS3 _s3Client;
         private readonly TransferUtilityDownloadDirectoryRequest _request;
         private readonly bool _skipEncryptionInstructionFiles;
-        private int _totalNumberOfFilesToDownload;
-        private int _numberOfFilesDownloaded;
-        private long _totalBytes;
-        private long _transferredBytes;
+        private uint _totalNumberOfFilesToDownload;
+        private uint _numberOfFilesDownloaded;
+        private ulong _totalBytes;
+        private ulong _transferredBytes;
         private string? _currentFile;
 
         internal DownloadDirectoryCommand(IAmazonS3 s3Client, TransferUtilityDownloadDirectoryRequest request)
@@ -84,7 +84,7 @@ namespace Amazon.Sdk.S3.Transfer.Internal
                 objs = await GetS3ObjectsToDownloadV2Async(listRequestV2, cancellationToken).ConfigureAwait(false);
             }
 
-            _totalNumberOfFilesToDownload = objs.Count;
+            _totalNumberOfFilesToDownload = (uint) objs.Count;
 
             SemaphoreSlim? asyncThrottler = null;
             CancellationTokenSource? internalCts = null;
@@ -99,7 +99,7 @@ namespace Amazon.Sdk.S3.Transfer.Internal
                 var pendingTasks = new List<Task>();
                 foreach (S3Object s3O in objs)
                 {
-                    if (s3O.Key.EndsWith("/", StringComparison.Ordinal))
+                    if (s3O.Key.EndsWith('/'))
                         continue;
 
                     await asyncThrottler.WaitAsync(cancellationToken)
@@ -157,7 +157,7 @@ namespace Amazon.Sdk.S3.Transfer.Internal
                     {
                         if (ShouldDownload(s3O))
                         {
-                            _totalBytes += s3O.Size;
+                            _totalBytes += (ulong) s3O.Size;
                             objs.Add(s3O);
                         }
                     }
@@ -181,7 +181,7 @@ namespace Amazon.Sdk.S3.Transfer.Internal
                     {
                         if (ShouldDownload(s3O))
                         {
-                            _totalBytes += s3O.Size;
+                            _totalBytes += (ulong) s3O.Size;
                             objs.Add(s3O);
                         }
                     }
@@ -195,7 +195,7 @@ namespace Amazon.Sdk.S3.Transfer.Internal
         {
             var transferredBytes = Interlocked.Add(ref _transferredBytes, e.IncrementTransferred());
 
-            int numberOfFilesDownloaded = _numberOfFilesDownloaded;
+            uint numberOfFilesDownloaded = _numberOfFilesDownloaded;
             if (e.IsCompleted)
             {
                 numberOfFilesDownloaded = Interlocked.Increment(ref _numberOfFilesDownloaded);
@@ -212,9 +212,15 @@ namespace Amazon.Sdk.S3.Transfer.Internal
             }
             else
             {
-                downloadDirectoryProgress = new(numberOfFilesDownloaded, _totalNumberOfFilesToDownload,
-                    transferredBytes, _totalBytes,
-                    _currentFile, e.TransferredBytes, e.TotalBytes);
+                downloadDirectoryProgress = new(
+                    numberOfFilesDownloaded, 
+                    _totalNumberOfFilesToDownload,
+                    transferredBytes, 
+                    _totalBytes,
+                    _currentFile, 
+                    (ulong) e.TransferredBytes, 
+                    (ulong) e.TotalBytes
+                    );
             }
             _request.OnRaiseProgressEvent(downloadDirectoryProgress);
         }

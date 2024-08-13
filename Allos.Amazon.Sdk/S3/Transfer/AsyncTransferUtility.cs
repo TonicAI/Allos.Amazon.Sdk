@@ -794,14 +794,14 @@ namespace Amazon.Sdk.S3.Transfer
 
         private bool IsMultipartUpload(TransferUtilityUploadRequest request)
         {
-            //If the length is -1 that means when we tried to get the ContentLength, we caught a NotSupportedException
-            //or it means the length is unknown. In this case we do a multpartupload. If we are uploading
-            //a nonseekable stream and the ContentLength is more than zero, we also do a multipart upload.
-            if (request.ContentLength == -1 && request.InputStream is { CanSeek: false })
+            if (request.ContentLength.HasValue)
             {
-                return true;
+                return request.ContentLength.Value >= (ulong) _config.MinSizeBeforePartUpload;
             }
-            return request.ContentLength >= _config.MinSizeBeforePartUpload;
+            //If the length is null that means when we tried to get the ContentLength, we caught a NotSupportedException,
+            //or it means the length is unknown. In this case we do a MultiPartUpload. If we are uploading
+            //a nonseekable stream and the ContentLength is more than zero, we also do a multipart upload.
+            return true;
         }
 
         private static void Validate(TransferUtilityUploadRequest request)

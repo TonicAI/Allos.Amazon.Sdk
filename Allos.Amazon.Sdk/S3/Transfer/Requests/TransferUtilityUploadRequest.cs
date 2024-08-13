@@ -278,35 +278,35 @@ namespace Amazon.Sdk.S3.Transfer
         /// Gets the length of the content by either checking the FileInfo.Length property or the Stream.Length property.
         /// </summary>
         /// <value>The length of the content.</value>
-        internal long ContentLength
+        internal ulong? ContentLength
         {
             get
             {
-                long length;
+                ulong? length;
                 try
                 {
                     if (IsSetFilePath())
                     {
                         //System.IO.
                         FileInfo fileInfo = new(FilePath);
-                        length = fileInfo.Length;
+                        length = (ulong) fileInfo.Length;
                     }
                     else if (IsSetInputStream())
                     {
-                        length = InputStream.Length - InputStream.Position;
+                        length = (ulong) (InputStream.Length - InputStream.Position);
                     }
                     else
                     {
-                        throw new ArgumentException($"{nameof(FilePath)} or {nameof(InputStream)} must be set before calculating the {nameof(ContentLength)}");
+                        throw new ArgumentException(
+                            $"{nameof(FilePath)} or {nameof(InputStream)} must be set before calculating the {nameof(ContentLength)}");
                     }
                 }
                 catch (NotSupportedException)
                 {
                     //length is unknown
-                    length = -1;
+                    length = null;
                 }
-
-
+                
                 return length;
             }
         }

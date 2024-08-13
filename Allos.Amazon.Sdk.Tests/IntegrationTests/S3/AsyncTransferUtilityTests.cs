@@ -15,8 +15,8 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
     [AmazonSdkFork("sdk/test/Services/S3/IntegrationTests/TransferUtilityTests.cs", "AWSSDK_DotNet.IntegrationTests.Tests.S3")]
     public class AsyncTransferUtilityTests : TestBase<AmazonS3Client>
     {
-        public static readonly long MegSize = (int)Math.Pow(2, 20);
-        public static readonly long KiloSize = (int)Math.Pow(2, 10);
+        public static readonly ulong MegSize = (uint)Math.Pow(2, 20);
+        public static readonly ulong KiloSize = (uint)Math.Pow(2, 10);
 
         private static string? _basePath; //set by instance property `BasePath` for `ClassCleanup`
         protected override string BasePath
@@ -112,7 +112,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
                     Assert.AreEqual(p.FilePath, Path.Combine(BasePath, fileName));
                 }
             };
-            await Upload(fileName, 10 * MegSize, progressValidator).ConfigureAwait(false);
+            await Upload(fileName, 10U * MegSize, progressValidator).ConfigureAwait(false);
             progressValidator.AssertOnCompletion();
         }
 
@@ -176,7 +176,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
                     BucketName = _bucketName,
                     Key = fileName
                 }).ConfigureAwait(false);
-                Assert.AreEqual(fileSize, metadata.ContentLength);
+                Assert.AreEqual(fileSize, (ulong) metadata.ContentLength);
 
                 //Download the file and validate content of downloaded file is equal.
                 var downloadPath = path + ".download";
@@ -214,7 +214,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
                     BucketName = _bucketName,
                     Key = fileName
                 }).ConfigureAwait(false);
-                Assert.AreEqual(fileSize, metadata.ContentLength);
+                Assert.AreEqual(fileSize, (ulong) metadata.ContentLength);
 
                 //Download the file and validate content of downloaded file is equal.
                 var downloadPath = path + ".download";
@@ -253,7 +253,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
                     BucketName = _bucketName,
                     Key = fileName
                 }).ConfigureAwait(false);
-                Assert.AreEqual(fileSize, metadata.ContentLength);
+                Assert.AreEqual(fileSize, (ulong) metadata.ContentLength);
 
                 //Download the file and validate content of downloaded file is equal.
                 var downloadPath = path + ".download";
@@ -292,7 +292,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
                     BucketName = _bucketName,
                     Key = fileName
                 }).ConfigureAwait(false);
-                Assert.AreEqual(fileSize, metadata.ContentLength);
+                Assert.AreEqual(fileSize, (ulong) metadata.ContentLength);
 
                 //Download the file and validate content of downloaded file is equal.
                 var downloadPath = path + ".download";
@@ -333,7 +333,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
                     BucketName = _bucketName,
                     Key = fileName
                 }).ConfigureAwait(false);
-                Assert.AreEqual(fileSize, metadata.ContentLength);
+                Assert.AreEqual(fileSize, (ulong) metadata.ContentLength);
 
                 //Download the file and validate content of downloaded file is equal.
                 var downloadPath = path + ".download";
@@ -382,7 +382,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             var fileName = UtilityMethods.GenerateName(@"UnSeekableStream\EmptyFile");
             var path = Path.Combine(BasePath, fileName);
             var fileSize = 0;
-            UtilityMethods.GenerateFile(path, fileSize);
+            UtilityMethods.GenerateFile(path, (ulong) fileSize);
             //take the generated file and turn it into an unseekable stream
 
             var stream = GenerateUnseekableStreamFromFile(path);
@@ -430,7 +430,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
                     BucketName = _bucketName,
                     Key = fileName
                 }).ConfigureAwait(false);
-                Assert.AreEqual(fileSize, metadata.ContentLength);
+                Assert.AreEqual(fileSize, (ulong) metadata.ContentLength);
                 Assert.IsTrue(metadata.Metadata.Count > 0);
                 Assert.AreEqual("testmetadatavalue", metadata.Metadata["testmetadata"]);
                 Assert.IsTrue(metadata.Headers.Count > 0);
@@ -466,7 +466,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             }
         }
 
-        private async Task UploadWithSSE_C(long fileSize, string name)
+        private async Task UploadWithSSE_C(ulong fileSize, string name)
         {
             // Create a fileSize file to upload
             var fileName = UtilityMethods.GenerateName(name);
@@ -607,7 +607,6 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
 
             try
             {
-
                 var objectMetadataResponse = await Client.GetObjectMetadataAsync(new()
                 {
                     BucketName = _bucketName,
@@ -640,7 +639,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             }
         }
 
-        private async Task Upload(string fileName, long size, 
+        private async Task Upload(string fileName, ulong size, 
             TransferProgressValidator<UploadProgressArgs>? progressValidator, AmazonS3Client? client = null)
         {
             ArgumentNullException.ThrowIfNull(_bucketName);
@@ -683,7 +682,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             }).ConfigureAwait(false);
             Console.WriteLine("Expected Size: {0} , Actual Size {1}", size, metadata.ContentLength);
             Assert.AreEqual(_octetStreamContentType, metadata.Headers.ContentType);
-            Assert.AreEqual(size, metadata.ContentLength);
+            Assert.AreEqual(size, (ulong) metadata.ContentLength);
             await ValidateFileContents(Client, _bucketName, key, path).ConfigureAwait(false);
         }
 
@@ -694,11 +693,11 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             var progressValidator = new DirectoryProgressValidator<UploadDirectoryProgressArgs>();
             ConfigureProgressValidator(progressValidator);
 
-            await UploadDirectory(10 * MegSize, progressValidator).ConfigureAwait(false);
+            await UploadDirectory(10U * MegSize, progressValidator).ConfigureAwait(false);
             progressValidator.AssertOnCompletion();
         }
 
-        private async Task<DirectoryInfo> UploadDirectory(long size,
+        private async Task<DirectoryInfo> UploadDirectory(ulong size,
              DirectoryProgressValidator<UploadDirectoryProgressArgs>? progressValidator, bool validate = true)
         {
             ArgumentNullException.ThrowIfNull(_bucketName);
@@ -768,7 +767,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
         {
             ArgumentNullException.ThrowIfNull(_bucketName);
             
-            var directory = await UploadDirectory(20 * MegSize, null, false).ConfigureAwait(false);
+            var directory = await UploadDirectory(20U * MegSize, null, false).ConfigureAwait(false);
             var directoryPath = directory.FullName;
             var keyPrefix = directory.Name;
             Directory.Delete(directoryPath, true);
@@ -799,19 +798,33 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
                 var progressValidator = new DirectoryProgressValidator<DownloadDirectoryProgressArgs>();
                 ConfigureProgressValidator(progressValidator);
 
-                int numberOfTestFiles = 5;
-                var downloadDirectory = await DownloadDirectoryWithDisableSlashCorrectionForS3Directory(numberOfTestFiles, progressValidator).ConfigureAwait(false);
+                uint numberOfTestFiles = 5;
+                var downloadDirectory = await DownloadDirectoryWithDisableSlashCorrectionForS3Directory(
+                    numberOfTestFiles, 
+                    progressValidator
+                    ).ConfigureAwait(false);
                 progressValidator.AssertOnCompletion();
 
-                Assert.AreEqual(numberOfTestFiles, downloadDirectory.GetFiles("*", SearchOption.AllDirectories).Length);
+                Assert.AreEqual(
+                    numberOfTestFiles,
+                    (uint) downloadDirectory.GetFiles("*", SearchOption.AllDirectories).Length
+                    );
                 await ValidateDirectoryContents(Client, _bucketName, string.Empty, downloadDirectory).ConfigureAwait(false);
             }
         }
 
-        private async Task<DirectoryInfo> DownloadDirectoryWithDisableSlashCorrectionForS3Directory(int numberOfTestFiles, DirectoryProgressValidator<DownloadDirectoryProgressArgs> progressValidator)
+        private async Task<DirectoryInfo> DownloadDirectoryWithDisableSlashCorrectionForS3Directory(
+            uint numberOfTestFiles, 
+            DirectoryProgressValidator<DownloadDirectoryProgressArgs> progressValidator)
         {
             var keyPrefix = DateTime.Now.ToString("yyyy-MM-dd");
-            var directory = await UploadDirectoryWithKeyPrefix(1 * KiloSize, null, keyPrefix, numberOfTestFiles, false).ConfigureAwait(false);
+            var directory = await UploadDirectoryWithKeyPrefix(
+                1 * KiloSize, 
+                null, 
+                keyPrefix, 
+                numberOfTestFiles, 
+                false
+                ).ConfigureAwait(false);
             var directoryPath = directory.FullName;
             Directory.Delete(directoryPath, true);
 
@@ -831,7 +844,12 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             return directory;
         }
 
-        private async Task<DirectoryInfo> UploadDirectoryWithKeyPrefix(long size, DirectoryProgressValidator<UploadDirectoryProgressArgs>? progressValidator, string keyPrefix, int numberOfTestFiles, bool validate = true)
+        private async Task<DirectoryInfo> UploadDirectoryWithKeyPrefix(
+            ulong size, 
+            DirectoryProgressValidator<UploadDirectoryProgressArgs>? progressValidator, 
+            string keyPrefix, 
+            uint numberOfTestFiles, 
+            bool validate = true)
         {
             ArgumentNullException.ThrowIfNull(_bucketName);
             
@@ -911,7 +929,10 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             progressValidator.AssertOnCompletion();
         }
 
-        private async Task Download(string fileName, long size, TransferProgressValidator<WriteObjectProgressArgs>? progressValidator)
+        private async Task Download(
+            string fileName, 
+            ulong size, 
+            TransferProgressValidator<WriteObjectProgressArgs>? progressValidator)
         {
             var key = fileName;
             var originalFilePath = Path.Combine(BasePath, fileName);
@@ -1078,7 +1099,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
                     Assert.IsTrue(progress.TransferredBytes > lastProgress.TransferredBytes);
                     if (progress.NumberOfFilesUploaded == lastProgress.NumberOfFilesUploaded)
                     {
-                        Assert.IsTrue(progress.TransferredBytes - lastProgress.TransferredBytes >= 100 * KiloSize);
+                        Assert.IsTrue(progress.TransferredBytes - lastProgress.TransferredBytes >= 100U * KiloSize);
                     }
                     else
                     {
@@ -1149,7 +1170,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             }
         }
 
-        public static DirectoryInfo CreateTestDirectory(string basePath, long size = 0, int numberOfTestFiles = 5)
+        public static DirectoryInfo CreateTestDirectory(string basePath, ulong size = 0, uint numberOfTestFiles = 5)
         {
             if (size == 0)
                 size = 1 * MegSize;
@@ -1164,15 +1185,19 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             return new(directoryPath);
         }
 
-        private static DirectoryInfo CreateTestDirectoryWithFilePrefix(string basePath, long size = 0, string? filePrefix = null, int numberOfTestFiles = 5)
+        private static DirectoryInfo CreateTestDirectoryWithFilePrefix(
+            string basePath, 
+            ulong size = 0, 
+            string? filePrefix = null, 
+            uint numberOfTestFiles = 5)
         {
             if (string.IsNullOrWhiteSpace(filePrefix))
             {
                 return CreateTestDirectory(basePath, size, numberOfTestFiles);
             }
 
-            int numberOfTestFilesInChildDirectory = numberOfTestFiles / 2;
-            int numberOfTestFilesInParentDirectory = numberOfTestFiles - numberOfTestFilesInChildDirectory;
+            uint numberOfTestFilesInChildDirectory = numberOfTestFiles / 2;
+            uint numberOfTestFilesInParentDirectory = numberOfTestFiles - numberOfTestFilesInChildDirectory;
 
             if (size == 0)
                 size = 1 * KiloSize;
@@ -1266,14 +1291,14 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
 
                         if (progress.TransferredBytes < progress.TotalBytes)
                         {
-                            if (progress.TransferredBytes - LastProgressEventValue.TransferredBytes < 100 * KiloSize)
+                            if ((ulong) progress.TransferredBytes - (ulong) LastProgressEventValue.TransferredBytes < 100 * KiloSize)
                                 Console.WriteLine("Progress Event : *******Part Uploaded********");
 
                             if (ValidateProgressInterval)
                             {
                                 // When TransferUtility uploads using multipart upload, the TransferredBytes
                                 // will be less than the interval for last chunk of each upload part request.
-                                Assert.IsTrue(progress.TransferredBytes - LastProgressEventValue.TransferredBytes >= 100 * KiloSize);
+                                Assert.IsTrue((ulong) progress.TransferredBytes - (ulong) LastProgressEventValue.TransferredBytes >= 100 * KiloSize);
                             }
                         }
                     }

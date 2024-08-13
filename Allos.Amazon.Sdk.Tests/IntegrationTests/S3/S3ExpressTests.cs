@@ -66,7 +66,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             var retrievedFilepath = filePath + ".download";
             var totalSize = MegSize * 15;
 
-            UtilityMethods.GenerateFile(filePath, totalSize);
+            UtilityMethods.GenerateFile(filePath, (ulong) totalSize);
 
             try
             {
@@ -115,7 +115,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
         [TestCategory("S3")]
         public async Task Test_TransferUtility_Directory()
         {
-            var size = 1 * MegSize;
+            var size = 1U * MegSize;
             var random = new Random();
 
             var key = "key-" + random.Next();
@@ -124,7 +124,7 @@ namespace AWSSDK_DotNet.IntegrationTests.Tests.S3
             for (int i = 0; i < 5; i++)
             {
                 var filePath = Path.Combine(Path.Combine(directoryPath, i.ToString()), "file.txt");
-                UtilityMethods.GenerateFile(filePath, size);
+                UtilityMethods.GenerateFile(filePath, (ulong) size);
             }
 
             var retrievedDirectoryPath = directoryPath + "download";

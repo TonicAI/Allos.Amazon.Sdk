@@ -34,11 +34,11 @@ public class DownloadDirectoryProgressArgs : EventArgs
     /// The size of the current file in bytes.
     /// </param>
     public DownloadDirectoryProgressArgs(
-        int numberOfFilesDownloaded, 
-        int totalNumberOfFiles,
+        uint numberOfFilesDownloaded, 
+        uint totalNumberOfFiles,
         string? currentFile, 
-        long transferredBytesForCurrentFile, 
-        long totalNumberOfBytesForCurrentFile)
+        ulong transferredBytesForCurrentFile, 
+        ulong totalNumberOfBytesForCurrentFile)
     {
         NumberOfFilesDownloaded = numberOfFilesDownloaded;
         TotalNumberOfFiles = totalNumberOfFiles;
@@ -72,13 +72,13 @@ public class DownloadDirectoryProgressArgs : EventArgs
     /// The size of the current file in bytes.
     /// </param>
     public DownloadDirectoryProgressArgs(
-        int numberOfFilesDownloaded, 
-        int totalNumberOfFiles, 
-        long transferredBytes, 
-        long totalBytes,
+        uint numberOfFilesDownloaded, 
+        uint totalNumberOfFiles, 
+        ulong transferredBytes, 
+        ulong totalBytes,
         string? currentFile, 
-        long transferredBytesForCurrentFile, 
-        long totalNumberOfBytesForCurrentFile)
+        ulong transferredBytesForCurrentFile, 
+        ulong totalNumberOfBytesForCurrentFile)
     {
         NumberOfFilesDownloaded = numberOfFilesDownloaded;
         TotalNumberOfFiles = totalNumberOfFiles;
@@ -93,26 +93,25 @@ public class DownloadDirectoryProgressArgs : EventArgs
     /// Gets or sets the total number of files.
     /// </summary>
     /// <value>The total number of files.</value>
-    public int TotalNumberOfFiles { get; set; }
+    public uint TotalNumberOfFiles { get; set; }
 
     /// <summary>
     /// Gets or sets the number of files downloaded so far.
     /// </summary>
     /// <value>The number of files downloaded.</value>
-    public int NumberOfFilesDownloaded { get; set; }
+    public uint NumberOfFilesDownloaded { get; set; }
 
     /// <summary>
     /// Gets or sets the total number of bytes across all files being downloaded.
     /// </summary>
     /// <value>The total number of bytes across all files being downloaded.</value>
-    public long TotalBytes { get; set; }
+    public ulong TotalBytes { get; set; }
 
     /// <summary>
     /// Gets or sets the bytes transferred across all files being downloaded.
     /// </summary>
     /// <value>The bytes transferred across all files being downloaded.</value>
-    public long TransferredBytes { get; set; }
-
+    public ulong TransferredBytes { get; set; }
         
     /// <summary>
     /// Gets or sets the current file being downloaded.
@@ -134,7 +133,7 @@ public class DownloadDirectoryProgressArgs : EventArgs
     /// will return 0.
     /// </remarks>
     /// <value>The transferred bytes for the current file.</value>
-    public long TransferredBytesForCurrentFile { get; set; }
+    public ulong TransferredBytesForCurrentFile { get; set; }
 
     /// <summary>
     /// Gets or sets the total number of bytes for the current file.
@@ -145,7 +144,7 @@ public class DownloadDirectoryProgressArgs : EventArgs
     /// will return 0.
     /// </remarks>
     /// <value>The total number of bytes for the current file.</value>
-    public long TotalNumberOfBytesForCurrentFile { get; set; }
+    public ulong TotalNumberOfBytesForCurrentFile { get; set; }
 
     /// <summary>
     /// The string representation of this instance of DownloadDirectoryProgressArgs.
@@ -153,11 +152,6 @@ public class DownloadDirectoryProgressArgs : EventArgs
     /// <returns>The string representation of this instance of DownloadDirectoryProgressArgs.</returns>
     public override string ToString()
     {
-        return string.Format(CultureInfo.InvariantCulture, 
-            "Total Files: {0}, Downloaded Files {1}, Total Bytes: {2}, Transferred Bytes: {3}",
-            TotalNumberOfFiles, 
-            NumberOfFilesDownloaded, 
-            TotalBytes, 
-            TransferredBytes);
+        return $"Downloaded {NumberOfFilesDownloaded} of {TotalNumberOfFiles}, {TransferredBytes} bytes transferred of {TotalBytes} total bytes";
     }
 }
