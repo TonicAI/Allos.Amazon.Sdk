@@ -134,12 +134,13 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
 
         protected virtual void PutObjectProgressEventCallback(object? sender, UploadProgressArgs e)
         {
-            var progressArgs = new UploadProgressArgs(
+            var progressArgs = IUploadProgressArgsFactory.Instance.Create(
                 e.IncrementTransferred, 
                 e.TransferredBytes, 
                 e.TotalBytes, 
                 e.CompensationForRetry, 
-                _fileTransporterRequest.FilePath);
+                _fileTransporterRequest.FilePath
+                );
             
             _fileTransporterRequest.OnRaiseProgressEvent(progressArgs);
         }
