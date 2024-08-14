@@ -694,12 +694,13 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
                 ref _totalTransferredBytes, 
                 e.IncrementTransferred - e.CompensationForRetry);
 
-            var progressArgs = new UploadProgressArgs(
+            var progressArgs = IUploadProgressArgsFactory.Instance.Create(
                 e.IncrementTransferred, 
                 transferredBytes, 
                 _contentLength,
                 e.CompensationForRetry, 
                 _fileTransporterRequest.FilePath);
+            
             _fileTransporterRequest.OnRaiseProgressEvent(progressArgs);
         }
     }
@@ -748,7 +749,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
                 }
             }
 
-            var progressArgs = new UploadProgressArgs(e, compensationForRetry);
+            var progressArgs = IUploadProgressArgsFactory.Instance.Create(e, compensationForRetry);
             
             _callback(this, progressArgs);
 
@@ -767,7 +768,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
                 if (_totalIncrementTransferred >= _progressUpdateInterval ||
                     (_contentLength.HasValue && _totalBytesRead == _contentLength.Value))
                 {
-                    var uploadProgressArgs = new UploadProgressArgs(
+                    var uploadProgressArgs = IUploadProgressArgsFactory.Instance.Create(
                         _totalIncrementTransferred,
                         _totalBytesRead,
                         _contentLength,

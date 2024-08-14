@@ -421,7 +421,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer
                             cancellationToken)
                         .ConfigureAwait(false);
 
-                    var progressArgs = new UploadProgressArgs(
+                    var progressArgs = IUploadProgressArgsFactory.Instance.Create(
                         0,
                         metadata.ContentLength.ToUInt64(),
                         request.ContentLength,

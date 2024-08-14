@@ -6,23 +6,54 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>3.7.99.0</Version>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Amazon.Extensions.S3.Encryption" Version="[2.1.0, 3.0.0)" />
+        <PackageReference Include="AWSSDK.S3" Version="[3.7.400, 4.0.0)" />
+        <PackageReference Include="Serilog" Version="[4.0.0, 5.0.0)" />
+    </ItemGroup>
+
+    <PropertyGroup> <!-- NuGet Package [All Build Configurations] -->
+        <Deterministic>true</Deterministic> <!-- deterministic builds (affects `.nuspec`) -->
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild> <!-- Generates `.nuspec` and packs `.nupkg` on build -->
+        <PackageOutputPath>$(SolutionDir)/publish</PackageOutputPath>
+        <IncludeSymbols>true</IncludeSymbols> <!-- Include Debug symbols / PDBs -->
+        <Owners>tonic.ai</Owners>
+        <Description>
+            A manually created forked subset of the official AWS SDK (from aws-sdk-net) limited to the S3 type 
+            Amazon.S3.Transfer.TransferUtility, required supporting types, and relevant tests
+        </Description>
+        <Copyright>© 2024 Tonic AI</Copyright>
+        <PackageLanguage>en-US</PackageLanguage>
+        <PackageReadmeFile>contentFiles/README.md</PackageReadmeFile>
+        <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+        <PackageProjectUrl>https://github.com/TonicAI/Allos.Amazon.Sdk</PackageProjectUrl>
+        <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+        <Authors>Brian Bennewitz</Authors>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
       <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+      <DebugSymbols>true</DebugSymbols>
+      <Version>3.7.99.0-debug+build.0</Version>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
       <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
       <DebugSymbols>true</DebugSymbols>
+      <Version>3.7.99.0+build.0</Version>
     </PropertyGroup>
 
-    <ItemGroup>
-      <PackageReference Include="Amazon.Extensions.S3.Encryption" Version="2.1.1" />
-      <PackageReference Include="AWSSDK.S3" Version="3.7.400.4" />
-      <PackageReference Include="Serilog" Version="4.0.1" />
+    <ItemGroup> <!-- NuGet Package content files to pack -->
+        <None Include="$(SolutionDir)README.md">
+            <Pack>true</Pack>
+            <PackagePath>contentFiles/README.md</PackagePath>
+        </None>
+        <None Include="$(SolutionDir)License.txt">
+            <Pack>true</Pack>
+            <PackagePath>contentFiles/License.txt</PackagePath>
+        </None>
     </ItemGroup>
 
     <ItemGroup>
