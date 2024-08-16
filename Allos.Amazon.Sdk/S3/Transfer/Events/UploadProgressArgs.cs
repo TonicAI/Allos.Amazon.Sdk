@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using Allos.Amazon.Sdk.Fork;
+using Allos.Amazon.Sdk.S3.Transfer.Internal;
 using Amazon.S3.Model;
 
 namespace Allos.Amazon.Sdk.S3.Transfer;
@@ -20,15 +21,18 @@ namespace Allos.Amazon.Sdk.S3.Transfer;
 [AmazonSdkFork("sdk/src/Services/S3/Custom/Transfer/TransferUtilityUploadRequest.cs", "Amazon.S3.Transfer")]
 public class UploadProgressArgs : TransferProgressArgs
 {
+    private readonly WeakReference<ITransferCommand> _weakCommand;
+
     /// <summary>
     /// The constructor takes the number of
     /// currently transferred bytes and the
     /// total number of bytes to be transferred
     /// </summary>
+    /// <param name="command">The executing command</param>
     /// <param name="incrementTransferred">The how many bytes were transferred since last event.</param>
     /// <param name="transferred">The number of bytes transferred</param>
     /// <param name="total">The total number of bytes to be transferred, if available</param>
-    public UploadProgressArgs(ulong incrementTransferred, ulong transferred, ulong? total)
+    public UploadProgressArgs(ITransferCommand command, ulong incrementTransferred, ulong transferred, ulong? total)
         : base(
             Convert.ToInt64(incrementTransferred), 
             Convert.ToInt64(transferred),
@@ -37,6 +41,7 @@ public class UploadProgressArgs : TransferProgressArgs
                 Constants.UnknownContentLengthSentinel //supports the original behavior of shadowed properties
             )
     {
+        _weakCommand = new WeakReference<ITransferCommand>(command);
         IncrementTransferred = incrementTransferred;
         TransferredBytes = transferred;
         TotalBytes = total;
@@ -47,12 +52,19 @@ public class UploadProgressArgs : TransferProgressArgs
     /// currently transferred bytes and the
     /// total number of bytes to be transferred
     /// </summary>
+    /// <param name="command">The executing command</param>
     /// <param name="incrementTransferred">The how many bytes were transferred since last event.</param>
     /// <param name="transferred">The number of bytes transferred</param>
     /// <param name="total">The total number of bytes to be transferred, if available</param>        
     /// <param name="filePath">The file being uploaded</param>
-    public UploadProgressArgs(ulong incrementTransferred, ulong transferred, ulong? total, string filePath)
-        : this(incrementTransferred, transferred, total, 0, filePath)
+    public UploadProgressArgs(
+        ITransferCommand command, 
+        ulong incrementTransferred, 
+        ulong transferred, 
+        ulong? total, 
+        string filePath
+        )
+        : this(new WeakReference<ITransferCommand>(command), incrementTransferred, transferred, total, 0, filePath)
     {
     }
 
@@ -61,6 +73,7 @@ public class UploadProgressArgs : TransferProgressArgs
     /// currently transferred bytes and the
     /// total number of bytes to be transferred
     /// </summary>
+    /// <param name="command">The executing command</param>
     /// <param name="incrementTransferred">The how many bytes were transferred since last event.</param>
     /// <param name="transferred">The number of bytes transferred</param>
     /// <param name="total">The total number of bytes to be transferred, if available</param>
@@ -70,6 +83,40 @@ public class UploadProgressArgs : TransferProgressArgs
     /// </param>
     /// <param name="filePath">The file being uploaded</param>
     internal UploadProgressArgs(
+        ITransferCommand command,
+        ulong incrementTransferred,
+        ulong transferred,
+        ulong? total,
+        ulong compensationForRetry,
+        string? filePath
+    )
+        : this(
+            new WeakReference<ITransferCommand>(command), 
+            incrementTransferred, 
+            transferred, 
+            total, 
+            compensationForRetry, 
+            filePath
+            )
+    {
+    }
+        
+    /// <summary>
+    /// The constructor takes the number of
+    /// currently transferred bytes and the
+    /// total number of bytes to be transferred
+    /// </summary>
+    /// <param name="command">The executing command</param>
+    /// <param name="incrementTransferred">The how many bytes were transferred since last event.</param>
+    /// <param name="transferred">The number of bytes transferred</param>
+    /// <param name="total">The total number of bytes to be transferred, if available</param>
+    /// <param name="compensationForRetry">
+    /// A compensation for any upstream aggregators of this event to correct the totalTransferred count,
+    /// in case the underlying request is retried.
+    /// </param>
+    /// <param name="filePath">The file being uploaded</param>
+    internal UploadProgressArgs(
+        WeakReference<ITransferCommand> command,
         ulong incrementTransferred, 
         ulong transferred, 
         ulong? total, 
@@ -84,6 +131,7 @@ public class UploadProgressArgs : TransferProgressArgs
                 Constants.UnknownContentLengthSentinel //supports the original behavior of shadowed properties
             )
     {
+        _weakCommand = command;
         IncrementTransferred = incrementTransferred;
         TransferredBytes = transferred;
         FilePath = filePath;
@@ -98,6 +146,7 @@ public class UploadProgressArgs : TransferProgressArgs
     /// </param>
     internal UploadProgressArgs(UploadProgressArgs argsWithoutCompensation, ulong compensationForRetry)
         : this(
+            argsWithoutCompensation._weakCommand,
             argsWithoutCompensation.IncrementTransferred,
             argsWithoutCompensation.TransferredBytes,
             argsWithoutCompensation.TotalBytes,
@@ -149,6 +198,21 @@ public class UploadProgressArgs : TransferProgressArgs
     /// in case the underlying request is retried.
     /// </summary>
     public virtual ulong CompensationForRetry { get; }
+    
+    /// <summary>
+    /// The executing command, if still executing
+    /// </summary>
+    internal virtual ITransferCommand? Command
+    {
+        get
+        {
+            if (_weakCommand.TryGetTarget(out var command))
+            {
+                return command;
+            }
+            return null;
+        }
+    }
 
     /// <summary>
     /// Returns a string representation of this object

@@ -24,7 +24,9 @@ namespace Allos.Amazon.S3.Model
             IncrementTransferredPropertyInfo = incrementTransferredPropertyInfo;
         }
 
-        /// <inheritdoc cref="TransferProgressArgs.IncrementTransferred"/>
+        /// <summary>
+        /// Gets the number of bytes transferred since last event
+        /// </summary>
         public static ulong IncrementTransferred(this TransferProgressArgs transferProgressArgs) =>
             (ulong?) (long?) IncrementTransferredPropertyInfo.GetValue(transferProgressArgs) ?? default;
     }

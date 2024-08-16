@@ -4,7 +4,6 @@ using Allos.Amazon.Sdk.Fork;
 using Amazon.Runtime.Internal;
 using Amazon.S3;
 using Amazon.S3.Model;
-using Amazon.S3.Transfer;
 using Amazon.Util;
 
 namespace Allos.Amazon.Sdk.S3.Transfer
@@ -21,7 +20,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer
     [SuppressMessage("ReSharper", "InconsistentNaming")]
     [DebuggerDisplay("{DebuggerDisplay}")]
     [AmazonSdkFork("sdk/src/Services/S3/Custom/Transfer/TransferUtilityUploadRequest.cs", "Amazon.S3.Transfer")]
-    public class UploadRequest : BaseUploadRequest
+    public class UploadRequest : BaseRequest
     {
         protected ulong? _partSize;
 
@@ -36,14 +35,14 @@ namespace Allos.Amazon.Sdk.S3.Transfer
         /// <value>
         /// 	The name of the bucket.
         /// </value>
-        public string? BucketName { get; set; }
+        public virtual string? BucketName { get; set; }
 
         /// <summary>
         /// Checks if BucketName property is set.
         /// </summary>
         /// <returns>true if BucketName property is set.</returns>
         [MemberNotNullWhen(true, nameof(BucketName))]
-        internal bool IsSetBucketName() => !string.IsNullOrWhiteSpace(BucketName);
+        internal virtual bool IsSetBucketName() => !string.IsNullOrWhiteSpace(BucketName);
 
         /// <summary>
         /// 	Gets or sets the key under which the Amazon S3 object is to be stored.
@@ -52,14 +51,14 @@ namespace Allos.Amazon.Sdk.S3.Transfer
         /// 	The key under which the Amazon S3 object is to be stored. 
         /// </value>
         [MemberNotNullWhen(true, nameof(Key))]
-        public string? Key { get; set; }
+        public virtual string? Key { get; set; }
 
         /// <summary>
         /// Checks if Key property is set.
         /// </summary>
         /// <returns>true if Key property is set.</returns>
         [MemberNotNullWhen(true, nameof(Key))]
-        internal bool IsSetKey() => !string.IsNullOrWhiteSpace(Key);
+        internal virtual bool IsSetKey() => !string.IsNullOrWhiteSpace(Key);
 
         /// <summary>
         /// 	Gets or sets the canned access control list (ACL)
@@ -72,20 +71,20 @@ namespace Allos.Amazon.Sdk.S3.Transfer
         /// 	The canned access control list (ACL)
         /// 	for the uploaded object.
         /// </value>
-        public S3CannedACL? CannedAcl { get; set; }
+        public virtual S3CannedACL? CannedAcl { get; set; }
 
         /// <summary>
         /// Checks if the CannedACL property is set.
         /// </summary>
         /// <returns>true if there is the CannedACL property is set.</returns>
         [MemberNotNullWhen(true, nameof(CannedAcl))]
-        internal bool IsSetCannedAcl() => (CannedAcl != null);
+        internal virtual bool IsSetCannedAcl() => (CannedAcl != null);
 
         /// <summary>
         /// 	Removes the cannned access control list (ACL)
         /// 	for the uploaded object.
         /// </summary>
-        public void RemoveCannedAcl()
+        public virtual void RemoveCannedAcl()
         {
             CannedAcl = null;
         }
@@ -96,14 +95,14 @@ namespace Allos.Amazon.Sdk.S3.Transfer
         /// <value>
         /// 	The content type of the uploaded Amazon S3 object.
         /// </value>
-        public string? ContentType { get; set; }
+        public virtual string? ContentType { get; set; }
 
         /// <summary>
         /// Checks if ContentType property is set.
         /// </summary>
         /// <returns>true if ContentType property is set.</returns>
         [MemberNotNullWhen(true, nameof(ContentType))]
-        internal bool IsSetContentType() => !string.IsNullOrWhiteSpace(ContentType);
+        internal virtual bool IsSetContentType() => !string.IsNullOrWhiteSpace(ContentType);
 
         /// <summary>
         /// 	Gets or sets the storage class for the uploaded Amazon S3 object.
@@ -114,34 +113,34 @@ namespace Allos.Amazon.Sdk.S3.Transfer
         /// <value>
         /// 	The storage class for the uploaded Amazon S3 object.
         /// </value>
-        public S3StorageClass? StorageClass { get; set; }
+        public virtual S3StorageClass? StorageClass { get; set; }
 
         /// <summary>
         /// Gets and sets the ServerSideEncryptionMethod property.
         /// Specifies the encryption used on the server to
         /// store the content.
         /// </summary>
-        public ServerSideEncryptionMethod? ServerSideEncryptionMethod { get; set; }
+        public virtual ServerSideEncryptionMethod? ServerSideEncryptionMethod { get; set; }
 
         /// <summary>
         /// The Server-side encryption algorithm to be used with the customer provided key.
         ///  
         /// </summary>
-        public ServerSideEncryptionCustomerMethod? ServerSideEncryptionCustomerMethod { get; set; }
+        public virtual ServerSideEncryptionCustomerMethod? ServerSideEncryptionCustomerMethod { get; set; }
 
         /// <summary>
         /// The id of the AWS Key Management Service key that Amazon S3 should use to encrypt and decrypt the object.
         /// If a key id is not specified, the default key will be used for encryption and decryption.
         /// </summary>
         [AWSProperty(Sensitive=true)]
-        public string? ServerSideEncryptionKeyManagementServiceKeyId { get; set; }
+        public virtual string? ServerSideEncryptionKeyManagementServiceKeyId { get; set; }
 
         /// <summary>
         /// Checks if ServerSideEncryptionKeyManagementServiceKeyId property is set.
         /// </summary>
         /// <returns>true if ServerSideEncryptionKeyManagementServiceKeyId property is set.</returns>
         [MemberNotNullWhen(true, nameof(ServerSideEncryptionKeyManagementServiceKeyId))]
-        internal bool IsSetServerSideEncryptionKeyManagementServiceKeyId() => !string.IsNullOrWhiteSpace(ServerSideEncryptionKeyManagementServiceKeyId);
+        internal virtual bool IsSetServerSideEncryptionKeyManagementServiceKeyId() => !string.IsNullOrWhiteSpace(ServerSideEncryptionKeyManagementServiceKeyId);
 
         /// <summary>
         /// The base64-encoded encryption key for Amazon S3 to use to encrypt the object
@@ -159,22 +158,22 @@ namespace Allos.Amazon.Sdk.S3.Transfer
         /// </para>
         /// </summary>
         [AWSProperty(Sensitive=true)]
-        public string? ServerSideEncryptionCustomerProvidedKey { get; set; }
+        public virtual string? ServerSideEncryptionCustomerProvidedKey { get; set; }
 
         /// <summary>
         /// The MD5 of the customer encryption key specified in the ServerSideEncryptionCustomerProvidedKey property. The MD5 is
         /// base 64 encoded. This field is optional, the SDK will calculate the MD5 if this is not set.
         /// </summary>
-        public string? ServerSideEncryptionCustomerProvidedKeyMd5 { get; set; }
+        public virtual string? ServerSideEncryptionCustomerProvidedKeyMd5 { get; set; }
 
         /// <summary>
         /// Input stream for the request; content for the request will be read from the stream.
         /// </summary>
-        public Stream? InputStream { get; set; }
+        public virtual Stream? InputStream { get; set; }
 
         // Check to see if InputStream property is set
         [MemberNotNullWhen(true, nameof(InputStream))]
-        internal bool IsSetInputStream() => InputStream != null;
+        internal virtual bool IsSetInputStream() => InputStream != null;
 
         /// <summary>
         /// <para>
@@ -185,14 +184,14 @@ namespace Allos.Amazon.Sdk.S3.Transfer
         /// <value>
         /// 	The file path where the Amazon S3 object will be uploaded from.
         /// </value>
-        public string? FilePath { get; set; }
+        public virtual string? FilePath { get; set; }
 
         /// <summary>
         /// Checks if FilePath property is set.
         /// </summary>
         /// <returns>true if FilePath property is set.</returns>
         [MemberNotNullWhen(true, nameof(FilePath))]
-        internal bool IsSetFilePath() => !string.IsNullOrWhiteSpace(FilePath);
+        internal virtual bool IsSetFilePath() => !string.IsNullOrWhiteSpace(FilePath);
 
         /// <summary>
         /// 	Gets or sets the part size of the upload in bytes.
@@ -203,7 +202,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer
         /// <value>
         /// 	The part size of the upload.
         /// </value>
-        public ulong PartSize
+        public virtual ulong PartSize
         {
             get => _partSize.GetValueOrDefault();
             set => _partSize = value;
@@ -215,12 +214,12 @@ namespace Allos.Amazon.Sdk.S3.Transfer
         /// <returns>true if PartSize property is set.</returns>
         [MemberNotNullWhen(true, nameof(PartSize))]
         [MemberNotNullWhen(true, nameof(_partSize))]
-        internal bool IsSetPartSize() => _partSize.HasValue;
+        internal virtual bool IsSetPartSize() => _partSize.HasValue;
 
         /// <summary>
         /// The collection of headers for the request.
         /// </summary>
-        public HeadersCollection Headers
+        public virtual HeadersCollection Headers
         {
             get => _headersCollection ??= new HeadersCollection();
             internal set => _headersCollection = value;
@@ -229,7 +228,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer
         /// <summary>
         /// The collection of metadata for the request.
         /// </summary>
-        public MetadataCollection Metadata
+        public virtual MetadataCollection Metadata
         {
             get => _metadataCollection ??= new MetadataCollection();
             internal set => _metadataCollection = value;
@@ -238,7 +237,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer
         /// <summary>
         /// The tag-set for the object.
         /// </summary>
-        public List<Tag>? TagSet { get; set; }
+        public virtual List<Tag>? TagSet { get; set; }
 
         /// <summary>
         /// The event for UploadProgressEvent notifications. All
@@ -282,7 +281,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer
         /// Gets the length of the content by either checking the FileInfo.Length property or the Stream.Length property.
         /// </summary>
         /// <value>The length of the content.</value>
-        internal ulong? ContentLength
+        internal virtual ulong? ContentLength
         {
             get
             {
@@ -324,13 +323,13 @@ namespace Allos.Amazon.Sdk.S3.Transfer
         /// 	automatically closed when all of the content is read from the stream.
         /// 	A value of <c>false</c> if otherwise. 		
         /// </value>
-        public bool AutoCloseStream { get; set; } = true;
+        public virtual bool AutoCloseStream { get; set; } = true;
 
         /// <summary>
         /// If this value is set to true then the stream's position will be reset to the start before being read for upload.
         /// Default: true.
         /// </summary>
-        public bool AutoResetStreamPosition { get; set; } = true;
+        public virtual bool AutoResetStreamPosition { get; set; } = true;
 
         /// <summary>
         /// 	Sets whether the stream used with this request is
@@ -346,7 +345,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer
         /// <returns>
         /// 	This object instance, enabling additional method calls to be chained together.
         /// </returns>
-        public UploadRequest WithAutoCloseStream(bool autoCloseStream)
+        public virtual UploadRequest WithAutoCloseStream(bool autoCloseStream)
         {
             AutoCloseStream = autoCloseStream;
             return this;
@@ -366,7 +365,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer
         /// possibility of data corruption is completely dependent on HTTPS being the only remaining 
         /// source of data integrity verification.</para>
         /// </summary>
-        public bool? DisableDefaultChecksumValidation { get; set; }
+        public virtual bool? DisableDefaultChecksumValidation { get; set; }
 
         /// <summary>      
         /// <para><b>WARNING: Setting DisablePayloadSigning to true disables the SigV4 payload signing 
@@ -385,12 +384,12 @@ namespace Allos.Amazon.Sdk.S3.Transfer
         /// possibility of data corruption is completely dependent on HTTPS being the only remaining 
         /// source of data integrity verification.</para>
         /// </summary>
-        public bool? DisablePayloadSigning { get; set; }
+        public virtual bool? DisablePayloadSigning { get; set; }
 
         /// <summary>
         /// Gets or sets whether the Content-MD5 header should be calculated for upload.
         /// </summary>
-        public bool CalculateContentMd5Header { get; set; }
+        public virtual bool CalculateContentMd5Header { get; set; }
 
         /// <summary>
         /// Gets and sets the property ObjectLockLegalHoldStatus. 
@@ -400,7 +399,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer
         /// Lock</a>.
         /// </para>
         /// </summary>
-        public ObjectLockLegalHoldStatus? ObjectLockLegalHoldStatus { get; set; }
+        public virtual ObjectLockLegalHoldStatus? ObjectLockLegalHoldStatus { get; set; }
 
         /// <summary>
         /// Gets and sets the property ObjectLockMode. 
@@ -408,7 +407,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer
         /// The Object Lock mode that you want to apply to this object.
         /// </para>
         /// </summary>
-        public ObjectLockMode? ObjectLockMode { get; set; }
+        public virtual ObjectLockMode? ObjectLockMode { get; set; }
 
         /// <summary>
         /// Gets and sets the property ObjectLockRetainUntilDate. 
@@ -416,7 +415,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer
         /// The date and time when you want this object's Object Lock to expire.
         /// </para>
         /// </summary>
-        public DateTimeOffset ObjectLockRetainUntilDate
+        public virtual DateTimeOffset ObjectLockRetainUntilDate
         {
             get => _objectLockRetainUntilDate.GetValueOrDefault();
             set => _objectLockRetainUntilDate = value;
@@ -425,7 +424,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer
         // Check to see if ObjectLockRetainUntilDate property is set
         [MemberNotNullWhen(true, nameof(ObjectLockRetainUntilDate))]
         [MemberNotNullWhen(true, nameof(_objectLockRetainUntilDate))]
-        internal bool IsSetObjectLockRetainUntilDate() => _objectLockRetainUntilDate.HasValue;
+        internal virtual bool IsSetObjectLockRetainUntilDate() => _objectLockRetainUntilDate.HasValue;
 
         /// <summary>
         /// Gets and sets the property ChecksumAlgorithm. 
@@ -440,7 +439,19 @@ namespace Allos.Amazon.Sdk.S3.Transfer
         /// If you provide an individual checksum, Amazon S3 will ignore any provided <code>ChecksumAlgorithm</code>.
         /// </para>
         /// </summary>
-        public ChecksumAlgorithm? ChecksumAlgorithm { get; set; }
+        public virtual ChecksumAlgorithm? ChecksumAlgorithm { get; set; }
+        
+        internal virtual bool IsMultipartUpload(IAsyncTransferConfig config)
+        {
+            if (ContentLength.HasValue)
+            {
+                return ContentLength.Value >= config.MinSizeBeforePartUpload;
+            }
+            //If the length is null that means when we tried to get the ContentLength, we caught a NotSupportedException,
+            //or it means the length is unknown. In this case we do a MultiPartUpload. If we are uploading
+            //a nonseekable stream and the ContentLength is more than zero, we also do a multipart upload.
+            return true;
+        }
         
         internal virtual string DebuggerDisplay => ToString() ?? GetType().Name;
     }

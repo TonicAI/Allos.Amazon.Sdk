@@ -23,10 +23,8 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
     [AmazonSdkFork("sdk/src/Services/S3/Custom/Transfer/Internal/_async/MultipartUploadCommand.async.cs", "Amazon.S3.Transfer.Internal")]
     internal class MultipartUploadCommand : BaseCommand
     {
-        protected readonly IAmazonS3 _s3Client;
         protected readonly long _partSize;
         protected uint _totalNumberOfParts;
-        protected readonly AsyncTransferConfig _config;
         protected readonly UploadRequest _fileTransporterRequest;
         protected readonly ConcurrentDictionary<uint, Stream> _inputStreams;
 
@@ -39,15 +37,14 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
         /// <summary>
         /// Initializes a new instance of the <see cref="MultipartUploadCommand"/> class.
         /// </summary>
-        /// <param name="s3Client">The s3 client.</param>
-        /// <param name="config">The config object that has the number of threads to use.</param>
+        /// <param name="asyncTransferUtility">The <see cref="IAsyncTransferUtility"/> that created this command.</param>
         /// <param name="fileTransporterRequest">The file transporter request.</param>
         /// <param name="logger">Logger</param>
         internal MultipartUploadCommand(
-            IAmazonS3 s3Client, 
-            AsyncTransferConfig config, 
+            IAsyncTransferUtility asyncTransferUtility,
             UploadRequest fileTransporterRequest,
             ILogger logger)
+            : base(asyncTransferUtility, fileTransporterRequest)
         {
             if (fileTransporterRequest.IsSetFilePath())
             {
@@ -67,8 +64,6 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
             _uploadResponses = new List<UploadPartResponse>();
             _partsToUpload = new Queue<UploadPartRequest>();
             _inputStreams = new ConcurrentDictionary<uint, Stream>();
-            _config = config;
-            _s3Client = s3Client;
             _fileTransporterRequest = fileTransporterRequest;
             _contentLength = _fileTransporterRequest.ContentLength;
 
@@ -101,7 +96,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
                 ArgumentNullException.ThrowIfNull(_fileTransporterRequest.ContentLength);
                 
                 var initRequest = ConstructInitiateMultipartUploadRequest();
-                var initResponse = await _s3Client.InitiateMultipartUploadAsync(initRequest, cancellationToken)
+                var initResponse = await S3Client.InitiateMultipartUploadAsync(initRequest, cancellationToken)
                     .ConfigureAwait(continueOnCapturedContext: false);
                 
                 Logger.Debug("Initiated upload: {UploadId}", 
@@ -166,7 +161,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
                     Logger.Debug("Beginning completing multipart `{UploadId}`", 
                         initResponse.UploadId);
                     var compRequest = ConstructCompleteMultipartUploadRequest(initResponse);
-                    await _s3Client.CompleteMultipartUploadAsync(compRequest, cancellationToken)
+                    await S3Client.CompleteMultipartUploadAsync(compRequest, cancellationToken)
                         .ConfigureAwait(continueOnCapturedContext: false);
                     Logger.Debug("Done completing multipart `{UploadId}`", 
                         initResponse.UploadId);
@@ -177,7 +172,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
                     Logger.Error(e, "Exception while uploading `{UploadId}`", 
                         initResponse.UploadId);
                     // Can't do async invocation in the catch block, doing cleanup synchronously.
-                    Cleanup(initResponse.UploadId, pendingUploadPartTasks);
+                    await Cleanup(initResponse.UploadId, pendingUploadPartTasks).ConfigureAwait(false);
                     throw;
                 }
                 finally
@@ -204,7 +199,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
         {
             try
             {
-                return await _s3Client.UploadPartAsync(uploadRequest, internalCts.Token)
+                return await S3Client.UploadPartAsync(uploadRequest, internalCts.Token)
                     .ConfigureAwait(continueOnCapturedContext: false);
             }
             catch (Exception exception)
@@ -224,18 +219,20 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
             }
         }       
 
-        protected virtual void Cleanup(string uploadId, List<Task<UploadPartResponse>> tasks)
+        protected virtual async Task Cleanup(string uploadId, List<Task<UploadPartResponse>> tasks)
         {
-            WaitForAllTasks(tasks);
-            AbortMultipartUpload(uploadId);
+            await WaitForAllTasksAsync(tasks).ConfigureAwait(false);;
+            await AbortMultipartUploadAsync(uploadId).ConfigureAwait(false);
         }
 
-        protected virtual void WaitForAllTasks(List<Task<UploadPartResponse>> tasks)
+        protected virtual async Task WaitForAllTasksAsync(List<Task<UploadPartResponse>> tasks)
         {
             try
             {
                 // Make sure all tasks complete (to completion/faulted/cancelled).
-                Task.WaitAll(tasks.Cast<Task>().ToArray(), _config.MultipartUploadFinalizeTimeout.ToInt32()); 
+                await Task.WhenAll(tasks.Cast<Task>())
+                    .WaitAsync(TimeSpan.FromMilliseconds(Config.MultipartUploadFinalizeTimeout))
+                    .ConfigureAwait(false);
             }
             catch(Exception exception)
             {
@@ -244,34 +241,19 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
                     "A timeout occured while waiting for all upload part request to complete as part of aborting the multipart upload : {ErrorMessage}",
                     exception.Message);
             }
-        }
-        
-        protected virtual void WaitForAllTasks(List<Task> tasks)
-        {
-            try
-            {
-                // Make sure all tasks complete (to completion/faulted/cancelled).
-                Task.WaitAll(tasks.Cast<Task>().ToArray(), _config.MultipartUploadFinalizeTimeout.ToInt32()); 
-            }
-            catch(Exception exception)
-            {
-                Logger.Information(
-                    exception,
-                    "A timeout occured while waiting for all upload part request to complete as part of aborting the multipart upload : {ErrorMessage}",
-                    exception.Message);
-            }
+            
         }
 
-        protected virtual void AbortMultipartUpload(string uploadId)
+        protected virtual async Task AbortMultipartUploadAsync(string uploadId)
         {
             try
             {
-                _s3Client.AbortMultipartUploadAsync(new AbortMultipartUploadRequest
+                await S3Client.AbortMultipartUploadAsync(new AbortMultipartUploadRequest
                 {
                     BucketName = _fileTransporterRequest.BucketName,
                     Key = _fileTransporterRequest.Key,
                     UploadId = uploadId
-                }).Wait();
+                });
             }
             catch (Exception e)
             {
@@ -286,7 +268,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
         {
             ArgumentNullException.ThrowIfNull(request.InputStream);
             
-            int readBufferSize = _s3Client.Config.BufferSize;
+            int readBufferSize = S3Client.Config.BufferSize;
 
             RequestEventHandler requestEventHandler = (_, args) =>
             {
@@ -299,7 +281,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
             };
 
             var initiateRequest = ConstructInitiateMultipartUploadRequest(requestEventHandler);
-            var initiateResponse = await _s3Client.InitiateMultipartUploadAsync(initiateRequest, cancellationToken)
+            var initiateResponse = await S3Client.InitiateMultipartUploadAsync(initiateRequest, cancellationToken)
                 .ConfigureAwait(false);
 
             try
@@ -355,7 +337,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
                                     isLastPart, 
                                     initiateResponse);
 
-                                var partResponse = await _s3Client.UploadPartAsync(uploadPartRequest, cancellationToken).ConfigureAwait(false);
+                                var partResponse = await S3Client.UploadPartAsync(uploadPartRequest, cancellationToken).ConfigureAwait(false);
                                 Logger.Debug(
                                     "Uploaded part {PartNumber} (PartSize={PartSize} UploadId={UploadId} IsLastPart={IsLastPart})", 
                                     partNumber, 
@@ -384,7 +366,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
                         initiateResponse, 
                         true,
                         requestEventHandler);
-                    await _s3Client.CompleteMultipartUploadAsync(compRequest, cancellationToken).ConfigureAwait(false);
+                    await S3Client.CompleteMultipartUploadAsync(compRequest, cancellationToken).ConfigureAwait(false);
                     Logger.Debug("Completed multi part upload (PartCount={PartCount}, UploadId={UploadId})",
                         uploadPartResponses.Count, 
                         initiateResponse.UploadId);
@@ -392,7 +374,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
             }
             catch (Exception ex)
             {
-                await _s3Client.AbortMultipartUploadAsync(new AbortMultipartUploadRequest
+                await S3Client.AbortMultipartUploadAsync(new AbortMultipartUploadRequest
                 {
                     BucketName = request.BucketName,
                     Key = request.Key,
@@ -445,9 +427,9 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
         {
             uint threadCount;
             if (_fileTransporterRequest.IsSetFilePath()
-                && !(_s3Client is IAmazonS3Encryption))
+                && !(S3Client is IAmazonS3Encryption))
             {
-                threadCount = _config.ConcurrentServiceRequests;
+                threadCount = Config.ConcurrentServiceRequests;
             }
             else
             {
@@ -547,14 +529,16 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
             uploadPartRequest.PartSize = _partSize;
 
             if ((filePosition + _partSize >= contentLengthLong)
-                && _s3Client is IAmazonS3Encryption)
+                && S3Client is IAmazonS3Encryption)
             {
                 uploadPartRequest.IsLastPart = true;
                 uploadPartRequest.PartSize = 0;
             }
 
             var progressHandler = new ProgressHandler(
-                _s3Client.Config.ProgressUpdateInterval.ToUInt64(),
+                Config,
+                this,
+                S3Client.Config.ProgressUpdateInterval.ToUInt64(),
                 _contentLength,
                 partFileFauxPath,
                 UploadPartProgressEventCallback,
@@ -634,7 +618,9 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
             uploadPartRequest.IsLastPart = isLastPart;
 
             var progressHandler = new ProgressHandler(
-                _s3Client.Config.ProgressUpdateInterval.ToUInt64(),
+                Config,
+                this,
+                S3Client.Config.ProgressUpdateInterval.ToUInt64(),
                 _contentLength,
                 uploadPartRequest.FilePath, 
                 UploadPartProgressEventCallback,
@@ -694,7 +680,8 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
                 ref _totalTransferredBytes, 
                 e.IncrementTransferred - e.CompensationForRetry);
 
-            var progressArgs = IUploadProgressArgsFactory.Instance.Create(
+            var progressArgs = Config.UploadProgressArgsFactory.Create(
+                this,
                 e.IncrementTransferred, 
                 transferredBytes, 
                 _contentLength,
@@ -710,6 +697,8 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
     [SuppressMessage("ReSharper", "ClassWithVirtualMembersNeverInherited.Global")]
     internal class ProgressHandler
     {
+        protected IAsyncTransferConfig _config;
+        protected ITransferCommand _command;
         protected UploadProgressArgs? _lastProgressArgs;
         protected readonly EventHandler<UploadProgressArgs> _callback;
         protected readonly ulong? _contentLength;
@@ -720,6 +709,8 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
         protected readonly ILogger _logger;
 
         public ProgressHandler(
+            IAsyncTransferConfig config,
+            ITransferCommand command,
             ulong progressUpdateInterval,
             ulong? contentLength,
             string? filePath, 
@@ -728,7 +719,9 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
             )
         {
             ArgumentNullException.ThrowIfNull(callback);
-            
+
+            _config = config;
+            _command = command;
             _progressUpdateInterval = progressUpdateInterval;
             _contentLength = contentLength;
             _filePath = filePath;
@@ -749,7 +742,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
                 }
             }
 
-            var progressArgs = IUploadProgressArgsFactory.Instance.Create(e, compensationForRetry);
+            var progressArgs = _config.UploadProgressArgsFactory.Create(e, compensationForRetry);
             
             _callback(this, progressArgs);
 
@@ -768,7 +761,8 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
                 if (_totalIncrementTransferred >= _progressUpdateInterval ||
                     (_contentLength.HasValue && _totalBytesRead == _contentLength.Value))
                 {
-                    var uploadProgressArgs = IUploadProgressArgsFactory.Instance.Create(
+                    var uploadProgressArgs = _config.UploadProgressArgsFactory.Create(
+                        _command,
                         _totalIncrementTransferred,
                         _totalBytesRead,
                         _contentLength,

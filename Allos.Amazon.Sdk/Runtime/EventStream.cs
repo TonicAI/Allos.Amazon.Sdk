@@ -6,6 +6,9 @@ using ILogger = Serilog.ILogger;
 
 namespace Allos.Amazon.Sdk
 {
+    /// <summary>
+    /// An implementation of <see cref="WrapperStream"/> that provides an <see cref="OnRead"/> event for each read operation.
+    /// </summary>
     [SuppressMessage("ReSharper", "RedundantExtendsListEntry")]
     [SuppressMessage("ReSharper", "EventNeverSubscribedTo.Global")]
     [SuppressMessage("ReSharper", "UnusedType.Global")]
@@ -188,7 +191,14 @@ namespace Allos.Amazon.Sdk
         
         protected override void Dispose(bool disposing)
         {
+            if (disposing)
+            {
+                OnRead = null;
+            }
 
+            //`base.Dispose(disposing)` will always do `BaseStream.Close()` which is not what we want,
+            //instead we will call `Close()` directly
+            Close();
         }
     }
 }

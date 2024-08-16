@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using Allos.Amazon.Sdk.Fork;
 using Amazon.S3;
+using Serilog;
 
 namespace Allos.Amazon.Sdk.S3.Transfer
 {
@@ -9,14 +10,14 @@ namespace Allos.Amazon.Sdk.S3.Transfer
     /// 	Provides a high level utility for managing transfers to and from Amazon S3.
     /// 	</para>
     /// 	<para>
-    /// 	<see cref="AsyncTransferUtility"/> provides a simple API for 
+    /// 	<see cref="IAsyncTransferUtility"/> provides a simple API for 
     /// 	uploading content to and downloading content
     /// 	from Amazon S3. It makes extensive use of Amazon S3 multipart uploads to
     /// 	achieve enhanced throughput, performance, and reliability. 
     /// 	</para>
     /// 	<para>
     /// 	When uploading large files by specifying file paths instead of a stream, 
-    /// 	<see cref="AsyncTransferUtility"/> uses multiple threads to upload
+    /// 	<see cref="IAsyncTransferUtility"/> uses multiple threads to upload
     /// 	multiple parts of a single upload at once. When dealing with large content
     /// 	sizes and high bandwidth, this can increase throughput significantly.
     /// 	</para>
@@ -169,7 +170,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer
         /// <summary>
         /// 	Downloads the content from Amazon S3 and writes it to the specified file.    
         /// 	If the key is not specified in the request parameter,
-        /// 	the file name will used as the key name.
+        /// 	the file name will use as the key name.
         /// </summary>
         /// <param name="request">
         /// 	Contains all the parameters required to download an Amazon S3 object.
@@ -361,5 +362,13 @@ namespace Allos.Amazon.Sdk.S3.Transfer
         /// 	The Amazon S3 client used for making calls into Amazon S3.
         /// </value>
         IAmazonS3 S3Client { get; }
+        
+        /// <summary>
+        /// Gets the configuration for the current instance of <see cref="AsyncTransferUtility"/>.
+        /// </summary>
+        IAsyncTransferConfig Config { get; }
+        
+        /// <inheritdoc cref="ILogger"/>
+        ILogger Logger { get; }
     }
 }

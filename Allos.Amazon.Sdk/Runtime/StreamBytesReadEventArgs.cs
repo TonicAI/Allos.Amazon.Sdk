@@ -8,8 +8,11 @@ namespace Allos.Amazon.Sdk;
 public partial class EventStream : WrapperStream
 {
     /// <summary>
-    /// Adapted from internal EventStream.ReadProgress delegate
+    /// Event arguments for <see cref="OnRead"/>
     /// </summary>
+    /// <remarks>
+    /// Adapted from internal EventStream.ReadProgress delegate
+    /// </remarks>
     [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
     [AmazonSdkFork("sdk/src/Core/Amazon.Runtime/Internal/Util/EventStream.cs", "Amazon.Runtime.Internal.Util")]
     public sealed class StreamBytesReadEventArgs : EventArgs

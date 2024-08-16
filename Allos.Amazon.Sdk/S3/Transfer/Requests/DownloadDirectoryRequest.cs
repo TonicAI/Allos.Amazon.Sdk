@@ -16,7 +16,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer
     [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
     [DebuggerDisplay("{DebuggerDisplay}")]
     [AmazonSdkFork("sdk/src/Services/S3/Custom/Transfer/TransferUtilityDownloadDirectoryRequest.cs", "Amazon.S3.Transfer")]
-    public class DownloadDirectoryRequest
+    public class DownloadDirectoryRequest : BaseRequest
     {
         protected DateTimeOffset? _modifiedSinceDateUtc;
         protected DateTimeOffset? _unmodifiedSinceDateUtc;

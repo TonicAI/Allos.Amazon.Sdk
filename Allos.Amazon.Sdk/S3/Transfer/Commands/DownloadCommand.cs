@@ -4,7 +4,6 @@ using System.Runtime.ExceptionServices;
 using Allos.Amazon.Sdk.Fork;
 using Allos.Amazon.Sdk.S3.Util;
 using Amazon.Runtime;
-using Amazon.S3;
 using Amazon.S3.Model;
 using Amazon.Util;
 
@@ -32,12 +31,11 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
         };
 #endif
 
-        protected readonly IAmazonS3 _s3Client;
         protected readonly DownloadRequest _request;
 
-        internal DownloadCommand(IAmazonS3 s3Client, DownloadRequest request)
+        internal DownloadCommand(IAsyncTransferUtility asyncTransferUtility, DownloadRequest request)
+            : base(asyncTransferUtility, request)
         {
-            _s3Client = s3Client;
             _request = request;
         }
         
@@ -59,7 +57,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
             //\
             GetObjectRequest getRequest = ConvertToGetObjectRequest(_request);
 
-            var maxRetries = _s3Client.Config.MaxErrorRetry.ToUInt32();
+            var maxRetries = S3Client.Config.MaxErrorRetry.ToUInt32();
             uint retries = 0;
             bool shouldRetry;
             string? mostRecentETag = null;
@@ -75,7 +73,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
 
                 try
                 {
-                    using (var response = await _s3Client.GetObjectAsync(getRequest, cancellationToken)
+                    using (var response = await S3Client.GetObjectAsync(getRequest, cancellationToken)
                         .ConfigureAwait(continueOnCapturedContext: false))
                     {
                         if (!string.IsNullOrWhiteSpace(mostRecentETag) && !string.Equals(mostRecentETag, response.ETag))
