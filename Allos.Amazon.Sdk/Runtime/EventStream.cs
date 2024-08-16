@@ -191,7 +191,14 @@ namespace Allos.Amazon.Sdk
         
         protected override void Dispose(bool disposing)
         {
+            if (disposing)
+            {
+                OnRead = null;
+            }
 
+            //`base.Dispose(disposing)` will always do `BaseStream.Close()` which is not what we want,
+            //instead we will call `Close()` directly
+            Close();
         }
     }
 }

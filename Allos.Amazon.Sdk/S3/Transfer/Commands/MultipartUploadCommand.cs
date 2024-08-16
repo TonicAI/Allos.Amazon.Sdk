@@ -172,7 +172,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
                     Logger.Error(e, "Exception while uploading `{UploadId}`", 
                         initResponse.UploadId);
                     // Can't do async invocation in the catch block, doing cleanup synchronously.
-                    Cleanup(initResponse.UploadId, pendingUploadPartTasks);
+                    await Cleanup(initResponse.UploadId, pendingUploadPartTasks).ConfigureAwait(false);
                     throw;
                 }
                 finally
@@ -219,18 +219,20 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
             }
         }       
 
-        protected virtual void Cleanup(string uploadId, List<Task<UploadPartResponse>> tasks)
+        protected virtual async Task Cleanup(string uploadId, List<Task<UploadPartResponse>> tasks)
         {
-            WaitForAllTasks(tasks);
-            AbortMultipartUpload(uploadId);
+            await WaitForAllTasksAsync(tasks).ConfigureAwait(false);;
+            await AbortMultipartUploadAsync(uploadId).ConfigureAwait(false);
         }
 
-        protected virtual void WaitForAllTasks(List<Task<UploadPartResponse>> tasks)
+        protected virtual async Task WaitForAllTasksAsync(List<Task<UploadPartResponse>> tasks)
         {
             try
             {
                 // Make sure all tasks complete (to completion/faulted/cancelled).
-                Task.WaitAll(tasks.Cast<Task>().ToArray(), Config.MultipartUploadFinalizeTimeout.ToInt32()); 
+                await Task.WhenAll(tasks.Cast<Task>())
+                    .WaitAsync(TimeSpan.FromMilliseconds(Config.MultipartUploadFinalizeTimeout))
+                    .ConfigureAwait(false);
             }
             catch(Exception exception)
             {
@@ -239,34 +241,19 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
                     "A timeout occured while waiting for all upload part request to complete as part of aborting the multipart upload : {ErrorMessage}",
                     exception.Message);
             }
-        }
-        
-        protected virtual void WaitForAllTasks(List<Task> tasks)
-        {
-            try
-            {
-                // Make sure all tasks complete (to completion/faulted/cancelled).
-                Task.WaitAll(tasks.Cast<Task>().ToArray(), Config.MultipartUploadFinalizeTimeout.ToInt32()); 
-            }
-            catch(Exception exception)
-            {
-                Logger.Information(
-                    exception,
-                    "A timeout occured while waiting for all upload part request to complete as part of aborting the multipart upload : {ErrorMessage}",
-                    exception.Message);
-            }
+            
         }
 
-        protected virtual void AbortMultipartUpload(string uploadId)
+        protected virtual async Task AbortMultipartUploadAsync(string uploadId)
         {
             try
             {
-                S3Client.AbortMultipartUploadAsync(new AbortMultipartUploadRequest
+                await S3Client.AbortMultipartUploadAsync(new AbortMultipartUploadRequest
                 {
                     BucketName = _fileTransporterRequest.BucketName,
                     Key = _fileTransporterRequest.Key,
                     UploadId = uploadId
-                }).Wait();
+                });
             }
             catch (Exception e)
             {
