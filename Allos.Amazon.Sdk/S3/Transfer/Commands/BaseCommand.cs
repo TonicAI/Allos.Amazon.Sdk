@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using Allos.Amazon.Sdk.Fork;
 using Amazon.Runtime;
 using Amazon.Runtime.Internal;
+using Amazon.S3;
 using Amazon.S3.Model;
 using Amazon.Util;
 using Serilog;
@@ -10,14 +11,30 @@ using Serilog;
 namespace Allos.Amazon.Sdk.S3.Transfer.Internal
 {
     [SuppressMessage("ReSharper", "VirtualMemberNeverOverridden.Global")]
+    [SuppressMessage("ReSharper", "InconsistentNaming")]
+    [SuppressMessage("ReSharper", "MemberCanBePrivate.Global")]
     [DebuggerDisplay("{DebuggerDisplay}")]
     [AmazonSdkFork("sdk/src/Services/S3/Custom/Transfer/Internal/BaseCommand.cs", "Amazon.S3.Transfer.Internal")]
     [AmazonSdkFork("sdk/src/Services/S3/Custom/Transfer/Internal/_async/BaseCommand.async.cs", "Amazon.S3.Transfer.Internal")]
-    internal abstract class BaseCommand
+    internal abstract class BaseCommand : ITransferCommand
     {
         private static readonly Lazy<ILogger> _logger =
             new Lazy<ILogger>(() => TonicLogger.ForContext(typeof(AsyncTransferUtility)));
         protected virtual ILogger Logger => _logger.Value;
+
+        public IAsyncTransferUtility Utility { get; }
+        public IAmazonS3 S3Client => Utility.S3Client;
+        public IAsyncTransferConfig Config => Utility.Config;
+       
+        public ITransferRequest Request { get; }
+        
+        public IExtensionData ExtensionData => Request.ExtensionData;
+
+        protected BaseCommand(IAsyncTransferUtility asyncTransferUtility, ITransferRequest request)
+        {
+            Utility = asyncTransferUtility;
+            Request = request;
+        }
         
         public abstract Task ExecuteAsync(CancellationToken cancellationToken);
 

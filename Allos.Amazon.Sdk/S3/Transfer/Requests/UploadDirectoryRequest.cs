@@ -22,7 +22,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
     [DebuggerDisplay("{DebuggerDisplay}")]
     [AmazonSdkFork("sdk/src/Services/S3/Custom/Transfer/TransferUtilityUploadDirectoryRequest.cs", "Amazon.S3.Transfer")]
-    public class UploadDirectoryRequest : BaseUploadRequest
+    public class UploadDirectoryRequest : BaseRequest
     {
         protected string _searchPattern = "*";
         protected MetadataCollection? _metadataCollection;

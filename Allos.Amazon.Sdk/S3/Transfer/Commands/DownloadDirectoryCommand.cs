@@ -18,9 +18,6 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
     [AmazonSdkFork("sdk/src/Services/S3/Custom/Transfer/Internal/_bcl45+netstandard/DownloadDirectoryCommand.cs", "Amazon.S3.Transfer.Internal")]
     internal class DownloadDirectoryCommand : BaseCommand
     {
-        protected readonly AsyncTransferConfig _config;
-        
-        protected readonly IAmazonS3 _s3Client;
         protected readonly DownloadDirectoryRequest _request;
         protected readonly bool _skipEncryptionInstructionFiles;
         protected uint _totalNumberOfFilesToDownload;
@@ -29,25 +26,23 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
         protected ulong _transferredBytes;
         protected string? _currentFile;
 
-        internal DownloadDirectoryCommand(IAmazonS3 s3Client, DownloadDirectoryRequest request)
+        internal DownloadDirectoryCommand(IAsyncTransferUtility asyncTransferUtility, DownloadDirectoryRequest request)
+            : base(asyncTransferUtility, request)
         {
-            ArgumentNullException.ThrowIfNull(s3Client);
+            ArgumentNullException.ThrowIfNull(asyncTransferUtility.S3Client);
 
-            _s3Client = s3Client;
             _request = request;
-            _skipEncryptionInstructionFiles = s3Client is IAmazonS3Encryption;
-            _config = new AsyncTransferConfig();
+            _skipEncryptionInstructionFiles = asyncTransferUtility.S3Client is IAmazonS3Encryption;
         }
         
         public bool DownloadFilesConcurrently { get; set; }
 
         internal DownloadDirectoryCommand(
-            IAmazonS3 s3Client, 
+            AsyncTransferUtility asyncTransferUtility, 
             DownloadDirectoryRequest request, 
             AsyncTransferConfig config)
-            : this(s3Client, request)
+            : this(asyncTransferUtility, request)
         {
-            _config = config;
         }
 
         public override async Task ExecuteAsync(CancellationToken cancellationToken)
@@ -100,7 +95,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
             try
             {
                 asyncThrottler = DownloadFilesConcurrently ?
-                    new SemaphoreSlim(_config.ConcurrentServiceRequests.ToInt32()) :
+                    new SemaphoreSlim(Config.ConcurrentServiceRequests.ToInt32()) :
                     new SemaphoreSlim(1);
 
                 internalCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -136,7 +131,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
                     _currentFile = s3O.Key.Substring(prefixLength);
 
                     var downloadRequest = ConstructTransferUtilityDownloadRequest(s3O, prefixLength);
-                    var command = new DownloadCommand(_s3Client, downloadRequest);
+                    var command = new DownloadCommand(Utility, downloadRequest);
 
                     var task = ExecuteCommandAsync(command, internalCts, asyncThrottler);
                     pendingTasks.Add(task);
@@ -158,7 +153,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
             List<S3Object> objs = new List<S3Object>();
             do
             {
-                ListObjectsResponse listResponse = await _s3Client.ListObjectsAsync(listRequest, cancellationToken)
+                ListObjectsResponse listResponse = await S3Client.ListObjectsAsync(listRequest, cancellationToken)
                     .ConfigureAwait(continueOnCapturedContext: false);
 
                 if (listResponse.S3Objects != null)
@@ -182,7 +177,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
             List<S3Object> objs = new List<S3Object>();
             do
             {
-                ListObjectsV2Response listResponse = await _s3Client.ListObjectsV2Async(listRequestV2, cancellationToken)
+                ListObjectsV2Response listResponse = await S3Client.ListObjectsV2Async(listRequestV2, cancellationToken)
                     .ConfigureAwait(continueOnCapturedContext: false);
 
                 if (listResponse.S3Objects != null)

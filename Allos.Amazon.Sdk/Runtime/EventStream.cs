@@ -6,6 +6,9 @@ using ILogger = Serilog.ILogger;
 
 namespace Allos.Amazon.Sdk
 {
+    /// <summary>
+    /// An implementation of <see cref="WrapperStream"/> that provides an <see cref="OnRead"/> event for each read operation.
+    /// </summary>
     [SuppressMessage("ReSharper", "RedundantExtendsListEntry")]
     [SuppressMessage("ReSharper", "EventNeverSubscribedTo.Global")]
     [SuppressMessage("ReSharper", "UnusedType.Global")]

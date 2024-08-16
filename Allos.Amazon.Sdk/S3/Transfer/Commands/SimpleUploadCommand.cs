@@ -16,14 +16,13 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
     [AmazonSdkFork("sdk/src/Services/S3/Custom/Transfer/Internal/_async/SimpleUploadCommand.async.cs", "Amazon.S3.Transfer.Internal")]
     internal class SimpleUploadCommand : BaseCommand
     {
-        protected readonly IAmazonS3 _s3Client;
         protected readonly UploadRequest _fileTransporterRequest;
 
         protected FileStream? _inputStream;
 
-        internal SimpleUploadCommand(IAmazonS3 s3Client, UploadRequest fileTransporterRequest)
+        internal SimpleUploadCommand(IAsyncTransferUtility asyncTransferUtility, UploadRequest fileTransporterRequest)
+            : base(asyncTransferUtility, fileTransporterRequest)
         {
-            _s3Client = s3Client;
             _fileTransporterRequest = fileTransporterRequest;
         }
         
@@ -41,7 +40,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
                 }
 
                 putRequest = ConstructRequest();
-                await _s3Client.PutObjectAsync(putRequest, cancellationToken)
+                await S3Client.PutObjectAsync(putRequest, cancellationToken)
                     .ConfigureAwait(continueOnCapturedContext: false);
             }
             finally
@@ -107,7 +106,9 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
             ArgumentNullException.ThrowIfNull(putRequest.InputStream);
 
             var progressHandler = new ProgressHandler(
-                _s3Client.Config.ProgressUpdateInterval.ToUInt64(),
+                Config,
+                this,
+                S3Client.Config.ProgressUpdateInterval.ToUInt64(),
                 _fileTransporterRequest.ContentLength,
                 putRequest.FilePath, 
                 PutObjectProgressEventCallback,
@@ -134,7 +135,8 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
 
         protected virtual void PutObjectProgressEventCallback(object? sender, UploadProgressArgs e)
         {
-            var progressArgs = IUploadProgressArgsFactory.Instance.Create(
+            var progressArgs = Config.UploadProgressArgsFactory.Create(
+                this,
                 e.IncrementTransferred, 
                 e.TransferredBytes, 
                 e.TotalBytes, 

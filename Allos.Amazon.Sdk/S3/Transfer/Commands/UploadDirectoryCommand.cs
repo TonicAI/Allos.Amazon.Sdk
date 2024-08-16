@@ -1,11 +1,12 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using Allos.Amazon.Sdk.Fork;
 using Amazon.S3.Internal;
+using Amazon.S3.Transfer;
 
 namespace Allos.Amazon.Sdk.S3.Transfer.Internal
 {
     /// <summary>
-    /// This command files all the files that meets the criteria specified in the TransferUtilityUploadDirectoryRequest request
+    /// This command files all the files that meets the criteria specified in the <see cref="TransferUtilityUploadDirectoryRequest"/> request
     /// and uploads them.
     /// </summary>
     [SuppressMessage("ReSharper", "InconsistentNaming")]
@@ -16,20 +17,19 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
     internal class UploadDirectoryCommand : BaseCommand
     {
         protected readonly UploadDirectoryRequest _request;
-        protected readonly AsyncTransferUtility _utility;
         protected readonly AsyncTransferConfig _config;
 
         protected uint _totalNumberOfFiles;
         protected uint _numberOfFilesUploaded;
         protected ulong _totalBytes;
-        protected ulong _transferredBytes;        
+        protected ulong _transferredBytes;
 
         internal UploadDirectoryCommand(
-            AsyncTransferUtility utility, 
+            IAsyncTransferUtility asyncTransferUtility, 
             AsyncTransferConfig config, 
             UploadDirectoryRequest request)
+            : base(asyncTransferUtility, request)
         {
-            _utility = utility;
             _request = request;
             _config = config;
         }
@@ -62,7 +62,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
                     new SemaphoreSlim(_config.ConcurrentServiceRequests.ToInt32()) :
                     new SemaphoreSlim(1);
 
-                asyncThrottler = _utility.S3Client is IAmazonS3Encryption ?
+                asyncThrottler = S3Client is IAmazonS3Encryption ?
                     // If we are using AmazonS3EncryptionClient, don't set the async throttler.
                     // The loopThrottler will be used to control how many files are uploaded in parallel.
                     // Each upload (multipart) will upload parts serially.
@@ -87,7 +87,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
                         break;
                     }
                     var uploadRequest = ConstructRequest(basePath, filepath, prefix);
-                    var uploadCommand = _utility.GetUploadCommand(uploadRequest, asyncThrottler);
+                    var uploadCommand = AsyncTransferUtility.GetUploadCommand(Utility, uploadRequest, asyncThrottler);
 
                     var task = ExecuteCommandAsync(uploadCommand, internalCts, loopThrottler);
                     pendingTasks.Add(task);

@@ -9,43 +9,21 @@ using Serilog;
 
 namespace Allos.Amazon.Sdk.S3.Transfer
 {
-    /// <summary>
-    /// 	<para>
-    /// 	Provides a high level utility for managing transfers to and from Amazon S3.
-    /// 	</para>
-    /// 	<para>
-    /// 	<see cref="AsyncTransferUtility"/> provides a simple API for 
-    /// 	uploading content to and downloading content
-    /// 	from Amazon S3. It makes extensive use of Amazon S3 multipart uploads to
-    /// 	achieve enhanced throughput, performance, and reliability. 
-    /// 	</para>
-    /// 	<para>
-    /// 	When uploading large files by specifying file paths instead of a stream, 
-    /// 	<see cref="AsyncTransferUtility"/> uses multiple threads to upload
-    /// 	multiple parts of a single upload at once. When dealing with large content
-    /// 	sizes and high bandwidth, this can increase throughput significantly.
-    /// 	</para>
-    /// </summary>
-    /// <remarks>
-    /// 	<para>
-    /// 	Transfers are stored in memory. If the application is restarted, 
-    /// 	previous transfers are no longer accessible. In this situation, if necessary, 
-    /// 	you should clean up any multipart uploads that are incomplete.
-    /// 	</para>
-    /// </remarks>
+    /// <inheritdoc cref="IAsyncTransferUtility"/>
     [SuppressMessage("ReSharper", "ClassWithVirtualMembersNeverInherited.Global")]
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
     [SuppressMessage("ReSharper", "InconsistentNaming")]
     [SuppressMessage("ReSharper", "MemberCanBePrivate.Global")]
+    [SuppressMessage("ReSharper", "MemberCanBeProtected.Global")]
     [DebuggerDisplay("{DebuggerDisplay}")]
     [AmazonSdkFork("sdk/src/Services/S3/Custom/Transfer/TransferUtility.cs", "Amazon.S3.Transfer")]
     [AmazonSdkFork("sdk/src/Services/S3/Custom/Transfer/_async/TransferUtility.async.cs", "Amazon.S3.Transfer")]
     [AmazonSdkFork("sdk/src/Services/S3/Custom/Transfer/_bcl45%2Bnetstandard/TransferUtility.async.cs", "Amazon.S3.Transfer")]
     public class AsyncTransferUtility : IAsyncTransferUtility
     {
+        protected bool _isDisposed;
         protected readonly AsyncTransferConfig _config;
         protected readonly bool _shouldDispose;
-        protected bool _isDisposed;
         protected readonly HashSet<string> _blockedServiceNames = new HashSet<string>
         {
             "s3-object-lambda"
@@ -54,7 +32,9 @@ namespace Allos.Amazon.Sdk.S3.Transfer
         private static readonly Lazy<ILogger> _logger =
             new Lazy<ILogger>(() => TonicLogger.ForContext(typeof(AsyncTransferUtility)));
         [SuppressMessage("ReSharper", "UnusedMember.Local")]
-        protected virtual ILogger Logger => _logger.Value;
+        internal virtual ILogger Logger => _logger.Value;
+
+        ILogger IAsyncTransferUtility.Logger => _logger.Value; 
         
         /// <summary>
         /// 	Constructs a new <see cref="AsyncTransferUtility"/> class.
@@ -401,7 +381,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer
             }
                 
             CheckForBlockedArn(request.BucketName);
-            var command = GetUploadCommand(request, null);
+            var command = GetUploadCommand(this, request, null);
             bool isMultiPartUpload = command is MultipartUploadCommand;
 
             try
@@ -421,7 +401,8 @@ namespace Allos.Amazon.Sdk.S3.Transfer
                             cancellationToken)
                         .ConfigureAwait(false);
 
-                    var progressArgs = IUploadProgressArgsFactory.Instance.Create(
+                    var progressArgs = Config.UploadProgressArgsFactory.Create(
+                        command,
                         0,
                         metadata.ContentLength.ToUInt64(),
                         request.ContentLength,
@@ -451,32 +432,28 @@ namespace Allos.Amazon.Sdk.S3.Transfer
         /// <param name="bucketName">
         /// 	The name of the bucket containing multipart uploads.
         /// </param>
-        /// <param name="initiatedDate">
+        /// <param name="initiatedDateUtc">
         /// 	The date before which the multipart uploads were initiated.
         /// </param>
         /// <param name="cancellationToken">
         ///     A cancellation token that can be used by other objects or threads to receive notice of cancellation.
         /// </param>
         /// <returns>The task object representing the asynchronous operation.</returns>
-        public virtual Task AbortMultipartUploadsAsync(string bucketName, DateTimeOffset initiatedDate, CancellationToken cancellationToken = default)
+        public virtual Task AbortMultipartUploadsAsync(
+            string bucketName, 
+            DateTimeOffset initiatedDateUtc, 
+            CancellationToken cancellationToken = default)
         {
             CheckForBlockedArn(bucketName);
-            var command = new AbortMultipartUploadsCommand(S3Client, bucketName, initiatedDate, _config);
+            AbortMultipartUploadsRequest request = new AbortMultipartUploadsRequest
+            {
+                BucketName = bucketName,
+                InitiateDateUtc = initiatedDateUtc
+            };
+            var command = new AbortMultipartUploadsCommand(this, request);
             return command.ExecuteAsync(cancellationToken);
         }
-
-        /// <summary>
-        /// 	Downloads the content from Amazon S3 and writes it to the specified file.    
-        /// 	If the key is not specified in the request parameter,
-        /// 	the file name will used as the key name.
-        /// </summary>
-        /// <param name="request">
-        /// 	Contains all the parameters required to download an Amazon S3 object.
-        /// </param>
-        /// <param name="cancellationToken">
-        ///     A cancellation token that can be used by other objects or threads to receive notice of cancellation.
-        /// </param>
-        /// <returns>The task object representing the asynchronous operation.</returns>
+        
         public virtual Task DownloadAsync(DownloadRequest request, CancellationToken cancellationToken = default)
         {
             if (!request.IsSetBucketName())
@@ -485,25 +462,10 @@ namespace Allos.Amazon.Sdk.S3.Transfer
             }
             
             CheckForBlockedArn(request.BucketName);
-            var command = new DownloadCommand(S3Client, request);
+            var command = new DownloadCommand(this, request);
             return command.ExecuteAsync(cancellationToken);
         }
         
-        /// <summary>
-        /// 	Returns a stream from which the caller can read the content from the specified
-        /// 	Amazon S3  bucket and key.
-        /// 	The caller of this method is responsible for closing the stream.
-        /// </summary>
-        /// <param name="bucketName">
-        /// 	The name of the bucket.
-        /// </param>
-        /// <param name="key">
-        /// 	The object key.
-        /// </param>
-        /// <param name="cancellationToken">
-        ///     A cancellation token that can be used by other objects or threads to receive notice of cancellation.
-        /// </param>
-        /// <returns>The task object representing the asynchronous operation.</returns>
         public virtual Task<Stream> OpenStreamAsync(string bucketName, string key, CancellationToken cancellationToken = default)
         {
             OpenStreamRequest request = new OpenStreamRequest
@@ -513,19 +475,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer
             };
             return OpenStreamAsync(request, cancellationToken);
         }
-
-        /// <summary>
-        /// 	Returns a stream to read the contents from Amazon S3 as 
-        /// 	specified by the <see cref="OpenStreamRequest"/>.
-        /// 	The caller of this method is responsible for closing the stream.
-        /// </summary>
-        /// <param name="request">
-        /// 	Contains all the parameters required for the OpenStream operation.
-        /// </param>
-        /// <param name="cancellationToken">
-        ///     A cancellation token that can be used by other objects or threads to receive notice of cancellation.
-        /// </param>
-        /// <returns>The task object representing the asynchronous operation.</returns>
+        
         public virtual async Task<Stream> OpenStreamAsync(OpenStreamRequest request, CancellationToken cancellationToken = default)
         {
             if (!request.IsSetBucketName())
@@ -534,97 +484,36 @@ namespace Allos.Amazon.Sdk.S3.Transfer
             }
             
             CheckForBlockedArn(request.BucketName);
-            OpenStreamCommand command = new OpenStreamCommand(S3Client, request);
+            OpenStreamCommand command = new OpenStreamCommand(this, request);
             await command.ExecuteAsync(cancellationToken).ConfigureAwait(continueOnCapturedContext: false);
             
             ArgumentNullException.ThrowIfNull(command.ResponseStream);
             return command.ResponseStream;
         }
 
-        internal virtual BaseCommand GetUploadCommand(UploadRequest request, SemaphoreSlim? asyncThrottler)
+        internal static BaseCommand GetUploadCommand(IAsyncTransferUtility asyncTransferUtility, UploadRequest request, SemaphoreSlim? asyncThrottler)
         {
             Validate(request);
-            if (IsMultipartUpload(request))
+            if (request.IsMultipartUpload(asyncTransferUtility.Config))
             {
-                var command = new MultipartUploadCommand(S3Client, _config, request, Logger);
+                var command = new MultipartUploadCommand(asyncTransferUtility, request, asyncTransferUtility.Logger);
                 command.AsyncThrottler = asyncThrottler;
                 return command;
             }
             else
             {
-                var command = new SimpleUploadCommand(S3Client, request);
+                var command = new SimpleUploadCommand(asyncTransferUtility, request);
                 command.AsyncThrottler = asyncThrottler;
                 return command;
             }
         }
         
-        /// <summary>
-        /// 	Uploads files from a specified directory.  
-        /// 	The object key is derived from the file names
-        /// 	inside the directory.
-        /// 	For large uploads, the file will be divided and uploaded in parts using 
-        /// 	Amazon S3's multipart API.  The parts will be reassembled as one object in
-        /// 	Amazon S3.
-        /// </summary>
-        /// <remarks>
-        /// <para>
-        /// If you are uploading large files, TransferUtility will use multipart upload to fulfill the request. 
-        /// If a multipart upload is interrupted, TransferUtility will attempt to abort the multipart upload. 
-        /// Under certain circumstances (network outage, power failure, etc.), TransferUtility will not be able 
-        /// to abort the multipart upload. In this case, in order to stop getting charged for the storage of uploaded parts,
-        /// you should manually invoke TransferUtility.AbortMultipartUploads() to abort the incomplete multipart uploads.
-        /// </para>
-        /// </remarks>
-        /// <param name="directory">
-        /// 	The source directory, that is, the directory containing the files to upload.
-        /// </param>
-        /// <param name="bucketName">
-        /// 	The target Amazon S3 bucket, that is, the name of the bucket to upload the files to.
-        /// </param>
-        /// <param name="cancellationToken">
-        ///     A cancellation token that can be used by other objects or threads to receive notice of cancellation.
-        /// </param>
-        /// <returns>The task object representing the asynchronous operation.</returns>
         public virtual Task UploadDirectoryAsync(string directory, string bucketName, CancellationToken cancellationToken = default)
         {
             var request = ConstructUploadDirectoryRequest(directory, bucketName);
             return UploadDirectoryAsync(request, cancellationToken);
         }
 
-        /// <summary>
-        /// 	Uploads files from a specified directory.  
-        /// 	The object key is derived from the file names
-        /// 	inside the directory.
-        /// 	For large uploads, the file will be divided and uploaded in parts using 
-        /// 	Amazon S3's multipart API.  The parts will be reassembled as one object in
-        /// 	Amazon S3.
-        /// </summary>
-        /// <remarks>
-        /// <para>
-        /// If you are uploading large files, TransferUtility will use multipart upload to fulfill the request. 
-        /// If a multipart upload is interrupted, TransferUtility will attempt to abort the multipart upload. 
-        /// Under certain circumstances (network outage, power failure, etc.), TransferUtility will not be able 
-        /// to abort the multipart upload. In this case, in order to stop getting charged for the storage of uploaded parts,
-        /// you should manually invoke TransferUtility.AbortMultipartUploads() to abort the incomplete multipart uploads.
-        /// </para>
-        /// </remarks>
-        /// <param name="directory">
-        /// 	The source directory, that is, the directory containing the files to upload.
-        /// </param>
-        /// <param name="bucketName">
-        /// 	The target Amazon S3 bucket, that is, the name of the bucket to upload the files to.
-        /// </param>
-        /// <param name="searchPattern">
-        /// 	A pattern used to identify the files from the source directory to upload.
-        /// </param>                                                                 
-        /// <param name="searchOption">
-        /// 	A search option that specifies whether to recursively search for files to upload
-        /// 	in subdirectories.
-        /// </param>
-        /// <param name="cancellationToken">
-        ///     A cancellation token that can be used by other objects or threads to receive notice of cancellation.
-        /// </param>
-        /// <returns>The task object representing the asynchronous operation.</returns>
         public virtual Task UploadDirectoryAsync(
             string directory, 
             string bucketName, 
@@ -635,31 +524,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer
             var request = ConstructUploadDirectoryRequest(directory, bucketName, searchPattern, searchOption);
             return UploadDirectoryAsync(request, cancellationToken);
         }
-
-        /// <summary>
-        /// 	Uploads files from a specified directory.  
-        /// 	The object key is derived from the file names
-        /// 	inside the directory.
-        /// 	For large uploads, the file will be divided and uploaded in parts using 
-        /// 	Amazon S3's multipart API.  The parts will be reassembled as one object in
-        /// 	Amazon S3.
-        /// </summary>
-        /// <remarks>
-        /// <para>
-        /// If you are uploading large files, TransferUtility will use multipart upload to fulfill the request. 
-        /// If a multipart upload is interrupted, TransferUtility will attempt to abort the multipart upload. 
-        /// Under certain circumstances (network outage, power failure, etc.), TransferUtility will not be able 
-        /// to abort the multipart upload. In this case, in order to stop getting charged for the storage of uploaded parts,
-        /// you should manually invoke TransferUtility.AbortMultipartUploads() to abort the incomplete multipart uploads.
-        /// </para>
-        /// </remarks>
-        /// <param name="request">
-        /// 	The request that contains all the parameters required to upload a directory.
-        /// </param>
-        /// <param name="cancellationToken">
-        ///     A cancellation token that can be used by other objects or threads to receive notice of cancellation.
-        /// </param>
-        /// <returns>The task object representing the asynchronous operation.</returns>
+        
         public virtual Task UploadDirectoryAsync(
             UploadDirectoryRequest request, 
             CancellationToken cancellationToken = default)
@@ -675,23 +540,6 @@ namespace Allos.Amazon.Sdk.S3.Transfer
             return command.ExecuteAsync(cancellationToken);
         }
 
-        /// <summary>
-        /// 	Downloads the objects in Amazon S3 that have a key that starts with the value 
-        /// 	specified by <c>s3Directory</c>.
-        /// </summary>
-        /// <param name="bucketName">
-        /// 	The name of the bucket containing the Amazon S3 objects to download.
-        /// </param>
-        /// <param name="s3Directory">
-        /// 	The directory in Amazon S3 to download.
-        /// </param>
-        /// <param name="localDirectory">
-        /// 	The local directory to download the objects to.
-        /// </param>
-        /// <param name="cancellationToken">
-        ///     A cancellation token that can be used by other objects or threads to receive notice of cancellation.
-        /// </param>
-        /// <returns>The task object representing the asynchronous operation.</returns>
         public virtual Task DownloadDirectoryAsync(
             string bucketName, 
             string s3Directory, 
@@ -702,19 +550,6 @@ namespace Allos.Amazon.Sdk.S3.Transfer
             return DownloadDirectoryAsync(request, cancellationToken);
         }
 
-        /// <summary>
-        /// 	Downloads the objects in Amazon S3 that have a key that starts with the value 
-        /// 	specified by the <c>S3Directory</c>
-        /// 	property of the passed in <see cref="DownloadDirectoryRequest"/> object.
-        /// </summary>
-        /// <param name="request">
-        /// 	Contains all the parameters required to download objects from Amazon S3 
-        /// 	into a local directory.
-        /// </param>
-        /// <param name="cancellationToken">
-        ///     A cancellation token that can be used by other objects or threads to receive notice of cancellation.
-        /// </param>
-        /// <returns>The task object representing the asynchronous operation.</returns>
         public virtual Task DownloadDirectoryAsync(
             DownloadDirectoryRequest request, 
             CancellationToken cancellationToken = default)
@@ -724,40 +559,20 @@ namespace Allos.Amazon.Sdk.S3.Transfer
                 ArgumentNullException.ThrowIfNull(request.BucketName);   
             }
             CheckForBlockedArn(request.BucketName);
-            var command = new DownloadDirectoryCommand(S3Client, request, _config);
+            var command = new DownloadDirectoryCommand(this, request, _config);
             command.DownloadFilesConcurrently = request.DownloadFilesConcurrently;
             return command.ExecuteAsync(cancellationToken);
         }
 
-        /// <summary>
-        /// 	Downloads the content from Amazon S3 and writes it to the specified file.    
-        /// </summary>
-        /// <param name="filePath">
-        /// 	The file path where the content from Amazon S3 will be written to.
-        /// </param>
-        /// <param name="bucketName">
-        /// 	The name of the bucket containing the Amazon S3 object to download.
-        /// </param>
-        /// <param name="key">
-        /// 	The key under which the Amazon S3 object is stored.
-        /// </param>
-        /// <param name="cancellationToken">
-        ///     A cancellation token that can be used by other objects or threads to receive notice of cancellation.
-        /// </param>
-        /// <returns>The task object representing the asynchronous operation.</returns>
         public virtual Task DownloadAsync(string filePath, string bucketName, string key, CancellationToken cancellationToken = default)
         {
             var request = ConstructDownloadRequest(filePath, bucketName, key);
             return DownloadAsync(request, cancellationToken);
         }
-
-        /// <summary>
-        /// 	Gets the Amazon S3 client used for making calls into Amazon S3.
-        /// </summary>
-        /// <value>
-        /// 	The Amazon S3 client used for making calls into Amazon S3.
-        /// </value>
+        
         public IAmazonS3 S3Client { get; private set; }
+
+        public IAsyncTransferConfig Config => _config;
 
         /// <summary>
         /// Implements the Dispose pattern
@@ -776,10 +591,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer
                 _isDisposed = true;
             }
         }
-
-        /// <summary>
-        /// Disposes of all managed and unmanaged resources.
-        /// </summary>
+        
         public void Dispose()
         {
             Dispose(true);
@@ -848,27 +660,15 @@ namespace Allos.Amazon.Sdk.S3.Transfer
         {
             Validate(request);
 
-            if (IsMultipartUpload(request))
+            if (request.IsMultipartUpload(_config))
             {
-                return new MultipartUploadCommand(S3Client, _config, request, Logger);
+                return new MultipartUploadCommand(this, request, Logger);
             }
 
-            return new SimpleUploadCommand(S3Client, request);
+            return new SimpleUploadCommand(this, request);
         }
 
-        protected virtual bool IsMultipartUpload(UploadRequest request)
-        {
-            if (request.ContentLength.HasValue)
-            {
-                return request.ContentLength.Value >= _config.MinSizeBeforePartUpload;
-            }
-            //If the length is null that means when we tried to get the ContentLength, we caught a NotSupportedException,
-            //or it means the length is unknown. In this case we do a MultiPartUpload. If we are uploading
-            //a nonseekable stream and the ContentLength is more than zero, we also do a multipart upload.
-            return true;
-        }
-
-        protected virtual void Validate(UploadRequest request)
+        internal static void Validate(UploadRequest request)
         {
             ArgumentNullException.ThrowIfNull(request);
 

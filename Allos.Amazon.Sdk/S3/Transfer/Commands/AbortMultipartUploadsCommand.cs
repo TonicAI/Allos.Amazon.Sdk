@@ -1,7 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using Allos.Amazon.Sdk.Fork;
 using Amazon.Runtime.Internal;
-using Amazon.S3;
 using Amazon.S3.Model;
 
 namespace Allos.Amazon.Sdk.S3.Transfer.Internal
@@ -14,41 +13,28 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
     [AmazonSdkFork("sdk/src/Services/S3/Custom/Transfer/Internal/_async/AbortMultipartUploadsCommand.async.cs", "Amazon.S3.Transfer.Internal")]
     internal class AbortMultipartUploadsCommand : BaseCommand
     {
-        protected readonly AsyncTransferConfig _config;
-        
-        protected readonly IAmazonS3 _s3Client;
-        protected readonly string _bucketName;
-        protected readonly DateTimeOffset _initiatedDate;
+        protected readonly AbortMultipartUploadsRequest _request;
 
-        internal AbortMultipartUploadsCommand(IAmazonS3 s3Client, string bucketName, DateTime initiateDate)
-        {
-            _s3Client = s3Client;
-            _bucketName = bucketName;
-            _initiatedDate = initiateDate;
-            _config = new AsyncTransferConfig();
-        }
-        
         internal AbortMultipartUploadsCommand(
-            IAmazonS3 s3Client, 
-            string bucketName, 
-            DateTimeOffset initiateDate, 
-            AsyncTransferConfig config)
+            IAsyncTransferUtility asyncTransferUtility, 
+            AbortMultipartUploadsRequest request)
+            : base(asyncTransferUtility, request)
         {
-            _s3Client = s3Client;
-            _bucketName = bucketName;
-            _initiatedDate = initiateDate;
-            _config = config;
+            _request = request;
         }
         
         public override async Task ExecuteAsync(CancellationToken cancellationToken)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(_bucketName);
+            if (!_request.IsSetBucketName())
+            {
+                ArgumentException.ThrowIfNullOrWhiteSpace(_request.BucketName);    
+            }
             
             SemaphoreSlim? asyncThrottler = null;
             CancellationTokenSource? internalCts = null;
             try
             {
-                asyncThrottler = new SemaphoreSlim(_config.ConcurrentServiceRequests.ToInt32());
+                asyncThrottler = new SemaphoreSlim(Config.ConcurrentServiceRequests.ToInt32());
                 internalCts = new CancellationTokenSource();
                 var internalCancellationToken = internalCts.Token;
 
@@ -57,7 +43,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
                 do
                 {
                     ListMultipartUploadsRequest listRequest = ConstructListMultipartUploadsRequest(listResponse);
-                    listResponse = await _s3Client.ListMultipartUploadsAsync(listRequest, cancellationToken)
+                    listResponse = await S3Client.ListMultipartUploadsAsync(listRequest, cancellationToken)
                         .ConfigureAwait(continueOnCapturedContext: false);
 
                     if (listResponse.MultipartUploads != null)
@@ -73,7 +59,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
                                 // responses and throw the original exception.
                                 break;
                             }
-                            if (upload.Initiated < _initiatedDate)
+                            if (upload.Initiated < _request.InitiateDateUtc.DateTime)
                             {
                                 await asyncThrottler.WaitAsync(cancellationToken)
                                     .ConfigureAwait(continueOnCapturedContext: false);
@@ -108,7 +94,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
         {
             try
             {
-                return await _s3Client.AbortMultipartUploadAsync(abortRequest, cancellationToken)
+                return await S3Client.AbortMultipartUploadAsync(abortRequest, cancellationToken)
                     .ConfigureAwait(continueOnCapturedContext: false);
             }
             catch (Exception exception)
@@ -130,7 +116,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
             {
                 ListMultipartUploadsRequest listRequest = new ListMultipartUploadsRequest
                 {
-                    BucketName = _bucketName,
+                    BucketName = _request.BucketName,
                     KeyMarker = listResponse.KeyMarker,
                     UploadIdMarker = listResponse.NextUploadIdMarker,
                 };
@@ -142,7 +128,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
                     {
                         var abortRequest = new AbortMultipartUploadRequest
                         {
-                            BucketName = _bucketName,
+                            BucketName = _request.BucketName,
                             Key = upload.Key,
                             UploadId = upload.UploadId,
                         };
