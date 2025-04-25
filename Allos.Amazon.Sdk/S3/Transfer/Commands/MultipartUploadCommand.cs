@@ -591,7 +591,6 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
                 DisableDefaultChecksumValidation = _fileTransporterRequest.DisableDefaultChecksumValidation,
                 DisablePayloadSigning = _fileTransporterRequest.DisablePayloadSigning,
                 ChecksumAlgorithm = _fileTransporterRequest.ChecksumAlgorithm,
-                CalculateContentMD5Header = _fileTransporterRequest.CalculateContentMd5Header
             };
 
             // If the InitiateMultipartUploadResponse indicates that this upload is using KMS, force SigV4 for each UploadPart request
