@@ -30,7 +30,7 @@ public static class AmazonS3ClientExtensions
             Key = objectKey,
             InputStream = stream
         };
-        InternalSDKUtils.ApplyValues(request, additionalProperties);
+        InternalSDKUtils.ApplyValuesV2(request, additionalProperties);
         return transfer.UploadAsync(request, cancellationToken);
     }
 
@@ -49,7 +49,7 @@ public static class AmazonS3ClientExtensions
             Key = objectKey,
             FilePath = filepath
         };
-        InternalSDKUtils.ApplyValues(request, additionalProperties);
+        InternalSDKUtils.ApplyValuesV2(request, additionalProperties);
 
         return transfer.UploadAsync(request, cancellationToken);
     }
@@ -70,7 +70,7 @@ public static class AmazonS3ClientExtensions
             Key = objectKey,
             FilePath = filepath
         };
-        InternalSDKUtils.ApplyValues(request, additionalProperties);
+        InternalSDKUtils.ApplyValuesV2(request, additionalProperties);
 
         return transfer.DownloadAsync(request, cancellationToken);
     }

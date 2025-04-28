@@ -122,8 +122,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
             putRequest.InputStream = eventStream;
             
             ((IAmazonWebServiceRequest)putRequest).AddBeforeRequestHandler(RequestEventHandler);
-
-            putRequest.CalculateContentMD5Header = _fileTransporterRequest.CalculateContentMd5Header;
+            
             putRequest.ObjectLockLegalHoldStatus = _fileTransporterRequest.ObjectLockLegalHoldStatus;
             putRequest.ObjectLockMode = _fileTransporterRequest.ObjectLockMode;
 
