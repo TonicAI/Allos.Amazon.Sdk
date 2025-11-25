@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using Allos.Amazon.Sdk.Fork;
 using Amazon.S3;
 
 namespace Allos.Amazon.Sdk.S3.Transfer;
@@ -7,6 +8,8 @@ namespace Allos.Amazon.Sdk.S3.Transfer;
 [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
 [SuppressMessage("ReSharper", "InconsistentNaming")]
 [SuppressMessage("ReSharper", "UnusedMember.Global")]
+// Note: different from AbortMultipartUploadRequest.cs Amazon SDK class (non-plural)
+[AmazonSdkFork("sdk/src/Services/S3/Custom/Transfer/TransferUtilityAbortMultipartUploadRequest.cs", "Amazon.S3.Transfer")]
 public class AbortMultipartUploadsRequest : BaseRequest
 {
     /// <summary>
@@ -28,12 +31,15 @@ public class AbortMultipartUploadsRequest : BaseRequest
     internal virtual bool IsSetBucketName() => !string.IsNullOrWhiteSpace(BucketName);
     
     /// <summary>
-    /// 	Gets or sets the <c>InitiatedDateUtc</c> property.
+    /// 	Gets or sets the <c>InitiatedDate</c> property.
     /// </summary>
     /// <value>
-    /// 	The <c>InitiateDateUtc</c> property.
+    /// 	The <c>InitiatedDate</c> property.
     /// </value>
-    public virtual DateTimeOffset? InitiatedDateUtc { get; set; }
+    public virtual DateTimeOffset? InitiatedDate { get; set; }
+    
+    [MemberNotNullWhen(true, nameof(InitiatedDate))]
+    internal virtual bool IsSetInitiatedDate() => InitiatedDate.HasValue;
 
     /// <summary>
     /// Gets or sets the account ID of the expected bucket owner.
@@ -72,7 +78,4 @@ public class AbortMultipartUploadsRequest : BaseRequest
     {
         return RequestPayer != null;
     }
-    
-    [MemberNotNullWhen(true, nameof(InitiatedDateUtc))]
-    internal virtual bool IsSetInitiatedDate() => InitiatedDateUtc.HasValue;
 }

@@ -432,7 +432,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer
         /// <param name="bucketName">
         /// 	The name of the bucket containing multipart uploads.
         /// </param>
-        /// <param name="initiatedDateUtc">
+        /// <param name="initiatedDate">
         /// 	The date before which the multipart uploads were initiated.
         /// </param>
         /// <param name="cancellationToken">
@@ -441,14 +441,14 @@ namespace Allos.Amazon.Sdk.S3.Transfer
         /// <returns>The task object representing the asynchronous operation.</returns>
         public virtual Task AbortMultipartUploadsAsync(
             string bucketName, 
-            DateTimeOffset initiatedDateUtc, 
+            DateTimeOffset initiatedDate, 
             CancellationToken cancellationToken = default)
         {
             CheckForBlockedArn(bucketName);
             AbortMultipartUploadsRequest request = new AbortMultipartUploadsRequest
             {
                 BucketName = bucketName,
-                InitiatedDateUtc = initiatedDateUtc
+                InitiatedDate = initiatedDate
             };
             var command = new AbortMultipartUploadsCommand(this, request);
             return command.ExecuteAsync(cancellationToken);

@@ -33,7 +33,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
             
             if (!_request.IsSetInitiatedDate())
             {
-                ArgumentNullException.ThrowIfNull(_request.InitiatedDateUtc);
+                ArgumentNullException.ThrowIfNull(_request.InitiatedDate);
             }
             
             SemaphoreSlim? asyncThrottler = null;
@@ -65,7 +65,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
                                 // responses and throw the original exception.
                                 break;
                             }
-                            if (upload.Initiated < _request.InitiatedDateUtc.Value.DateTime)
+                            if (upload.Initiated < _request.InitiatedDate.Value.DateTime)
                             {
                                 await asyncThrottler.WaitAsync(cancellationToken)
                                     .ConfigureAwait(continueOnCapturedContext: false);
