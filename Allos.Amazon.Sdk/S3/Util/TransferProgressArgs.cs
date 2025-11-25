@@ -2,7 +2,7 @@
 using Allos.Amazon.Sdk.Fork;
 using Amazon.S3.Model;
 
-namespace Allos.Amazon.S3.Model
+namespace Allos.Amazon.Sdk.S3.Util
 {
     [AmazonSdkFork("sdk/src/Services/S3/Custom/Util/TransferProgressArgs.cs", "Amazon.S3.Util")]
     internal static class TransferProgressArgsAdapter

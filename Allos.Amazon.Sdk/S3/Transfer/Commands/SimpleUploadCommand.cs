@@ -3,6 +3,7 @@ using Allos.Amazon.Sdk.Fork;
 using Amazon.Runtime.Internal;
 using Amazon.S3;
 using Amazon.S3.Model;
+using Amazon.Util;
 
 namespace Allos.Amazon.Sdk.S3.Transfer.Internal
 {
@@ -83,7 +84,25 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
                 ChecksumAlgorithm = _fileTransporterRequest.ChecksumAlgorithm
             };
             
-            putRequest.Headers.AddRange(_fileTransporterRequest.Headers);
+            // We are iterating over the Headers to avoid setting the Header from the Transfer utility upload request 
+            // to the PutObjectRequest since that will cause issues down the line.
+            // The AmazonS3PreMarshallHandler modifies the content type on the headers collection 
+            // which would impact other requests in a directory upload if the Headers were referenced.
+            if (_fileTransporterRequest.Headers.Count > 0)
+            {
+                foreach (var headerKey in _fileTransporterRequest.Headers.Keys)
+                {
+                    if (string.Equals(headerKey, HeaderKeys.ContentTypeHeader) && _fileTransporterRequest.IsSetContentType())
+                    {
+                        continue;
+                    }
+                    else
+                    {
+                        putRequest.Headers[headerKey] = _fileTransporterRequest.Headers[headerKey];
+                    }
+                }
+            }
+            
             putRequest.Metadata.AddRange(_fileTransporterRequest.Metadata);
             
             // Avoid setting ContentType to null, as that may clear

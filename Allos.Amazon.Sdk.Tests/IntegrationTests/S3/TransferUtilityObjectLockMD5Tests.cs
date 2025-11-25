@@ -52,7 +52,6 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
             {
                 BucketName = _bucketName,
                 Key = UtilityMethods.GenerateName(nameof(TransferUtilityObjectLockMd5Tests)),
-                CalculateContentMd5Header = true,
                 InputStream = contentStream
             };
 
@@ -85,7 +84,6 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
             {
                 BucketName = _bucketName,
                 Key = key,
-                CalculateContentMd5Header = true,
                 FilePath = filePath
             };
 
@@ -211,7 +209,6 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
             {
                 BucketName = _bucketName,
                 Key = UtilityMethods.GenerateName(nameof(TransferUtilityObjectLockMd5Tests)),
-                CalculateContentMd5Header = true,
                 InputStream = contentStream,
             };
 
@@ -237,7 +234,6 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
             {
                 BucketName = _bucketName,
                 Key = UtilityMethods.GenerateName(nameof(TransferUtilityObjectLockMd5Tests)),
-                CalculateContentMd5Header = true,
                 InputStream = contentStream,
             };
             uploadRequest.Headers.ContentMD5 = AWSSDKUtils.GenerateMD5ChecksumForStream(contentStream);
@@ -271,7 +267,6 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
             {
                 BucketName = _bucketName,
                 Key = key,
-                CalculateContentMd5Header = true,
                 FilePath = filePath
             };
 
@@ -304,7 +299,6 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
             {
                 BucketName = _bucketName,
                 Key = key,
-                CalculateContentMd5Header = true,
                 FilePath = filePath
             };
 
@@ -354,7 +348,6 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
             {
                 BucketName = _bucketName,
                 Directory = directoryPath,
-                CalculateContentMd5Header = true
             };
 
             await transfer.UploadDirectoryAsync(uploadDirectoryRequest).ConfigureAwait(false);
@@ -395,7 +388,6 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
             {
                 BucketName = _bucketName,
                 Key = key,
-                CalculateContentMd5Header = true,
                 FilePath = filePath,
                 ObjectLockLegalHoldStatus = desiredObjectLockLegalHoldStatus,
                 ObjectLockMode = desiredObjectLockMode,
@@ -410,7 +402,7 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
                 Assert.AreEqual(content, getBody);
                 Assert.AreEqual(desiredObjectLockLegalHoldStatus, getResponse.ObjectLockLegalHoldStatus);
                 Assert.AreEqual(desiredObjectLockMode, getResponse.ObjectLockMode);
-                Assert.AreEqual(desiredObjectLockRetainUntilDate.Date, getResponse.ObjectLockRetainUntilDate.ToUniversalTime().Date);
+                Assert.AreEqual(desiredObjectLockRetainUntilDate.Date, getResponse.ObjectLockRetainUntilDate.GetValueOrDefault().ToUniversalTime().Date);
             }
         }
 
@@ -451,7 +443,6 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
             {
                 BucketName = _bucketName,
                 Directory = directoryPath,
-                CalculateContentMd5Header = true,
                 ObjectLockLegalHoldStatus = desiredObjectLockLegalHoldStatus,
                 ObjectLockMode = desiredObjectLockMode,
                 ObjectLockRetainUntilDate = desiredObjectLockRetainUntilDate
@@ -468,7 +459,7 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
                     Assert.AreEqual(new('a', file.Value), getBody);
                     Assert.AreEqual(desiredObjectLockLegalHoldStatus, getResponse.ObjectLockLegalHoldStatus);
                     Assert.AreEqual(desiredObjectLockMode, getResponse.ObjectLockMode);
-                    Assert.AreEqual(desiredObjectLockRetainUntilDate.Date, getResponse.ObjectLockRetainUntilDate.ToUniversalTime().Date);
+                    Assert.AreEqual(desiredObjectLockRetainUntilDate.Date, getResponse.ObjectLockRetainUntilDate.GetValueOrDefault().ToUniversalTime().Date);
                 }
             }
         }
@@ -498,7 +489,6 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
             {
                 BucketName = _bucketName,
                 Key = key,
-                CalculateContentMd5Header = true,
                 FilePath = filePath,
                 ObjectLockLegalHoldStatus = desiredObjectLockLegalHoldStatus,
                 ObjectLockMode = desiredObjectLockMode,
@@ -513,7 +503,7 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
                 Assert.AreEqual(content, getBody);
                 Assert.AreEqual(desiredObjectLockLegalHoldStatus, getResponse.ObjectLockLegalHoldStatus);
                 Assert.AreEqual(desiredObjectLockMode, getResponse.ObjectLockMode);
-                Assert.AreEqual(desiredObjectLockRetainUntilDate.Date, getResponse.ObjectLockRetainUntilDate.ToUniversalTime().Date);
+                Assert.AreEqual(desiredObjectLockRetainUntilDate.Date, getResponse.ObjectLockRetainUntilDate.GetValueOrDefault().ToUniversalTime().Date);
             }
         }
 
@@ -601,7 +591,7 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
 
             }
             // Continue listing objects and deleting them until the bucket is empty.
-            while (listVersionsResponse.IsTruncated);
+            while (listVersionsResponse.IsTruncated.GetValueOrDefault());
         }
     }
 }

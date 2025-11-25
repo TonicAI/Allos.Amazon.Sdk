@@ -448,7 +448,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer
             AbortMultipartUploadsRequest request = new AbortMultipartUploadsRequest
             {
                 BucketName = bucketName,
-                InitiateDateUtc = initiatedDateUtc
+                InitiatedDateUtc = initiatedDateUtc
             };
             var command = new AbortMultipartUploadsCommand(this, request);
             return command.ExecuteAsync(cancellationToken);

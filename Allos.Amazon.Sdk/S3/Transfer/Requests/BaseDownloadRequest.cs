@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using Allos.Amazon.Sdk.Fork;
 using Amazon.Runtime.Internal;
 using Amazon.S3;
+using Amazon.S3.Model;
 
 namespace Allos.Amazon.Sdk.S3.Transfer
 {
@@ -17,8 +18,9 @@ namespace Allos.Amazon.Sdk.S3.Transfer
     [AmazonSdkFork("sdk/src/Services/S3/Custom/Transfer/BaseDownloadRequest.cs", "Amazon.S3.Transfer")]
     public abstract class BaseDownloadRequest : BaseRequest
     {
-        protected DateTimeOffset? _modifiedSinceDateUtc;
-        protected DateTimeOffset? _unmodifiedSinceDateUtc;
+        protected DateTimeOffset? _modifiedSinceDate;
+        protected DateTimeOffset? _unmodifiedSinceDate;
+        protected ResponseHeaderOverrides? _responseHeaders;
 
         /// <summary>
         /// 	Gets or sets the name of the bucket.
@@ -77,16 +79,16 @@ namespace Allos.Amazon.Sdk.S3.Transfer
         /// <value>
         /// 	The <c>ModifiedSinceDate</c> property. 
         /// </value>
-        public virtual DateTimeOffset ModifiedSinceDateUtc
+        public virtual DateTimeOffset ModifiedSinceDate
         {
-            get => _modifiedSinceDateUtc ?? default(DateTime);
-            set => _modifiedSinceDateUtc = value;
+            get => _modifiedSinceDate ?? default(DateTime);
+            set => _modifiedSinceDate = value;
         }
 
-        // Check to see if ModifiedSinceDateUtc property is set
-        [MemberNotNullWhen(true, nameof(ModifiedSinceDateUtc))]
-        [MemberNotNullWhen(true, nameof(_modifiedSinceDateUtc))]
-        internal virtual bool IsSetModifiedSinceDateUtc() => _modifiedSinceDateUtc.HasValue;
+        // Check to see if ModifiedSinceDate property is set
+        [MemberNotNullWhen(true, nameof(ModifiedSinceDate))]
+        [MemberNotNullWhen(true, nameof(_modifiedSinceDate))]
+        internal virtual bool IsSetModifiedSinceDate() => _modifiedSinceDate.HasValue;
 
         /// <summary>
         /// 	Gets or sets the <c>UnmodifiedSinceDate</c> property.
@@ -94,16 +96,16 @@ namespace Allos.Amazon.Sdk.S3.Transfer
         /// <value>
         /// 	The <c>UnmodifiedSinceDate</c> property.
         /// </value>
-        public DateTimeOffset UnmodifiedSinceDateUtc
+        public DateTimeOffset UnmodifiedSinceDate
         {
-            get => _unmodifiedSinceDateUtc ?? default;
-            set => _unmodifiedSinceDateUtc = value;
+            get => _unmodifiedSinceDate ?? default;
+            set => _unmodifiedSinceDate = value;
         }
 
-        // Check to see if UnmodifiedSinceDateUtc property is set
-        [MemberNotNullWhen(true, nameof(UnmodifiedSinceDateUtc))]
-        [MemberNotNullWhen(true, nameof(_unmodifiedSinceDateUtc))]
-        internal virtual bool IsSetUnmodifiedSinceDateUtc() => _unmodifiedSinceDateUtc.HasValue;
+        // Check to see if UnmodifiedSinceDate property is set
+        [MemberNotNullWhen(true, nameof(UnmodifiedSinceDate))]
+        [MemberNotNullWhen(true, nameof(_unmodifiedSinceDate))]
+        internal virtual bool IsSetUnmodifiedSinceDate() => _unmodifiedSinceDate.HasValue;
 
         /// <summary>
         /// The Server-side encryption algorithm to be used with the customer provided key.
@@ -148,6 +150,95 @@ namespace Allos.Amazon.Sdk.S3.Transfer
         /// Bucket owners need not specify this parameter in their requests.
         /// </summary>
         public virtual RequestPayer? RequestPayer { get; set; }
+        
+        /// <summary>
+        /// Gets and sets the property ExpectedBucketOwner. 
+        /// <para>
+        /// The account ID of the expected bucket owner. If the account ID that you provide does
+        /// not match the actual owner of the bucket, the request fails with the HTTP status code
+        /// <c>403 Forbidden</c> (access denied).
+        /// </para>
+        /// </summary>
+        public string? ExpectedBucketOwner { get; set; }
+
+        /// <summary>
+        /// Checks to see if ExpectedBucketOwner is set.
+        /// </summary>
+        /// <returns>true, if ExpectedBucketOwner property is set.</returns>
+        [MemberNotNullWhen(true, nameof(ExpectedBucketOwner))]
+        internal virtual bool IsSetExpectedBucketOwner()
+        {
+            return !string.IsNullOrEmpty(ExpectedBucketOwner);
+        }
+        
+        /// <summary>
+        /// Gets and sets the property IfMatch. 
+        /// <para>
+        /// Return the object only if its entity tag (ETag) is the same as the one specified in this header;
+        /// otherwise, return a <c>412 Precondition Failed</c> error.
+        /// </para>
+        /// <para>
+        /// If both of the <c>If-Match</c> and <c>If-Unmodified-Since</c> headers are present in the request as follows:
+        /// <c>If-Match</c> condition evaluates to <c>true</c>, and; <c>If-Unmodified-Since</c> condition evaluates to <c>false</c>;
+        /// then, S3 returns <c>200 OK</c> and the data requested.
+        /// </para>
+        /// <para>
+        /// For more information about conditional requests, see <see href="https://tools.ietf.org/html/rfc7232">RFC 7232</see>.
+        /// </para>
+        /// The <see cref="IfMatch"/> property is equivalent to the <see cref="GetObjectRequest.EtagToMatch"/>.
+        /// </summary>
+        public string? IfMatch { get; set; }
+
+        /// <summary>
+        /// Checks to see if IfMatch is set.
+        /// </summary>
+        /// <returns>true, if IfMatch property is set.</returns>
+        [MemberNotNullWhen(true, nameof(IfMatch))]
+        internal virtual bool IsSetIfMatch()
+        {
+            return !string.IsNullOrEmpty(IfMatch);
+        }
+
+        /// <summary>
+        /// Gets and sets the property IfNoneMatch. 
+        /// <para>
+        /// Return the object only if its entity tag (ETag) is different from the one specified in this header;
+        /// otherwise, return a <c>304 Not Modified</c> error.
+        /// </para>
+        /// <para>
+        /// If both of the <c>If-None-Match</c> and <c>If-Modified-Since</c> headers are present in the request as follows:
+        /// <c> If-None-Match</c> condition evaluates to <c>false</c>, and; <c>If-Modified-Since</c> condition evaluates to <c>true</c>;
+        /// then, S3 returns <c>304 Not Modified</c> HTTP status code.
+        /// </para>
+        /// <para>
+        /// For more information about conditional requests, see <see href="https://tools.ietf.org/html/rfc7232">RFC 7232</see>.
+        /// </para>
+        /// The <see cref="IfNoneMatch"/> property is equivalent to the <see cref="GetObjectRequest.EtagToNotMatch"/>.
+        /// </summary>
+        public string? IfNoneMatch { get; set; }
+
+        /// <summary>
+        /// Checks to see if IfNoneMatch is set.
+        /// </summary>
+        /// <returns>true, if IfNoneMatch property is set.</returns>
+        [MemberNotNullWhen(true, nameof(IfNoneMatch))]
+        internal virtual bool IsSetIfNoneMatch()
+        {
+            return !string.IsNullOrEmpty(IfNoneMatch);
+        }
+
+        /// <summary>
+        /// A set of response headers that should be returned with the object.
+        /// </summary>
+        public ResponseHeaderOverrides ResponseHeaderOverrides
+        {
+            get
+            {
+                _responseHeaders ??= new ResponseHeaderOverrides();
+                return _responseHeaders;
+            }
+            set => _responseHeaders = value;
+        }
         
         internal virtual string DebuggerDisplay => ToString() ?? GetType().Name;
     }

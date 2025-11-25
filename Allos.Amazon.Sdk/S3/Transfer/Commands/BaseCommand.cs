@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using Allos.Amazon.Sdk.Fork;
 using Amazon.Runtime;
 using Amazon.Runtime.Internal;
+using Amazon.Runtime.Internal.UserAgent;
 using Amazon.S3;
 using Amazon.S3.Model;
 using Amazon.Util;
@@ -125,13 +126,13 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
             };
             ((IAmazonWebServiceRequest)getRequest).AddBeforeRequestHandler(RequestEventHandler);
 
-            if (request.IsSetModifiedSinceDateUtc())
+            if (request.IsSetModifiedSinceDate())
             {
-                getRequest.ModifiedSinceDateUtc = request.ModifiedSinceDateUtc.DateTime;
+                getRequest.ModifiedSinceDate = request.ModifiedSinceDate.DateTime;
             }
-            if (request.IsSetUnmodifiedSinceDateUtc())
+            if (request.IsSetUnmodifiedSinceDate())
             {
-                getRequest.UnmodifiedSinceDateUtc = request.UnmodifiedSinceDateUtc.DateTime;
+                getRequest.UnmodifiedSinceDate = request.UnmodifiedSinceDate.DateTime;
             }
 
             getRequest.ServerSideEncryptionCustomerMethod = request.ServerSideEncryptionCustomerMethod;
@@ -147,9 +148,8 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
         {
             if (args is WebServiceRequestEventArgs wsArgs)
             {
-                string currentUserAgent = wsArgs.Headers[AWSSDKUtils.UserAgentHeader];
-                wsArgs.Headers[AWSSDKUtils.UserAgentHeader] =
-                    currentUserAgent + " ft/s3-transfer md/" + GetType().Name;
+                ((IAmazonWebServiceRequest)wsArgs.Request).UserAgentDetails.AddFeature(UserAgentFeatureId.S3_TRANSFER);
+                ((IAmazonWebServiceRequest)wsArgs.Request).UserAgentDetails.AddUserAgentComponent("md/" + this.GetType().Name);
             }
         }
 

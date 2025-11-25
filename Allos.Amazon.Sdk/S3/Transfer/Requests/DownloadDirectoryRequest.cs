@@ -18,8 +18,8 @@ namespace Allos.Amazon.Sdk.S3.Transfer
     [AmazonSdkFork("sdk/src/Services/S3/Custom/Transfer/TransferUtilityDownloadDirectoryRequest.cs", "Amazon.S3.Transfer")]
     public class DownloadDirectoryRequest : BaseRequest
     {
-        protected DateTimeOffset? _modifiedSinceDateUtc;
-        protected DateTimeOffset? _unmodifiedSinceDateUtc;
+        protected DateTimeOffset? _modifiedSinceDate;
+        protected DateTimeOffset? _unmodifiedSinceDate;
 
         /// <summary>
         /// 	Gets or sets the name of the bucket.
@@ -81,48 +81,48 @@ namespace Allos.Amazon.Sdk.S3.Transfer
         internal virtual bool IsSetS3Directory() => !string.IsNullOrWhiteSpace(S3Directory);
 
         /// <summary>
-        /// 	Gets or sets the <c>ModifiedSinceDateUtc</c> property.  
+        /// 	Gets or sets the <c>ModifiedSinceDate</c> property.  
         /// 	Only objects that have been modified since this date will be
         /// 	downloaded.
         /// </summary>
         /// <value>
-        /// 	The <c>ModifiedSinceDateUtc</c> property. 
+        /// 	The <c>ModifiedSinceDate</c> property. 
         /// </value>
-        public virtual DateTimeOffset ModifiedSinceDateUtc
+        public virtual DateTimeOffset ModifiedSinceDate
         {
-            get => _modifiedSinceDateUtc.GetValueOrDefault();
-            set => _modifiedSinceDateUtc = value;
+            get => _modifiedSinceDate.GetValueOrDefault();
+            set => _modifiedSinceDate = value;
         }
 
         /// <summary>
-        /// Checks if ModifiedSinceDateUtc property is set.
+        /// Checks if ModifiedSinceDate property is set.
         /// </summary>
-        /// <returns>A value of <c>true</c> if ModifiedSinceDateUtc property is set.
+        /// <returns>A value of <c>true</c> if ModifiedSinceDate property is set.
         /// 	Otherwise, returns <c>false</c>.</returns>
-        [MemberNotNullWhen(true, nameof(ModifiedSinceDateUtc))]
-        [MemberNotNullWhen(true, nameof(_modifiedSinceDateUtc))]
-        internal virtual bool IsSetModifiedSinceDateUtc() => _modifiedSinceDateUtc.HasValue;
+        [MemberNotNullWhen(true, nameof(ModifiedSinceDate))]
+        [MemberNotNullWhen(true, nameof(_modifiedSinceDate))]
+        internal virtual bool IsSetModifiedSinceDate() => _modifiedSinceDate.HasValue;
 
         /// <summary>
-        /// 	Gets or sets the <c>UnmodifiedSinceDateUtc</c> property.  
+        /// 	Gets or sets the <c>UnmodifiedSinceDate</c> property.  
         /// 	Only objects that have not been modified since this date will be downloaded.
         /// </summary>
         /// <value>
-        /// 	The <c>UnmodifiedSinceDateUtc</c> property.
+        /// 	The <c>UnmodifiedSinceDate</c> property.
         /// </value>
-        public virtual DateTimeOffset UnmodifiedSinceDateUtc
+        public virtual DateTimeOffset UnmodifiedSinceDate
         {
-            get => _unmodifiedSinceDateUtc.GetValueOrDefault();
-            set => _unmodifiedSinceDateUtc = value;
+            get => _unmodifiedSinceDate.GetValueOrDefault();
+            set => _unmodifiedSinceDate = value;
         }
 
         /// <summary>
-        /// Checks if UnmodifiedSinceDateUtc property is set.
+        /// Checks if UnmodifiedSinceDate property is set.
         /// </summary>
-        /// <returns>true if UnmodifiedSinceDateUtc property is set.</returns>
-        [MemberNotNullWhen(true, nameof(UnmodifiedSinceDateUtc))]
-        [MemberNotNullWhen(true, nameof(_unmodifiedSinceDateUtc))]
-        internal virtual bool IsSetUnmodifiedSinceDateUtc() => _unmodifiedSinceDateUtc.HasValue;
+        /// <returns>true if UnmodifiedSinceDate property is set.</returns>
+        [MemberNotNullWhen(true, nameof(UnmodifiedSinceDate))]
+        [MemberNotNullWhen(true, nameof(_unmodifiedSinceDate))]
+        internal virtual bool IsSetUnmodifiedSinceDate() => _unmodifiedSinceDate.HasValue;
 
         /// <summary>
         /// Gets or sets the DownloadFilesConcurrently property.
