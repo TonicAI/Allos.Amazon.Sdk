@@ -318,11 +318,11 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
 
         protected virtual bool ShouldDownload(S3Object s3O)
         {
-            // skip objects based on ModifiedSinceDateUtc
+            // skip objects based on ModifiedSinceDate
             if (_request.IsSetModifiedSinceDate() && s3O.LastModified.GetValueOrDefault() <=
                 _request.ModifiedSinceDate.ToUniversalTime())
                 return false;
-            // skip objects based on UnmodifiedSinceDateUtc
+            // skip objects based on UnmodifiedSinceDate
             if (_request.IsSetUnmodifiedSinceDate() && s3O.LastModified.GetValueOrDefault() >
                 _request.UnmodifiedSinceDate.ToUniversalTime())
                 return false;
