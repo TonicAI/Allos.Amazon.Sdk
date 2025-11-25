@@ -348,6 +348,10 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
             }
         }
 
+        /// <summary>
+        /// N.B. etimmerman -- this test fails because we use a SimpleUploadCommand when the length is 0,
+        /// and checksum calculations there are for some reason different. Not being seekable causes this to fail.
+        /// </summary>
         [TestMethod]
         [TestCategory("S3")]
         public async Task UploadUnSeekableStreamWithZeroLengthTest()

@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using Allos.Amazon.Sdk.Fork;
+using Amazon;
 using Serilog;
 
 namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests;
@@ -21,7 +22,9 @@ public abstract class TestBase
     ///
     ///     NOTE there are no enclosing `[]` in the `profile name`
     /// </example>
-    private static string _testAwsCredentialsProfileName = "543337415716_AWSAdministratorAccess";
+    private static string _testAwsCredentialsProfileName = "001122334455_AwsExampleUserAccess";
+
+    protected static readonly RegionEndpoint TestAwsRegion = RegionEndpoint.USEast1; 
     
     /// <summary>
     /// The AWS Credentials profile name to use for the tests

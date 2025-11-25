@@ -1,5 +1,6 @@
 ﻿using Allos.Amazon.Sdk.Fork;
 using Allos.Amazon.Sdk.Tests.IntegrationTests.Utils;
+using Amazon;
 using Amazon.Runtime;
 using Amazon.S3;
 using Amazon.S3.Model;
@@ -23,6 +24,7 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
 
         private static IEnumerable<object[]> GetAlgorithmsToTest =>
             new List<object[]> {
+                new object[] { CoreChecksumAlgorithm.CRC64NVME },
                 new object[] { CoreChecksumAlgorithm.CRC32C },
                 new object[] { CoreChecksumAlgorithm.CRC32 },
                 new object[] { CoreChecksumAlgorithm.SHA1 },
@@ -118,7 +120,8 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
                 // Unrealistic timeout so SDK will do a retry
                 Timeout = TimeSpan.FromMilliseconds(1),
                 RetryMode = RequestRetryMode.Standard,
-                MaxErrorRetry = 1
+                MaxErrorRetry = 1,
+                RegionEndpoint = TestAwsRegion
             };
 
             using (var s3Client = new AmazonS3Client(s3Config))
@@ -286,7 +289,7 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
                     Key = copiedKey,
                     UploadId = initResponse.UploadId
                 };
-                completeRequest.AddPartETags(copyResponses);
+                completeRequest.AddPartETagsAndChecksums(copyResponses);
 
                 // Complete the copy.
                 CompleteMultipartUploadResponse completeUploadResponse = await Client.CompleteMultipartUploadAsync(completeRequest).ConfigureAwait(false);
@@ -409,7 +412,7 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
                     Key = key,
                     UploadId = initResponse.UploadId
                 };
-                compRequest.AddPartETags(up1Response, up2Response, up3Response);
+                compRequest.AddPartETagsAndChecksums(up1Response, up2Response, up3Response);
 
                 CompleteMultipartUploadResponse compResponse = await Client.CompleteMultipartUploadAsync(compRequest).ConfigureAwait(false);
                 Assert.IsNotNull(compResponse.ETag);
@@ -503,57 +506,70 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
                 Assert.AreEqual(content, getBody);
 
                 // We don't expect the checksum to be validated on getting an entire multipart object,
-                // because it's actually the checksum-of-checksums
-                Assert.AreEqual(CoreChecksumAlgorithm.NONE, getResponse.ResponseMetadata.ChecksumAlgorithm);
-                Assert.AreEqual(ChecksumValidationStatus.NOT_VALIDATED, getResponse.ResponseMetadata.ChecksumValidationStatus);
-
-                // Get the object attributes. Parts collection in ObjectParts is only returned if ChecksumAlgorithm is set different from default value.
-                GetObjectAttributesRequest getObjectAttributesRequest = new()
+                // because it's actually the checksum-of-checksums (except for CRC64).
+                if (algorithm == CoreChecksumAlgorithm.CRC64NVME)
                 {
-                    BucketName = _bucketName,
-                    Key = uploadRequest.Key,
-                    ObjectAttributes = new()
+                    Assert.AreEqual(CoreChecksumAlgorithm.CRC64NVME, getResponse.ResponseMetadata.ChecksumAlgorithm);
+                }
+                else
+                {
+                    Assert.AreEqual(CoreChecksumAlgorithm.NONE, getResponse.ResponseMetadata.ChecksumAlgorithm);
+                    Assert.AreEqual(ChecksumValidationStatus.NOT_VALIDATED, getResponse.ResponseMetadata.ChecksumValidationStatus);
+                }
+
+                // At the moment, S3 does not store the checksums for individual parts when using CRC64NVME.
+                // The full object checksum can be retrieved using GetObject or HeadObject instead.
+                if (algorithm != CoreChecksumAlgorithm.CRC64NVME)
+                {
+                    // Get the object attributes. Parts collection in ObjectParts is only returned if ChecksumAlgorithm is set different from default value.
+                    GetObjectAttributesRequest getObjectAttributesRequest = new GetObjectAttributesRequest()
                     {
-                        new("Checksum"),
-                        new("ObjectParts"),
-                        new("ObjectSize")
-                    }
-                };
-                GetObjectAttributesResponse getObjectAttributesResponse = await Client.GetObjectAttributesAsync(getObjectAttributesRequest).ConfigureAwait(false);
-                Assert.IsTrue(getObjectAttributesResponse.ObjectParts.Parts.Count > 0);
-                // Number of Parts returned is controlled by GetObjectAttributesRequest.MaxParts.
-                Assert.AreEqual(getObjectAttributesResponse.ObjectParts.Parts.Count, getObjectAttributesResponse.ObjectParts.TotalPartsCount);
+                        BucketName = _bucketName,
+                        Key = uploadRequest.Key,
+                        ObjectAttributes = new List<ObjectAttributes>()
+                        {
+                            new ObjectAttributes("Checksum"),
+                            new ObjectAttributes("ObjectParts"),
+                            new ObjectAttributes("ObjectSize")
+                        }
+                    };
 
-                var firstObjectPart = getObjectAttributesResponse.ObjectParts.Parts.First();
-                ChecksumAlgorithm expectedChecksumAlgorithm = ChecksumAlgorithm.FindValue(algorithm.ToString());
-                if (expectedChecksumAlgorithm == ChecksumAlgorithm.CRC32)
-                {
-                    Assert.IsNotNull(firstObjectPart.ChecksumCRC32);
+                    GetObjectAttributesResponse getObjectAttributesResponse = await Client.GetObjectAttributesAsync(getObjectAttributesRequest);
+                    Assert.IsTrue(getObjectAttributesResponse.ObjectParts.Parts.Count > 0);
+                    // Number of Parts returned is controlled by GetObjectAttributesRequest.MaxParts.
+                    Assert.AreEqual(getObjectAttributesResponse.ObjectParts.Parts.Count, getObjectAttributesResponse.ObjectParts.TotalPartsCount);
+
+                    var firstObjectPart = getObjectAttributesResponse.ObjectParts.Parts.First();
+                    ChecksumAlgorithm expectedChecksumAlgorithm = ChecksumAlgorithm.FindValue(algorithm.ToString());
+                    if (expectedChecksumAlgorithm == ChecksumAlgorithm.CRC32)
+                    {
+                        Assert.IsNotNull(firstObjectPart.ChecksumCRC32);
+                    }
+                    if (expectedChecksumAlgorithm == ChecksumAlgorithm.CRC32C)
+                    {
+                        Assert.IsNotNull(firstObjectPart.ChecksumCRC32C);
+                    }
+                    if (expectedChecksumAlgorithm == ChecksumAlgorithm.SHA1)
+                    {
+                        Assert.IsNotNull(firstObjectPart.ChecksumSHA1);
+                    }
+                    if (expectedChecksumAlgorithm == ChecksumAlgorithm.SHA256)
+                    {
+                        Assert.IsNotNull(firstObjectPart.ChecksumSHA256);
+                    }
+                    Assert.AreEqual(1, firstObjectPart.PartNumber);
+                    Assert.IsTrue(firstObjectPart.Size > 0);
                 }
-                if (expectedChecksumAlgorithm == ChecksumAlgorithm.CRC32C)
-                {
-                    Assert.IsNotNull(firstObjectPart.ChecksumCRC32C);
-                }
-                if (expectedChecksumAlgorithm == ChecksumAlgorithm.SHA1)
-                {
-                    Assert.IsNotNull(firstObjectPart.ChecksumSHA1);
-                }
-                if (expectedChecksumAlgorithm == ChecksumAlgorithm.SHA256)
-                {
-                    Assert.IsNotNull(firstObjectPart.ChecksumSHA256);
-                }
-                Assert.AreEqual(1, firstObjectPart.PartNumber);
-                Assert.IsTrue(firstObjectPart.Size > 0);
 
                 // Similarily we don't expect this to validate either,
                 // though it doesn't expose the reponse metadata
-                await transfer.DownloadAsync(new()
+                transfer.Download(new TransferUtilityDownloadRequest
                 {
                     BucketName = _bucketName,
                     Key = uploadRequest.Key,
                     FilePath = retrievedFilepath,
                     ChecksumMode = ChecksumMode.ENABLED
-                }).ConfigureAwait(false);
+                });
             }
             finally
             {
@@ -626,6 +642,49 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
                     File.Delete(filePath);
                 if (File.Exists(retrievedFilepath))
                     File.Delete(retrievedFilepath);
+            }
+        }
+        
+        // When the user sets ResponseChecksumValidation to WHEN_SUPPORTED, and the user has set the requestValidationModeMember to ENABLED, assert that the response checksum is validated.
+        [DataRow(ResponseChecksumValidation.WHEN_SUPPORTED, true, true)]
+        // When the user sets ResponseChecksumValidation to WHEN_SUPPORTED, and the user has NOT set the requestValidationModeMember to ENABLED, assert that the response checksum is validated.
+        [DataRow(ResponseChecksumValidation.WHEN_SUPPORTED, false, true)]
+        // When the user sets ResponseChecksumValidation to WHEN_REQUIRED, and the user has set the requestValidationModeMember to ENABLED, assert that the response checksum is validated.
+        [DataRow(ResponseChecksumValidation.WHEN_REQUIRED, true, true)]
+        // When the user sets ResponseChecksumValidation to WHEN_REQUIRED, and the user has NOT set the requestValidationModeMember to ENABLED, assert that the response checksum is NOT validated.
+        [DataRow(ResponseChecksumValidation.WHEN_REQUIRED, false, false)]
+        [DataTestMethod]
+        public async Task TestResponseChecksumValidation(ResponseChecksumValidation responseChecksumValidation, bool enableChecksumMode, bool isChecksumAlgorithmSet)
+        {
+            var s3Config = new AmazonS3Config
+            {
+                ResponseChecksumValidation = responseChecksumValidation,
+                RegionEndpoint = TestAwsRegion
+            };
+
+            using (var s3Client = new AmazonS3Client(s3Config))
+            {
+                var key = UtilityMethods.GenerateName(nameof(ChecksumTests));
+                var putRequest = new PutObjectRequest()
+                {
+                    BucketName = _bucketName,
+                    Key = key,
+                    ContentBody = TestContent,
+                };
+
+                await s3Client.PutObjectAsync(putRequest);
+
+                var getRequest = new GetObjectRequest
+                {
+                    BucketName = putRequest.BucketName,
+                    Key = putRequest.Key,
+                };
+                if (enableChecksumMode)
+                    getRequest.ChecksumMode = ChecksumMode.ENABLED;
+
+                var response = await s3Client.GetObjectAsync(getRequest);
+
+                Assert.AreEqual(response.ResponseMetadata.ChecksumAlgorithm == CoreChecksumAlgorithm.NONE, !isChecksumAlgorithmSet);
             }
         }
     }

@@ -2,6 +2,7 @@
 using System.Reflection;
 using Allos.Amazon.Sdk.Fork;
 using Allos.Amazon.Sdk.Tests.IntegrationTests.Utils;
+using Amazon;
 using Amazon.Runtime;
 
 namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests
@@ -9,7 +10,7 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
     [AmazonSdkFork("sdk/test/IntegrationTests/Tests/TestBase.cs", "AWSSDK_DotNet.IntegrationTests.Tests")]
     public class TestBase<T> : TestBase
-        where T : AmazonServiceClient, new()
+        where T : AmazonServiceClient
     {
         private static T? _client;
         public static T Client
@@ -62,9 +63,24 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests
                 clientConfig.AuthenticationRegion = region;
         }
 
-        public static T CreateClient()
+        private static T CreateClient()
         {
-            return new();
+            // Try to find a constructor that takes RegionEndpoint (needed for S3 and some other services)
+            var regionConstructor = typeof(T).GetConstructor(new[] { typeof(RegionEndpoint) });
+            if (regionConstructor != null)
+            {
+                return (T)regionConstructor.Invoke(new object[] { TestAwsRegion });
+            }
+
+            // Fall back to parameterless constructor for services that don't require region
+            var defaultConstructor = typeof(T).GetConstructor(Type.EmptyTypes);
+            if (defaultConstructor != null)
+            {
+                return (T)defaultConstructor.Invoke(null);
+            }
+
+            throw new InvalidOperationException(
+                $"Type {typeof(T).Name} must have either a constructor that accepts RegionEndpoint or a parameterless constructor.");
         }
     }
 }

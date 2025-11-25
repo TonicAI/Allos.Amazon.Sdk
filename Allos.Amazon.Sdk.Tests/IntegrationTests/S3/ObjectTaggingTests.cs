@@ -16,11 +16,17 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
         private readonly string _objectKey = "helloworld";
 
         private AsyncTransferUtility? _transferClient;
-        
+
+        [ClassInitialize]
+        public static void ClassInitialize(TestContext a)
+        {
+            BaseInitialize();
+        }
+
         [TestInitialize]
         public void TestInitialize()
         {
-            _transferClient = new(Client);
+            _transferClient = new AsyncTransferUtility(Client);
 
             _tempFilePath = Path.GetTempFileName();
             _bucketName = S3TestUtils.CreateBucketWithWait(Client).ConfigureAwait(false).GetAwaiter().GetResult();

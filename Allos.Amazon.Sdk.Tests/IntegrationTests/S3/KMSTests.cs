@@ -16,6 +16,7 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
     // These tests require being able to get the KMS key id from the response headers and so are disabled
     //[TestClass]
     [AmazonSdkFork("sdk/test/Services/S3/IntegrationTests/KMSTests.cs", "AWSSDK_DotNet.IntegrationTests.Tests.S3")]
+    [TestClass]
     public class KmsTests : TestBase<AmazonS3Client>
     {
         private const string Key = "foo.txt";
@@ -23,6 +24,12 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
         private static readonly string _largeTestContents = new('@', (int)(AsyncTransferUtilityTests.MegSize * 19));
         private static readonly string _fileContents = "Test file contents";
         protected override string BasePath => Path.Combine(base.BasePath, nameof(KmsTests));
+
+        [ClassInitialize]
+        public static void ClassInitialize(TestContext a)
+        {
+            BaseInitialize();
+        }
 
         [ClassCleanup]
         public static void Cleanup()
@@ -301,7 +308,7 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
 
         public async Task TestPresignedUrls(string? keyId, ServerSideEncryptionMethod serverSideEncryptionMethod)
         {
-            using (var newClient = new AmazonS3Client())
+            using (var newClient = new AmazonS3Client(TestAwsRegion))
             {
                 var bucketName = await S3TestUtils.CreateBucketWithWait(newClient);
                 try
