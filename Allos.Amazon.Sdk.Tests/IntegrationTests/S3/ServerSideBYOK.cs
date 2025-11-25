@@ -47,7 +47,7 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
         [TestCategory("S3")]
         public async Task ServerSideEncryptionByokPutAndGet()
         {
-            var bucketName = S3TestUtils.CreateBucketWithWait(Client);
+            var bucketName = await S3TestUtils.CreateBucketWithWait(Client);
 
             try
             {
@@ -184,7 +184,7 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
         [TestCategory("S3")]
         public async Task ServerSideEncryptionByokTransferUtility()
         {
-            var bucketName = S3TestUtils.CreateBucketWithWait(Client);
+            var bucketName = await S3TestUtils.CreateBucketWithWait(Client);
             try
             {
                 Aes aesEncryption = Aes.Create();

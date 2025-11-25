@@ -22,7 +22,7 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Utils
                 if (TestClockSkewCorrection)
                 {
                     // set clockskew correction to wrong value
-                    SetIncorrectOffset(client);
+                    SetIncorrectOffset();
                 }
             };
             client.AfterResponseEvent += (_, _) =>
@@ -69,11 +69,10 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Utils
             }
         }
 
-        private static void SetIncorrectOffset<T>(T client)
-            where T : AmazonServiceClient
+        private static void SetIncorrectOffset()
         {
             var offset = SetIncorrectClockOffsetFuture ? General.IncorrectPositiveClockSkewOffset : General.IncorrectNegativeClockSkewOffset;
-            General.SetClockSkewCorrection(client, offset);
+            General.SetClockSkewCorrection(offset);
         }
     }
 }

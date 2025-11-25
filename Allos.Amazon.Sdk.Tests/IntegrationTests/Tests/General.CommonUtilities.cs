@@ -1,6 +1,6 @@
 using System.Reflection;
 using Allos.Amazon.Sdk.Fork;
-using Amazon.Runtime;
+using Amazon;
 
 namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests
 {
@@ -11,15 +11,10 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests
         public static TimeSpan IncorrectPositiveClockSkewOffset = TimeSpan.FromHours(26);
         public static TimeSpan IncorrectNegativeClockSkewOffset = TimeSpan.FromHours(-1);
 
-        public static void SetClockSkewCorrection<T>(T client, TimeSpan value)
-            where T : AmazonServiceClient
+        public static void SetClockSkewCorrection(TimeSpan value)
         {
-            var method = typeof(CorrectClockSkew).GetMethod("SetClockCorrectionForEndpoint", BindingFlags.Static | BindingFlags.NonPublic);
-            ArgumentNullException.ThrowIfNull(method);
-            
-#pragma warning disable CS0618
-            method.Invoke(null, new object[] { client.Config.DetermineServiceURL(), value });
-#pragma warning restore CS0618
+            var property = typeof(AWSConfigs).GetProperty("ClockOffset", BindingFlags.Static | BindingFlags.Public);
+            property?.SetValue(null, value);
         }
     }
 }

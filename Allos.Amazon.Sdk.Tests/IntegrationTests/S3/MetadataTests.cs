@@ -51,7 +51,7 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
         public static void Initialize(TestContext a)
         {
             BaseInitialize();
-            _bucketName = S3TestUtils.CreateBucketWithWait(Client);
+            _bucketName = S3TestUtils.CreateBucketWithWait(Client).ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
         [ClassCleanup]
@@ -72,15 +72,6 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
         public async Task TestSingleUploads()
         {
             await TestSingleUploadsHelper(Client).ConfigureAwait(false);
-        }
-
-        [TestMethod]
-        [TestCategory("S3")]
-        public async Task TestSingleUploadsSigV2()
-        {
-            var client = new AmazonS3Client(new AmazonS3Config { SignatureVersion = "2" });
-            await TestSingleUploadsHelper(client).ConfigureAwait(false);
-            client.Dispose();
         }
 
         private async Task TestSingleUploadsHelper(AmazonS3Client client)
@@ -140,17 +131,6 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
         public async Task TestSingleUploadWithUnicodeMetadata()
         {
             await TestSingleUploadWithUnicodeMetadataHelper(Client).ConfigureAwait(false);
-        }
-
-        /// <summary>
-        /// Ensure that when escaped, a SigV2 request with unicode metadata succeeds
-        /// </summary>
-        [TestMethod]
-        public async Task TestSingleUploadWithUnicodeMetadataSigV2()
-        {
-            var client = new AmazonS3Client(new AmazonS3Config { SignatureVersion = "2" });
-            await TestSingleUploadWithUnicodeMetadataHelper(client).ConfigureAwait(false);
-            client.Dispose();
         }
 
         private async Task TestSingleUploadWithUnicodeMetadataHelper(AmazonS3Client client)

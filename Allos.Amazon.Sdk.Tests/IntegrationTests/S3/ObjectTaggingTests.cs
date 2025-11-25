@@ -23,7 +23,7 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
             _transferClient = new(Client);
 
             _tempFilePath = Path.GetTempFileName();
-            _bucketName = S3TestUtils.CreateBucketWithWait(Client);
+            _bucketName = S3TestUtils.CreateBucketWithWait(Client).ConfigureAwait(false).GetAwaiter().GetResult();
 
             UtilityMethods.GenerateFile(_tempFilePath, 1024 * 1024 * 20);
         }

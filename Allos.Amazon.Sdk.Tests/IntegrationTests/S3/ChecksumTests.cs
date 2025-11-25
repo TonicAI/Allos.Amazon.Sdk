@@ -33,7 +33,7 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
         public static void Setup(TestContext context)
         {
             BaseInitialize();
-            _bucketName = S3TestUtils.CreateBucketWithWait(Client);
+            _bucketName = S3TestUtils.CreateBucketWithWait(Client).ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
         [ClassCleanup]

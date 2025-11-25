@@ -35,7 +35,7 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
         public async Task GetObjectFromNonDefaultEndpoint()
         {
             var client = new AmazonS3Client(RegionEndpoint.USWest2);
-            var bucketName = S3TestUtils.CreateBucketWithWait(client);
+            var bucketName = await S3TestUtils.CreateBucketWithWait(client);
             try
             {
                 var putObjectRequest = new PutObjectRequest
@@ -69,7 +69,7 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
         public async Task GetObjectFromNonDefaultEndpointWithDoubleEncryption()
         {
             var client = new AmazonS3Client(RegionEndpoint.USEast2);
-            var bucketName = S3TestUtils.CreateBucketWithWait(client);
+            var bucketName = await S3TestUtils.CreateBucketWithWait(client);
             try
             {
                 var putObjectRequest = new PutObjectRequest
@@ -104,7 +104,7 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
         {
             var client = new AmazonS3Client(RegionEndpoint.USWest2);
             var defaultEndpointClient = new AmazonS3Client(RegionEndpoint.USEast1);
-            var bucketName = S3TestUtils.CreateBucketWithWait(client);
+            var bucketName = await S3TestUtils.CreateBucketWithWait(client);
             try
             {
                 var putObjectRequest = new PutObjectRequest
@@ -140,7 +140,7 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
         {
             var client = new AmazonS3Client(RegionEndpoint.USEast2);
             var defaultEndpointClient = new AmazonS3Client(RegionEndpoint.USEast1);
-            var bucketName = S3TestUtils.CreateBucketWithWait(client);
+            var bucketName = await S3TestUtils.CreateBucketWithWait(client);
             try
             {
                 var putObjectRequest = new PutObjectRequest
@@ -179,7 +179,7 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
             var client = new AmazonS3Client(RegionEndpoint.USWest2);
             var defaultEndpointClient = new AmazonS3Client(RegionEndpoint.USEast1);
 
-            var bucketName = S3TestUtils.CreateBucketWithWait(client);
+            var bucketName = await S3TestUtils.CreateBucketWithWait(client);
             try
             {
                 var putObjectRequest = new PutObjectRequest
@@ -216,7 +216,7 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
             };
             using(var client = new AmazonS3Client(config))
             {
-                var bucketName = S3TestUtils.CreateBucketWithWait(client);
+                var bucketName = await S3TestUtils.CreateBucketWithWait(client);
                 try
                 {
                     var putObjectRequest = new PutObjectRequest
@@ -301,12 +301,9 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
 
         public async Task TestPresignedUrls(string? keyId, ServerSideEncryptionMethod serverSideEncryptionMethod)
         {
-            var oldSigV4 = AWSConfigsS3.UseSignatureVersion4;
-            AWSConfigsS3.UseSignatureVersion4 = true;
-
             using (var newClient = new AmazonS3Client())
             {
-                var bucketName = S3TestUtils.CreateBucketWithWait(newClient);
+                var bucketName = await S3TestUtils.CreateBucketWithWait(newClient);
                 try
                 {
                     await VerifyPresignedPut(bucketName, Key, keyId, serverSideEncryptionMethod).ConfigureAwait(false);
@@ -331,15 +328,13 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
                     {
                         await AmazonS3Util.DeleteS3BucketWithObjectsAsync(newClient, bucketName).ConfigureAwait(false);
                     }
-
-                    AWSConfigsS3.UseSignatureVersion4 = oldSigV4;
                 }
             }
         }
 
         private async Task TestSseKms(string? keyId, ServerSideEncryptionMethod serverSideEncryptionMethod)
         {
-            var bucketName = S3TestUtils.CreateBucketWithWait(Client);
+            var bucketName = await S3TestUtils.CreateBucketWithWait(Client);
             try
             {
                 var putObjectRequest = new PutObjectRequest
@@ -530,8 +525,10 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
                     Key = srcKey
                 }).ConfigureAwait(false);
                 
+                ArgumentNullException.ThrowIfNull(gomr.LastModified);
+                
                 // ReSharper disable RedundantAssignment
-                srcTimeStamp = gomr.LastModified;
+                srcTimeStamp = gomr.LastModified.Value;
                 srcVersionId = gomr.VersionId;
                 srcETag = gomr.ETag;
                 // ReSharper restore RedundantAssignment

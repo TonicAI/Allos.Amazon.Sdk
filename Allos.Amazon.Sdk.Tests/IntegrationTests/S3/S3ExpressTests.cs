@@ -30,7 +30,7 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
         public static void Initialize(TestContext a)
         {
             BaseInitialize();
-            _bucketName = S3TestUtils.CreateS3ExpressBucketWithWait(Client, "use1-az5", createForSse: false);
+            _bucketName = S3TestUtils.CreateS3ExpressBucketWithWait(Client, "use1-az5", createForSse: false).ConfigureAwait(false).GetAwaiter().GetResult();
 
             foreach (var key in _keys)
             {

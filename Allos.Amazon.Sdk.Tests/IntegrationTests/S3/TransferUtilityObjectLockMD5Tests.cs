@@ -509,7 +509,7 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
 
         private static async Task CreateBucketWithObjectLockConfiguration()
         {
-            _bucketName = S3TestUtils.CreateBucketWithWait(Client, new PutBucketRequest
+            _bucketName = await S3TestUtils.CreateBucketWithWait(Client, new PutBucketRequest
             {
                 ObjectLockEnabledForBucket = true,
             });

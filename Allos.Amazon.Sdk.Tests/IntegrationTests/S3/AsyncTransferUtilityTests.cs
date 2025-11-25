@@ -41,10 +41,10 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
         {
             BaseInitialize();
             // Create standard bucket for operations
-            _bucketName = S3TestUtils.CreateBucketWithWait(Client);
+            _bucketName = S3TestUtils.CreateBucketWithWait(Client).ConfigureAwait(false).GetAwaiter().GetResult();
 
             // Create a bucket specifically for the SSE-C tests as a bucket policy has to be set on it to require SSE-C.
-            _ssecBucketName = S3TestUtils.CreateBucketWithWait(Client, createForSse: true);
+            _ssecBucketName = S3TestUtils.CreateBucketWithWait(Client, createForSse: true).ConfigureAwait(false).GetAwaiter().GetResult();
             // Apply the bucket policy to SSE-C: https://docs.aws.amazon.com/AmazonS3/latest/userguide/ServerSideEncryptionCustomerKeys.html
             Client.PutBucketPolicyAsync(new()
             {
@@ -1217,7 +1217,7 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
             await ValidateFileContents(s3Client, bucketName, key, path, AmazonS3Util.MimeTypeFromExtension(ext)).ConfigureAwait(false);
         }
 
-        private static Task ValidateFileContents(IAmazonS3 s3Client, string bucketName, string key, string path, string? contentType)
+        private static async Task ValidateFileContents(IAmazonS3 s3Client, string bucketName, string key, string path, string? contentType)
         {
             var downloadPath = path + ".chk";
             var request = new GetObjectRequest
@@ -1226,21 +1226,21 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
                 Key = key,
             };
 
-            UtilityMethods.WaitUntil(() =>
+            await UtilityMethods.WaitUntil(async () =>
             {
-                using (var response = s3Client.GetObjectAsync(request).ConfigureAwait(false).GetAwaiter().GetResult())
+                using (var response = await s3Client.GetObjectAsync(request).ConfigureAwait(false))
                 {
                     if (!string.IsNullOrWhiteSpace(contentType))
                     {
                         Assert.AreEqual(contentType, response.Headers.ContentType);
                     }
-                    response.WriteResponseStreamToFileAsync(downloadPath, append: false, CancellationToken.None).ConfigureAwait(false).GetAwaiter().GetResult();
+
+                    await response.WriteResponseStreamToFileAsync(downloadPath, append: false, CancellationToken.None)
+                        .ConfigureAwait(false);
                 }
                 return true;
             }, sleepSeconds: 2, maxWaitSeconds: 10);
             UtilityMethods.CompareFiles(path, downloadPath);
-
-            return Task.CompletedTask;
         }
 
         public static async Task ValidateDirectoryContents(IAmazonS3 s3Client, string bucketName, string keyPrefix, DirectoryInfo sourceDirectory)

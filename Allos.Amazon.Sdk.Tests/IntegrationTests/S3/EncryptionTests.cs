@@ -61,7 +61,7 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
             {
                 writer.Write(SampleContent);
             }
-            _bucketName = S3TestUtils.CreateBucketWithWait(_s3EncryptionClientFileMode);
+            _bucketName = S3TestUtils.CreateBucketWithWait(_s3EncryptionClientFileMode).ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
         [ClassCleanup]
