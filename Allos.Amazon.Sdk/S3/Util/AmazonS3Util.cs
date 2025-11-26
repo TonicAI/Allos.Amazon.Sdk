@@ -226,11 +226,13 @@ namespace Allos.Amazon.Sdk.S3.Util
         /// True is returned in case of success, AccessDenied error or PermanentRedirect error.
         /// An exception is thrown in case of any other error.</returns>
         /// <remarks>This method calls GetACL for the bucket.</remarks>
-        public static bool DoesS3BucketExistV2(IAmazonS3 s3Client, string bucketName)
+        public static async Task<bool> DoesS3BucketExistV2Async(IAmazonS3 s3Client, string bucketName)
         {
             try
             {
-                s3Client.GetACLAsync(bucketName).ConfigureAwait(false).GetAwaiter().GetResult();
+#pragma warning disable CS0618 // Type or member is obsolete
+                await s3Client.GetACLAsync(bucketName).ConfigureAwait(false);
+#pragma warning restore CS0618 // Type or member is obsolete
             }
             catch (AmazonS3Exception e)
             {
@@ -239,7 +241,6 @@ namespace Allos.Amazon.Sdk.S3.Util
                     // A redirect error or a forbidden error means the bucket exists.
                     case "AccessDenied":
                     case "PermanentRedirect":
-                    case "UnknownOperationException":
                         return true;
                     case "NoSuchBucket":
                         return false;
@@ -511,12 +512,12 @@ namespace Allos.Amazon.Sdk.S3.Util
                 {
                     listVersionsRequest.KeyMarker = listVersionsResponse.NextKeyMarker;
                     listVersionsRequest.VersionIdMarker = listVersionsResponse.NextVersionIdMarker;
-                    isTruncated = listVersionsResponse.IsTruncated;
+                    isTruncated = listVersionsResponse.IsTruncated.GetValueOrDefault();
                 }
                 if(listObjectsV2Response != null)
                 {
                     listObjectsV2Request.ContinuationToken = listObjectsV2Response.NextContinuationToken;
-                    isTruncated = listObjectsV2Response.IsTruncated;
+                    isTruncated = listObjectsV2Response.IsTruncated.GetValueOrDefault();
                 }
 
             }
@@ -549,7 +550,6 @@ namespace Allos.Amazon.Sdk.S3.Util
         /// </summary>
         /// <param name="updateCallback">The callback to be invoked.</param>
         /// <param name="update">The data being passed to the callback.</param>
-        /// 8
         private static void InvokeS3DeleteBucketWithObjectsUpdateCallback(
             Action<S3DeleteBucketWithObjectsUpdate>? updateCallback, S3DeleteBucketWithObjectsUpdate update)
         {

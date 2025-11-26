@@ -15,122 +15,123 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
         private const uint MaxSpinLoops = 100;
 
         [SuppressMessage("ReSharper", "UnusedParameter.Global")]
-        public static string CreateBucket(IAmazonS3 s3Client, bool createForSse)
+        public static async Task<string> CreateBucket(IAmazonS3 s3Client, bool createForSse)
         {
             string bucketName = TestBase.ExistingBucketName ?? UtilityMethods.UniqueTestBucketName();
             
-            if (AmazonS3Util.DoesS3BucketExistV2(s3Client, bucketName))
+            if (await AmazonS3Util.DoesS3BucketExistV2Async(s3Client, bucketName))
             {
                 return bucketName;
             }
 
-            s3Client.PutBucketAsync(new PutBucketRequest { BucketName = bucketName }).ConfigureAwait(false).GetAwaiter().GetResult();
+            await s3Client.PutBucketAsync(new PutBucketRequest { BucketName = bucketName }).ConfigureAwait(false);
             
             return bucketName;
         }
 
         [SuppressMessage("ReSharper", "UnusedParameter.Global")]
-        public static string CreateBucket(IAmazonS3 s3Client, PutBucketRequest bucketRequest, bool createForSse)
+        public static async Task<string> CreateBucket(IAmazonS3 s3Client, PutBucketRequest bucketRequest, bool createForSse)
         {
             string bucketName = string.IsNullOrWhiteSpace(bucketRequest.BucketName) ?
                 TestBase.ExistingBucketName ?? UtilityMethods.UniqueTestBucketName() :
                 bucketRequest.BucketName;
 
-            if (AmazonS3Util.DoesS3BucketExistV2(s3Client, bucketName))
+            if (await AmazonS3Util.DoesS3BucketExistV2Async(s3Client, bucketName))
             {
                 return bucketName;
             }
 
             bucketRequest.BucketName = bucketName;
 
-            s3Client.PutBucketAsync(bucketRequest).ConfigureAwait(false).GetAwaiter().GetResult();
+            await s3Client.PutBucketAsync(bucketRequest).ConfigureAwait(false);
             return bucketName;
         }
-        public static string CreateS3ExpressBucketWithWait(IAmazonS3 s3Client, string regionCode, bool createForSse)
+        public static async Task<string> CreateS3ExpressBucketWithWait(IAmazonS3 s3Client, string regionCode, bool createForSse)
         {
             string bucketName = TestBase.ExistingBucketName ?? $"{UtilityMethods.SdkTestPrefix}-{DateTime.Now.Ticks}--{regionCode}--x-s3";
             
-            if (AmazonS3Util.DoesS3BucketExistV2(s3Client, bucketName))
+            if (await AmazonS3Util.DoesS3BucketExistV2Async(s3Client, bucketName))
             {
                 return bucketName;
             }
 
-            s3Client.PutBucketAsync(new PutBucketRequest
+            await s3Client.PutBucketAsync(new PutBucketRequest
             {
                 BucketName = bucketName,
                 PutBucketConfiguration = new()
                 {
-                    BucketInfo = new() { DataRedundancy = DataRedundancy.SingleAvailabilityZone, Type = BucketType.Directory },
+                    BucketInfo = new()
+                        { DataRedundancy = DataRedundancy.SingleAvailabilityZone, Type = BucketType.Directory },
                     Location = new() { Name = regionCode, Type = LocationType.AvailabilityZone }
                 }
-            }).ConfigureAwait(false).GetAwaiter().GetResult();
-            WaitForBucket(s3Client, bucketName, true);
+            }).ConfigureAwait(false);
+            await WaitForBucket(s3Client, bucketName, true);
 
 
             return bucketName;
         }
-        public static string CreateBucketWithWait(IAmazonS3 s3Client, bool setPublicAcLs = false, bool createForSse = false)
+        public static async Task<string> CreateBucketWithWait(IAmazonS3 s3Client, bool setPublicAcLs = false, bool createForSse = false)
         {
-            string bucketName = CreateBucket(s3Client, createForSse);
-            WaitForBucket(s3Client, bucketName);
+            string bucketName = await CreateBucket(s3Client, createForSse);
+            await WaitForBucket(s3Client, bucketName);
             if (setPublicAcLs)
             {
-                SetPublicBucketAcLs(s3Client, bucketName);
+                await SetPublicBucketAcLs(s3Client, bucketName);
             }
             return bucketName;
         }
 
-        public static string CreateBucketWithWait(IAmazonS3 s3Client, PutBucketRequest bucketRequest, bool setPublicAcLs = false, bool createForSse = false)
+        public static async Task<string> CreateBucketWithWait(IAmazonS3 s3Client, PutBucketRequest bucketRequest, bool setPublicAcLs = false, bool createForSse = false)
         {
-            string bucketName = CreateBucket(s3Client, bucketRequest, createForSse);
-            WaitForBucket(s3Client, bucketName);
+            string bucketName = await CreateBucket(s3Client, bucketRequest, createForSse);
+            await WaitForBucket(s3Client, bucketName);
             if (setPublicAcLs)
             {
-                SetPublicBucketAcLs(s3Client, bucketName);
+                await SetPublicBucketAcLs(s3Client, bucketName);
             }
             return bucketName;
         }
 
-        private static void SetPublicBucketAcLs(IAmazonS3 client, string bucketName)
+        private static async Task SetPublicBucketAcLs(IAmazonS3 client, string bucketName)
         {
-             client.PutBucketOwnershipControlsAsync(new()
-             {
-                 BucketName = bucketName,
-                 OwnershipControls = new()
-                 {
-                     Rules = new()
-                     {
-                             new() {ObjectOwnership = ObjectOwnership.BucketOwnerPreferred}
-                         }
-                 }
-             }).ConfigureAwait(false).GetAwaiter().GetResult();
-            
-             client.PutPublicAccessBlockAsync(new()
-             {
-                 BucketName = bucketName,
-                 PublicAccessBlockConfiguration = new()
-                 {
-                     BlockPublicAcls = false
-                 }
-             }).ConfigureAwait(false).GetAwaiter().GetResult();
+            await client.PutBucketOwnershipControlsAsync(new()
+            {
+                BucketName = bucketName,
+                OwnershipControls = new()
+                {
+                    Rules = new()
+                    {
+                        new() { ObjectOwnership = ObjectOwnership.BucketOwnerPreferred }
+                    }
+                }
+            }).ConfigureAwait(false);
+
+            await client.PutPublicAccessBlockAsync(new()
+            {
+                BucketName = bucketName,
+                PublicAccessBlockConfiguration = new()
+                {
+                    BlockPublicAcls = false
+                }
+            }).ConfigureAwait(false);
         }
 
-        public static void WaitForBucket(IAmazonS3 client, string bucketName, bool skipDoubleCheck = false)
+        public static async Task WaitForBucket(IAmazonS3 client, string bucketName, bool skipDoubleCheck = false)
         {
-            UtilityMethods.WaitUntilSuccess(() => {
+            await UtilityMethods.WaitUntilSuccess(async () => {
                 //Check if a bucket exists by trying to put an object in it
                 var key = Guid.NewGuid() + "_existskey";
 
-                _ = client.PutObjectAsync(new()
+                await client.PutObjectAsync(new()
                 {
                     BucketName = bucketName,
                     Key = key,
                     ContentBody = "exists..."
-                }).ConfigureAwait(false).GetAwaiter().GetResult();
+                });
 
                 try
                 {
-                    client.DeleteAsync(bucketName, key, null).ConfigureAwait(false).GetAwaiter().GetResult();
+                    await client.DeleteAsync(bucketName, key, null);
                 }
                 catch (AmazonS3Exception s3Ex) when (s3Ex.IsSenderException(TestBase.Logger))
                 {
@@ -141,19 +142,22 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
                     Console.WriteLine($"Eventual consistency error: failed to delete key {key} from bucket {bucketName}");
                 }
 
-                return true;
+                return Task.FromResult(true);
             });
 
             if (skipDoubleCheck) return;
 
             //Double check the bucket still exists using the DoesBucketExistV2 method
-            _ = WaitForConsistency(() => AmazonS3Util.DoesS3BucketExistV2(client, bucketName) ? (bool?) true : null);
+            _ = WaitForConsistency(async () => await AmazonS3Util.DoesS3BucketExistV2Async(client, bucketName) ? (bool?) true : null);
         }
 
-        public static void WaitForObject(IAmazonS3 client, string bucketName, string key, uint maxSeconds)
+        public static async Task WaitForObject(IAmazonS3 client, string bucketName, string key, uint maxSeconds)
         {
             var sleeper = UtilityMethods.ListSleeper.Create();
-            UtilityMethods.WaitUntilSuccess(() => { client.GetObjectAsync(bucketName, key).ConfigureAwait(false).GetAwaiter().GetResult(); }, sleeper, maxSeconds);
+            await UtilityMethods.WaitUntilSuccess(async () =>
+            {
+                await client.GetObjectAsync(bucketName, key).ConfigureAwait(false);
+            }, sleeper, maxSeconds);
         }
 
         /// <summary>
@@ -204,16 +208,16 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
                 listVersionsRequest.VersionIdMarker = listVersionsResponse.NextVersionIdMarker;
             }
             // Continue listing objects and deleting them until the bucket is empty.
-            while (listVersionsResponse.IsTruncated);
+            while (listVersionsResponse.IsTruncated.GetValueOrDefault());
         }
 
-        public static T? WaitForConsistency<T>(Func<T> loadFunction)
+        public static async Task<T?> WaitForConsistency<T>(Func<Task<T>> loadFunction)
         {
             //First try waiting up to 60 seconds.    
             uint firstWaitSeconds = 60;
             try
             {
-                return UtilityMethods.WaitUntilSuccess(loadFunction, 10, firstWaitSeconds);
+                return await UtilityMethods.WaitUntilSuccess(loadFunction, 10, firstWaitSeconds);
             }
             catch (AmazonS3Exception s3Ex) when (s3Ex.IsSenderException(TestBase.Logger))
             {
@@ -229,7 +233,7 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
             {
                 try
                 {
-                    T result = loadFunction();
+                    T result = await loadFunction();
                     if (result != null)
                     {
                         if (spinCounter != 0)
@@ -252,35 +256,7 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
             //If we don't have an ok result then spend the normal wait period to wait for eventual consistency.
             Console.WriteLine($"Eventual consistency wait: could not resolve eventual consistency after {MaxSpinLoops}. Waiting normally...");
             uint lastWaitSeconds = 240; //4 minute wait.
-            return UtilityMethods.WaitUntilSuccess(loadFunction, 5, lastWaitSeconds);
-        }
-
-        public static IDisposable UseSignatureVersion4(bool newValue)
-        {
-            return new SigV4Disposable(newValue);
-        }
-
-        public static void TestWithVariableSigV4(Action action, bool useSigV4)
-        {
-            using (_ = UseSignatureVersion4(useSigV4))
-            {
-                action();
-            }
-        }
-
-        private class SigV4Disposable : IDisposable
-        {
-            private readonly bool _oldSigV4;
-            public SigV4Disposable(bool newSigV4)
-            {
-                _oldSigV4 = AWSConfigsS3.UseSignatureVersion4;
-                AWSConfigsS3.UseSignatureVersion4 = newSigV4;
-            }
-
-            public void Dispose()
-            {
-                AWSConfigsS3.UseSignatureVersion4 = _oldSigV4;
-            }
+            return await UtilityMethods.WaitUntilSuccess(loadFunction, 5, lastWaitSeconds);
         }
     }
 }

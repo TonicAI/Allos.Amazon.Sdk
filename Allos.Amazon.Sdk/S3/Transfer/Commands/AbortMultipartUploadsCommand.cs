@@ -30,6 +30,12 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
                 ArgumentException.ThrowIfNullOrWhiteSpace(_request.BucketName);    
             }
             
+            
+            if (!_request.IsSetInitiatedDate())
+            {
+                ArgumentNullException.ThrowIfNull(_request.InitiatedDate);
+            }
+            
             SemaphoreSlim? asyncThrottler = null;
             CancellationTokenSource? internalCts = null;
             try
@@ -59,7 +65,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
                                 // responses and throw the original exception.
                                 break;
                             }
-                            if (upload.Initiated < _request.InitiateDateUtc.DateTime)
+                            if (upload.Initiated < _request.InitiatedDate.Value.DateTime)
                             {
                                 await asyncThrottler.WaitAsync(cancellationToken)
                                     .ConfigureAwait(continueOnCapturedContext: false);
@@ -71,7 +77,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
                         }
                     }
                 }
-                while (listResponse.IsTruncated);
+                while (listResponse.IsTruncated.GetValueOrDefault());
 
                 await WhenAllOrFirstExceptionAsync(pendingTasks,cancellationToken)
                     .ConfigureAwait(continueOnCapturedContext: false);

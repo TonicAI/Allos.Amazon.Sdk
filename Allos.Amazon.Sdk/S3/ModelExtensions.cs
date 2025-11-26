@@ -1,9 +1,10 @@
 using System.Runtime.CompilerServices;
+using Amazon.S3.Model;
 
-namespace Amazon.S3.Model;
+namespace Allos.Amazon.Sdk.S3;
 
 /// <summary>
-/// Extensions that simplify working with types in Amazon.S3.<see cref="Amazon.S3.Model"/>
+/// Extensions that simplify working with types in Amazon.S3.Model
 /// </summary>
 public static class ModelExtensions
 {

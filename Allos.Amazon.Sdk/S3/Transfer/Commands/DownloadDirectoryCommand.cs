@@ -1,6 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Net;
-using Allos.Amazon.S3.Model;
 using Allos.Amazon.Sdk.Fork;
 using Allos.Amazon.Sdk.S3.Util;
 using Amazon.Runtime;
@@ -162,7 +161,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
                     {
                         if (ShouldDownload(s3O))
                         {
-                            _totalBytes += s3O.Size.ToUInt64();
+                            _totalBytes += s3O.Size.GetValueOrDefault().ToUInt64();
                             objs.Add(s3O);
                         }
                     }
@@ -186,7 +185,7 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
                     {
                         if (ShouldDownload(s3O))
                         {
-                            _totalBytes += s3O.Size.ToUInt64();
+                            _totalBytes += s3O.Size.GetValueOrDefault().ToUInt64();
                             objs.Add(s3O);
                         }
                     }
@@ -319,11 +318,13 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
 
         protected virtual bool ShouldDownload(S3Object s3O)
         {
-            // skip objects based on ModifiedSinceDateUtc
-            if (_request.IsSetModifiedSinceDateUtc() && s3O.LastModified.ToUniversalTime() <= _request.ModifiedSinceDateUtc.ToUniversalTime())
+            // skip objects based on ModifiedSinceDate
+            if (_request.IsSetModifiedSinceDate() && s3O.LastModified.GetValueOrDefault() <=
+                _request.ModifiedSinceDate.ToUniversalTime())
                 return false;
-            // skip objects based on UnmodifiedSinceDateUtc
-            if (_request.IsSetUnmodifiedSinceDateUtc() && s3O.LastModified.ToUniversalTime() > _request.UnmodifiedSinceDateUtc.ToUniversalTime())
+            // skip objects based on UnmodifiedSinceDate
+            if (_request.IsSetUnmodifiedSinceDate() && s3O.LastModified.GetValueOrDefault() >
+                _request.UnmodifiedSinceDate.ToUniversalTime())
                 return false;
             // skip objects which are instruction files and we're using encryption client
             if (IsInstructionFile(s3O.Key))

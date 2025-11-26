@@ -145,10 +145,18 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
                 ServerSideEncryptionCustomerProvidedKey = _request.ServerSideEncryptionCustomerProvidedKey,
                 ServerSideEncryptionCustomerProvidedKeyMd5 = _request.ServerSideEncryptionCustomerProvidedKeyMd5,
                 TagSet = _request.TagSet,
-                CalculateContentMd5Header = _request.CalculateContentMd5Header,
                 ObjectLockLegalHoldStatus = _request.ObjectLockLegalHoldStatus,
                 ObjectLockMode = _request.ObjectLockMode,
                 DisablePayloadSigning = _request.DisablePayloadSigning,
+                RequestPayer = _request.RequestPayer,
+                DisableDefaultChecksumValidation = _request.DisableDefaultChecksumValidation,
+                ChecksumAlgorithm = _request.ChecksumAlgorithm,
+                BucketKeyEnabled = _request.BucketKeyEnabled,
+                ExpectedBucketOwner = _request.ExpectedBucketOwner,
+                SSEKMSEncryptionContext = _request.SSEKMSEncryptionContext,
+                WebsiteRedirectLocation = _request.WebsiteRedirectLocation,
+                Headers = _request.Headers,
+                Grants = _request.Grants
             };
             
             if (_request.IsSetObjectLockRetainUntilDate())

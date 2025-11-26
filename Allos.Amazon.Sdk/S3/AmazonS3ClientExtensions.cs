@@ -5,7 +5,7 @@ using Amazon.Runtime.SharedInterfaces;
 using Amazon.S3;
 using Amazon.Util.Internal;
 
-namespace Amazon.Sdk.S3;
+namespace Allos.Amazon.Sdk.S3;
 
 /// <summary>
 /// Extensions implementing parts of <see cref="ICoreAmazonS3"/> relevent to <see cref="AsyncTransferUtility"/>

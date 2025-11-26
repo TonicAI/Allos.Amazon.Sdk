@@ -52,7 +52,6 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
             {
                 BucketName = _bucketName,
                 Key = UtilityMethods.GenerateName(nameof(TransferUtilityObjectLockMd5Tests)),
-                CalculateContentMd5Header = true,
                 InputStream = contentStream
             };
 
@@ -85,7 +84,6 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
             {
                 BucketName = _bucketName,
                 Key = key,
-                CalculateContentMd5Header = true,
                 FilePath = filePath
             };
 
@@ -96,106 +94,6 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
                 var getBody = await new StreamReader(getResponse.ResponseStream).ReadToEndAsync().ConfigureAwait(false);
                 Assert.AreEqual(content, getBody);
             }
-        }
-
-        [TestMethod]
-        [TestCategory("S3")]
-        [ExpectedException(typeof(AmazonS3Exception), "Content-MD5 HTTP header is required for Put Part requests with Object Lock parameters")]
-        public async Task TestMultipartUploadFileFailViaTransferUtility()
-        {
-            var transferConfig = new AsyncTransferConfig { MinSizeBeforePartUpload = 6000000 };
-
-            var transfer = new AsyncTransferUtility(Client, transferConfig);
-            var content = new string('a', 7000000);
-            var key = UtilityMethods.GenerateName(nameof(TransferUtilityObjectLockMd5Tests));
-            var filePath = Path.Combine(Path.GetTempPath(), key + ".txt");
-
-            // Create the file
-            await using (StreamWriter writer = File.CreateText(filePath))
-            {
-                await writer.WriteAsync(content).ConfigureAwait(false);
-            }
-
-            // Do not set CalculateContentMD5Header as true which should cause upload to fail.
-            var uploadRequest = new UploadRequest
-            {
-                BucketName = _bucketName,
-                Key = key,
-                FilePath = filePath
-            };
-
-            await transfer.UploadAsync(uploadRequest).ConfigureAwait(false);
-        }
-
-        [TestMethod]
-        [TestCategory("S3")]
-        [ExpectedException(typeof(AmazonS3Exception), "Content-MD5 HTTP header is required for Put Part requests with Object Lock parameters")]
-        public async Task TestSimpleUploadFileFailViaTransferUtility()
-        {
-            var transferConfig = new AsyncTransferConfig { MinSizeBeforePartUpload = 6000000 };
-
-            var transfer = new AsyncTransferUtility(Client, transferConfig);
-            var content = new string('a', 2000000);
-            var key = UtilityMethods.GenerateName(nameof(TransferUtilityObjectLockMd5Tests));
-            var filePath = Path.Combine(Path.GetTempPath(), key + ".txt");
-
-            // Create the file
-            await using (StreamWriter writer = File.CreateText(filePath))
-            {
-                await writer.WriteAsync(content).ConfigureAwait(false);
-            }
-
-            // Do not set CalculateContentMD5Header as true which should cause upload to fail.
-            var uploadRequest = new UploadRequest
-            {
-                BucketName = _bucketName,
-                Key = key,
-                FilePath = filePath
-            };
-
-            await transfer.UploadAsync(uploadRequest).ConfigureAwait(false);
-        }
-
-        [TestMethod]
-        [TestCategory("S3")]
-        [ExpectedException(typeof(AmazonS3Exception), "Content-MD5 HTTP header is required for Put Part requests with Object Lock parameters")]
-        public async Task TestMultipartUploadStreamFailViaTransferUtility()
-        {
-            var transferConfig = new AsyncTransferConfig { MinSizeBeforePartUpload = 6000000 };
-            var transfer = new AsyncTransferUtility(Client, transferConfig);
-            var content = new string('a', 7000000);
-            var contentStream = new MemoryStream(Encoding.UTF8.GetBytes(content));
-
-            // Do not set CalculateContentMD5Header as true which should cause upload to fail.
-            var uploadRequest = new UploadRequest
-            {
-                BucketName = _bucketName,
-                Key = UtilityMethods.GenerateName(nameof(TransferUtilityObjectLockMd5Tests)),
-                InputStream = contentStream
-            };
-
-            await transfer.UploadAsync(uploadRequest).ConfigureAwait(false);
-        }
-
-        [TestMethod]
-        [TestCategory("S3")]
-        [ExpectedException(typeof(AmazonS3Exception), "Content-MD5 HTTP header is required for Put Part requests with Object Lock parameters")]
-        public async Task TestSimpleUploadStreamFailViaTransferUtility()
-        {
-            var transferConfig = new AsyncTransferConfig { MinSizeBeforePartUpload = 6000000 };
-            var transfer = new AsyncTransferUtility(Client, transferConfig);
-            var content = new string('a', 2000000);
-            var contentStream = new MemoryStream(Encoding.UTF8.GetBytes(content));
-
-            // Do not set CalculateContentMD5Header as true which should cause upload to fail.
-            var uploadRequest = new UploadRequest
-            {
-                BucketName = _bucketName,
-                Key = UtilityMethods.GenerateName(nameof(TransferUtilityObjectLockMd5Tests)),
-                InputStream = contentStream
-            };
-
-            await transfer.UploadAsync(uploadRequest).ConfigureAwait(false);
         }
 
         [TestMethod]
@@ -211,7 +109,6 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
             {
                 BucketName = _bucketName,
                 Key = UtilityMethods.GenerateName(nameof(TransferUtilityObjectLockMd5Tests)),
-                CalculateContentMd5Header = true,
                 InputStream = contentStream,
             };
 
@@ -237,7 +134,6 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
             {
                 BucketName = _bucketName,
                 Key = UtilityMethods.GenerateName(nameof(TransferUtilityObjectLockMd5Tests)),
-                CalculateContentMd5Header = true,
                 InputStream = contentStream,
             };
             uploadRequest.Headers.ContentMD5 = AWSSDKUtils.GenerateMD5ChecksumForStream(contentStream);
@@ -271,7 +167,6 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
             {
                 BucketName = _bucketName,
                 Key = key,
-                CalculateContentMd5Header = true,
                 FilePath = filePath
             };
 
@@ -304,7 +199,6 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
             {
                 BucketName = _bucketName,
                 Key = key,
-                CalculateContentMd5Header = true,
                 FilePath = filePath
             };
 
@@ -354,7 +248,6 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
             {
                 BucketName = _bucketName,
                 Directory = directoryPath,
-                CalculateContentMd5Header = true
             };
 
             await transfer.UploadDirectoryAsync(uploadDirectoryRequest).ConfigureAwait(false);
@@ -395,7 +288,6 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
             {
                 BucketName = _bucketName,
                 Key = key,
-                CalculateContentMd5Header = true,
                 FilePath = filePath,
                 ObjectLockLegalHoldStatus = desiredObjectLockLegalHoldStatus,
                 ObjectLockMode = desiredObjectLockMode,
@@ -410,7 +302,7 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
                 Assert.AreEqual(content, getBody);
                 Assert.AreEqual(desiredObjectLockLegalHoldStatus, getResponse.ObjectLockLegalHoldStatus);
                 Assert.AreEqual(desiredObjectLockMode, getResponse.ObjectLockMode);
-                Assert.AreEqual(desiredObjectLockRetainUntilDate.Date, getResponse.ObjectLockRetainUntilDate.ToUniversalTime().Date);
+                Assert.AreEqual(desiredObjectLockRetainUntilDate.Date, getResponse.ObjectLockRetainUntilDate.GetValueOrDefault().ToUniversalTime().Date);
             }
         }
 
@@ -451,7 +343,6 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
             {
                 BucketName = _bucketName,
                 Directory = directoryPath,
-                CalculateContentMd5Header = true,
                 ObjectLockLegalHoldStatus = desiredObjectLockLegalHoldStatus,
                 ObjectLockMode = desiredObjectLockMode,
                 ObjectLockRetainUntilDate = desiredObjectLockRetainUntilDate
@@ -468,7 +359,7 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
                     Assert.AreEqual(new('a', file.Value), getBody);
                     Assert.AreEqual(desiredObjectLockLegalHoldStatus, getResponse.ObjectLockLegalHoldStatus);
                     Assert.AreEqual(desiredObjectLockMode, getResponse.ObjectLockMode);
-                    Assert.AreEqual(desiredObjectLockRetainUntilDate.Date, getResponse.ObjectLockRetainUntilDate.ToUniversalTime().Date);
+                    Assert.AreEqual(desiredObjectLockRetainUntilDate.Date, getResponse.ObjectLockRetainUntilDate.GetValueOrDefault().ToUniversalTime().Date);
                 }
             }
         }
@@ -498,7 +389,6 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
             {
                 BucketName = _bucketName,
                 Key = key,
-                CalculateContentMd5Header = true,
                 FilePath = filePath,
                 ObjectLockLegalHoldStatus = desiredObjectLockLegalHoldStatus,
                 ObjectLockMode = desiredObjectLockMode,
@@ -513,13 +403,13 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
                 Assert.AreEqual(content, getBody);
                 Assert.AreEqual(desiredObjectLockLegalHoldStatus, getResponse.ObjectLockLegalHoldStatus);
                 Assert.AreEqual(desiredObjectLockMode, getResponse.ObjectLockMode);
-                Assert.AreEqual(desiredObjectLockRetainUntilDate.Date, getResponse.ObjectLockRetainUntilDate.ToUniversalTime().Date);
+                Assert.AreEqual(desiredObjectLockRetainUntilDate.Date, getResponse.ObjectLockRetainUntilDate.GetValueOrDefault().ToUniversalTime().Date);
             }
         }
 
         private static async Task CreateBucketWithObjectLockConfiguration()
         {
-            _bucketName = S3TestUtils.CreateBucketWithWait(Client, new PutBucketRequest
+            _bucketName = await S3TestUtils.CreateBucketWithWait(Client, new PutBucketRequest
             {
                 ObjectLockEnabledForBucket = true,
             });
@@ -601,7 +491,7 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
 
             }
             // Continue listing objects and deleting them until the bucket is empty.
-            while (listVersionsResponse.IsTruncated);
+            while (listVersionsResponse.IsTruncated.GetValueOrDefault());
         }
     }
 }

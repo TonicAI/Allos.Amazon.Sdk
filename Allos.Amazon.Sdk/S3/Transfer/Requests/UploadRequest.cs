@@ -1,9 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using Allos.Amazon.Sdk.Fork;
-using Amazon.Runtime.Internal;
-using Amazon.S3;
-using Amazon.S3.Model;
 using Amazon.Util;
 
 namespace Allos.Amazon.Sdk.S3.Transfer
@@ -20,29 +17,10 @@ namespace Allos.Amazon.Sdk.S3.Transfer
     [SuppressMessage("ReSharper", "InconsistentNaming")]
     [DebuggerDisplay("{DebuggerDisplay}")]
     [AmazonSdkFork("sdk/src/Services/S3/Custom/Transfer/TransferUtilityUploadRequest.cs", "Amazon.S3.Transfer")]
-    public class UploadRequest : BaseRequest
+    public class UploadRequest : BaseUploadRequest
     {
         protected ulong? _partSize;
-
-        protected HeadersCollection? _headersCollection;
-        protected MetadataCollection? _metadataCollection;
-
-        protected DateTimeOffset? _objectLockRetainUntilDate;
-        
-        /// <summary>
-        /// 	Gets or sets the name of the bucket.
-        /// </summary>
-        /// <value>
-        /// 	The name of the bucket.
-        /// </value>
-        public virtual string? BucketName { get; set; }
-
-        /// <summary>
-        /// Checks if BucketName property is set.
-        /// </summary>
-        /// <returns>true if BucketName property is set.</returns>
-        [MemberNotNullWhen(true, nameof(BucketName))]
-        internal virtual bool IsSetBucketName() => !string.IsNullOrWhiteSpace(BucketName);
+        protected ulong? _mpuObjectSize;
 
         /// <summary>
         /// 	Gets or sets the key under which the Amazon S3 object is to be stored.
@@ -59,112 +37,6 @@ namespace Allos.Amazon.Sdk.S3.Transfer
         /// <returns>true if Key property is set.</returns>
         [MemberNotNullWhen(true, nameof(Key))]
         internal virtual bool IsSetKey() => !string.IsNullOrWhiteSpace(Key);
-
-        /// <summary>
-        /// 	Gets or sets the canned access control list (ACL)
-        /// 	for the uploaded object.
-        /// 	Please refer to 
-        /// 	<see cref="T:Amazon.S3.S3CannedACL"/> for
-        /// 	information on Amazon S3 canned ACLs.
-        /// </summary>
-        /// <value>
-        /// 	The canned access control list (ACL)
-        /// 	for the uploaded object.
-        /// </value>
-        public virtual S3CannedACL? CannedAcl { get; set; }
-
-        /// <summary>
-        /// Checks if the CannedACL property is set.
-        /// </summary>
-        /// <returns>true if there is the CannedACL property is set.</returns>
-        [MemberNotNullWhen(true, nameof(CannedAcl))]
-        internal virtual bool IsSetCannedAcl() => (CannedAcl != null);
-
-        /// <summary>
-        /// 	Removes the cannned access control list (ACL)
-        /// 	for the uploaded object.
-        /// </summary>
-        public virtual void RemoveCannedAcl()
-        {
-            CannedAcl = null;
-        }
-
-        /// <summary>
-        /// 	Gets or sets the content type of the uploaded Amazon S3 object.
-        /// </summary>
-        /// <value>
-        /// 	The content type of the uploaded Amazon S3 object.
-        /// </value>
-        public virtual string? ContentType { get; set; }
-
-        /// <summary>
-        /// Checks if ContentType property is set.
-        /// </summary>
-        /// <returns>true if ContentType property is set.</returns>
-        [MemberNotNullWhen(true, nameof(ContentType))]
-        internal virtual bool IsSetContentType() => !string.IsNullOrWhiteSpace(ContentType);
-
-        /// <summary>
-        /// 	Gets or sets the storage class for the uploaded Amazon S3 object.
-        /// 	Please refer to 
-        /// 	<see cref="T:Amazon.S3.S3StorageClass"/> for
-        /// 	information on S3 Storage Classes.
-        /// </summary>
-        /// <value>
-        /// 	The storage class for the uploaded Amazon S3 object.
-        /// </value>
-        public virtual S3StorageClass? StorageClass { get; set; }
-
-        /// <summary>
-        /// Gets and sets the ServerSideEncryptionMethod property.
-        /// Specifies the encryption used on the server to
-        /// store the content.
-        /// </summary>
-        public virtual ServerSideEncryptionMethod? ServerSideEncryptionMethod { get; set; }
-
-        /// <summary>
-        /// The Server-side encryption algorithm to be used with the customer provided key.
-        ///  
-        /// </summary>
-        public virtual ServerSideEncryptionCustomerMethod? ServerSideEncryptionCustomerMethod { get; set; }
-
-        /// <summary>
-        /// The id of the AWS Key Management Service key that Amazon S3 should use to encrypt and decrypt the object.
-        /// If a key id is not specified, the default key will be used for encryption and decryption.
-        /// </summary>
-        [AWSProperty(Sensitive=true)]
-        public virtual string? ServerSideEncryptionKeyManagementServiceKeyId { get; set; }
-
-        /// <summary>
-        /// Checks if ServerSideEncryptionKeyManagementServiceKeyId property is set.
-        /// </summary>
-        /// <returns>true if ServerSideEncryptionKeyManagementServiceKeyId property is set.</returns>
-        [MemberNotNullWhen(true, nameof(ServerSideEncryptionKeyManagementServiceKeyId))]
-        internal virtual bool IsSetServerSideEncryptionKeyManagementServiceKeyId() => !string.IsNullOrWhiteSpace(ServerSideEncryptionKeyManagementServiceKeyId);
-
-        /// <summary>
-        /// The base64-encoded encryption key for Amazon S3 to use to encrypt the object
-        /// <para>
-        /// Using the encryption key you provide as part of your request Amazon S3 manages both the encryption, as it writes 
-        /// to disks, and decryption, when you access your objects. Therefore, you don't need to maintain any data encryption code. The only 
-        /// thing you do is manage the encryption keys you provide.
-        /// </para>
-        /// <para>
-        /// When you retrieve an object, you must provide the same encryption key as part of your request. Amazon S3 first verifies 
-        /// the encryption key you provided matches, and then decrypts the object before returning the object data to you.
-        /// </para>
-        /// <para>
-        /// Important: Amazon S3 does not store the encryption key you provide.
-        /// </para>
-        /// </summary>
-        [AWSProperty(Sensitive=true)]
-        public virtual string? ServerSideEncryptionCustomerProvidedKey { get; set; }
-
-        /// <summary>
-        /// The MD5 of the customer encryption key specified in the ServerSideEncryptionCustomerProvidedKey property. The MD5 is
-        /// base 64 encoded. This field is optional, the SDK will calculate the MD5 if this is not set.
-        /// </summary>
-        public virtual string? ServerSideEncryptionCustomerProvidedKeyMd5 { get; set; }
 
         /// <summary>
         /// Input stream for the request; content for the request will be read from the stream.
@@ -215,29 +87,6 @@ namespace Allos.Amazon.Sdk.S3.Transfer
         [MemberNotNullWhen(true, nameof(PartSize))]
         [MemberNotNullWhen(true, nameof(_partSize))]
         internal virtual bool IsSetPartSize() => _partSize.HasValue;
-
-        /// <summary>
-        /// The collection of headers for the request.
-        /// </summary>
-        public virtual HeadersCollection Headers
-        {
-            get => _headersCollection ??= new HeadersCollection();
-            internal set => _headersCollection = value;
-        }
-
-        /// <summary>
-        /// The collection of metadata for the request.
-        /// </summary>
-        public virtual MetadataCollection Metadata
-        {
-            get => _metadataCollection ??= new MetadataCollection();
-            internal set => _metadataCollection = value;
-        }
-
-        /// <summary>
-        /// The tag-set for the object.
-        /// </summary>
-        public virtual List<Tag>? TagSet { get; set; }
 
         /// <summary>
         /// The event for UploadProgressEvent notifications. All
@@ -350,96 +199,171 @@ namespace Allos.Amazon.Sdk.S3.Transfer
             AutoCloseStream = autoCloseStream;
             return this;
         }
-
+        
         /// <summary>
-        /// <para><b>WARNING: Setting DisableDefaultChecksumValidation to true disables the default data 
-        /// integrity check on upload requests.</b></para>
-        /// <para>When true, checksum verification will not be used in upload requests. This may increase upload 
-        /// performance under high CPU loads. Setting DisableDefaultChecksumValidation sets the deprecated property
-        /// DisableMD5Stream to the same value. The default value is false. Set this value to true to 
-        /// disable the default checksum validation used in all S3 upload requests or override this value per
-        /// request by setting the DisableDefaultChecksumValidation property on <see cref="PutObjectRequest"/>,
-        /// <see cref="UploadPartRequest"/>, or <see cref="UploadRequest"/>.</para>
-        /// <para>Checksums, SigV4 payload signing, and HTTPS each provide some data integrity 
-        /// verification. If DisableDefaultChecksumValidation is true and DisablePayloadSigning is true, then the 
-        /// possibility of data corruption is completely dependent on HTTPS being the only remaining 
-        /// source of data integrity verification.</para>
-        /// </summary>
-        public virtual bool? DisableDefaultChecksumValidation { get; set; }
-
-        /// <summary>      
-        /// <para><b>WARNING: Setting DisablePayloadSigning to true disables the SigV4 payload signing 
-        /// data integrity check on this request.</b></para>  
-        /// <para>If using SigV4, the DisablePayloadSigning flag controls if the payload should be 
-        /// signed on a request by request basis. By default, this flag is null which will use the 
-        /// default client behavior. The default client behavior is to sign the payload. When 
-        /// DisablePayloadSigning is true, the request will be signed with an UNSIGNED-PAYLOAD value. 
-        /// Setting DisablePayloadSigning to true requires that the request is sent over a HTTPS 
-        /// connection.</para>        
-        /// <para>Under certain circumstances, such as uploading to S3 while using MD5 hashing, it may 
-        /// be desirable to use UNSIGNED-PAYLOAD to decrease signing CPU usage. This flag only applies 
-        /// to Amazon S3 PutObject and UploadPart requests.</para>
-        /// <para>MD5Stream, SigV4 payload signing, and HTTPS each provide some data integrity 
-        /// verification. If DisableMD5Stream is true and DisablePayloadSigning is true, then the 
-        /// possibility of data corruption is completely dependent on HTTPS being the only remaining 
-        /// source of data integrity verification.</para>
-        /// </summary>
-        public virtual bool? DisablePayloadSigning { get; set; }
-
-        /// <summary>
-        /// Gets or sets whether the Content-MD5 header should be calculated for upload.
-        /// </summary>
-        public virtual bool CalculateContentMd5Header { get; set; }
-
-        /// <summary>
-        /// Gets and sets the property ObjectLockLegalHoldStatus. 
+        /// Gets and sets the property ChecksumCRC32. 
         /// <para>
-        /// Specifies whether a legal hold will be applied to this object. For more information
-        /// about S3 Object Lock, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/dev/object-lock.html">Object
-        /// Lock</a>.
+        /// This specifies the Base64 encoded, 32-bit <c>CRC-32C</c> checksum of the object. 
+        /// For more information, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html">Checking object integrity</a>
+        /// in the <i>Amazon S3 User Guide</i>.
         /// </para>
         /// </summary>
-        public virtual ObjectLockLegalHoldStatus? ObjectLockLegalHoldStatus { get; set; }
+        public virtual string? ChecksumCRC32 { get; set; }
 
         /// <summary>
-        /// Gets and sets the property ObjectLockMode. 
-        /// <para>
-        /// The Object Lock mode that you want to apply to this object.
-        /// </para>
+        /// Checks if ChecksumCRC32 property is set.
         /// </summary>
-        public virtual ObjectLockMode? ObjectLockMode { get; set; }
-
-        /// <summary>
-        /// Gets and sets the property ObjectLockRetainUntilDate. 
-        /// <para>
-        /// The date and time when you want this object's Object Lock to expire.
-        /// </para>
-        /// </summary>
-        public virtual DateTimeOffset ObjectLockRetainUntilDate
+        /// <returns>true if ChecksumCRC32 property is set.</returns>
+        [MemberNotNullWhen(true, nameof(ChecksumCRC32))]
+        internal virtual bool IsSetChecksumCRC32()
         {
-            get => _objectLockRetainUntilDate.GetValueOrDefault();
-            set => _objectLockRetainUntilDate = value;
+            return !string.IsNullOrEmpty(ChecksumCRC32);
         }
 
-        // Check to see if ObjectLockRetainUntilDate property is set
-        [MemberNotNullWhen(true, nameof(ObjectLockRetainUntilDate))]
-        [MemberNotNullWhen(true, nameof(_objectLockRetainUntilDate))]
-        internal virtual bool IsSetObjectLockRetainUntilDate() => _objectLockRetainUntilDate.HasValue;
-
         /// <summary>
-        /// Gets and sets the property ChecksumAlgorithm. 
+        /// Gets and sets the property ChecksumCRC32C. 
         /// <para>
-        /// Indicates the algorithm used to create the checksum for the object. Amazon S3 will
-        /// fail the request with a 400 error if there is no checksum associated with the object.
-        /// For more information, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html">
-        /// Checking object integrity</a> in the <i>Amazon S3 User Guide</i>.
-        /// </para>
-        ///  
-        /// <para>
-        /// If you provide an individual checksum, Amazon S3 will ignore any provided <code>ChecksumAlgorithm</code>.
+        /// This specifies the Base64 encoded, 32-bit <c>CRC-32C</c> checksum of the object. 
+        /// For more information, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html">Checking object integrity</a>
+        /// in the <i>Amazon S3 User Guide</i>.
         /// </para>
         /// </summary>
-        public virtual ChecksumAlgorithm? ChecksumAlgorithm { get; set; }
+        public virtual string? ChecksumCRC32C { get; set; }
+
+        /// <summary>
+        /// Checks if ChecksumCRC32C property is set.
+        /// </summary>
+        /// <returns>true if ChecksumCRC32C property is set.</returns>
+        [MemberNotNullWhen(true, nameof(ChecksumCRC32C))]
+        internal virtual bool IsSetChecksumCRC32C()
+        {
+            return !string.IsNullOrEmpty(ChecksumCRC32C);
+        }
+
+        /// <summary>
+        /// Gets and sets the property ChecksumCRC64NVME. 
+        /// <para>
+        /// This specifies the Base64 encoded, 64-bit <c>CRC-64NVME</c> checksum of the object. 
+        /// For more information, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html">Checking object integrity</a>
+        /// in the <i>Amazon S3 User Guide</i>.
+        /// </para>
+        /// </summary>
+        public virtual string? ChecksumCRC64NVME { get; set; }
+
+        /// <summary>
+        /// Checks if ChecksumCRC64NVME property is set.
+        /// </summary>
+        /// <returns>true if ChecksumCRC64NVME property is set.</returns>
+        [MemberNotNullWhen(true, nameof(ChecksumCRC64NVME))]
+        internal virtual bool IsSetChecksumCRC64NVME()
+        {
+            return !string.IsNullOrEmpty(ChecksumCRC64NVME);
+        }
+
+        /// <summary>
+        /// Gets and sets the property ChecksumSHA1. 
+        /// <para>
+        /// This specifies the Base64 encoded, 160-bit <c>SHA-1</c> digest of the object. 
+        /// For more information, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html">Checking object integrity</a>
+        /// in the <i>Amazon S3 User Guide</i>.
+        /// </para>
+        /// </summary>
+        public virtual string? ChecksumSHA1 { get; set; }
+
+        /// <summary>
+        /// Checks if ChecksumSHA1 property is set.
+        /// </summary>
+        /// <returns>true if ChecksumSHA1 property is set.</returns>
+        [MemberNotNullWhen(true, nameof(ChecksumSHA1))]
+        internal virtual bool IsSetChecksumSHA1()
+        {
+            return !string.IsNullOrEmpty(ChecksumSHA1);
+        }
+
+        /// <summary>
+        /// Gets and sets the property ChecksumSHA256. 
+        /// <para>
+        /// This specifies the Base64 encoded, 256-bit <c>SHA-256</c> digest of the object. 
+        /// For more information, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html">Checking object integrity</a>
+        /// in the <i>Amazon S3 User Guide</i>.
+        /// </para>
+        /// </summary>
+        public virtual string? ChecksumSHA256 { get; set; }
+
+        /// <summary>
+        /// Checks if ChecksumSHA256 property is set.
+        /// </summary>
+        /// <returns>true if ChecksumSHA256 property is set.</returns>
+        [MemberNotNullWhen(true, nameof(ChecksumSHA256))]
+        internal virtual bool IsSetChecksumSHA256()
+        {
+            return !string.IsNullOrEmpty(ChecksumSHA256);
+        }
+
+        /// <summary>
+        /// Gets and sets the property IfNoneMatch used when CompleteMultipartUploadRequest is called to 
+        /// complete the multipart upload.
+        /// <para>Uploads the object only if the object key name does not already exist in the bucket specified. Otherwise, 
+        /// Amazon S3 returns a <c>412 Precondition Failed</c> error.</para> <para>If a conflicting operation occurs 
+        /// during the upload S3 returns a <c>409 ConditionalRequestConflict</c> response. On a 409 failure you should 
+        /// re-initiate the multipart upload with <c>CreateMultipartUpload</c> and re-upload each part.</para> <para>Expects 
+        /// the '*' (asterisk) character.</para> <para>For more information about conditional requests, 
+        /// see <a href="https://tools.ietf.org/html/rfc7232">RFC 7232</a>, or <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/conditional-requests.html">Conditional requests</a> 
+        /// in the <i>Amazon S3 User Guide</i>.</para>
+        /// </summary>
+        public virtual string? IfNoneMatch { get; set; }
+
+        /// <summary>
+        /// Checks to see if IfNoneMatch is set.
+        /// </summary>
+        /// <returns>true, if IfNoneMatch property is set.</returns>
+        internal virtual bool IsSetIfNoneMatch()
+        {
+            return !string.IsNullOrEmpty(IfNoneMatch);
+        }
+
+        /// <summary>
+        /// Gets and sets the property IfMatch used when CompleteMultipartUploadRequest is called to 
+        /// complete the multipart upload.
+        /// <para>Uploads the object only if the ETag (entity tag) value provided during the WRITE operation matches the ETag of the object in S3. If the ETag values do not match, the operation returns a <c>412 Precondition Failed</c> error.</para>
+        /// <para>If a conflicting operation occurs during the upload S3 returns a <c>409 ConditionalRequestConflict</c> response. On a 409 failure you should fetch the object's ETag and retry the upload.</para>
+        /// <para>Expects the ETag value as a string.</para>
+        /// <para>For more information about conditional requests, see <a href="https://tools.ietf.org/html/rfc7232">RFC 7232</a>, or <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/conditional-requests.html">Conditional requests</a> in the <i>Amazon S3 User Guide</i>.</para>
+        /// </summary>
+        public string? IfMatch { get; set; }
+
+        /// <summary>
+        /// Checks to see if IfMatch is set.
+        /// </summary>
+        /// <returns>true, if IfMatch property is set.</returns>
+        [MemberNotNullWhen(true, nameof(IfMatch))]
+        internal virtual bool IsSetIfMatch()
+        {
+            return !string.IsNullOrEmpty(IfMatch);
+        }
+        /// <summary>
+        /// Gets and sets the property MpuObjectSize. 
+        /// <para>
+        /// The expected total object size of the multipart upload request.
+        /// If there's a mismatch between the specified object size value and the actual
+        /// object size value, it results in an <c>HTTP 400 InvalidRequest</c> error.
+        /// </para>
+        /// </summary>
+        public virtual ulong MpuObjectSize
+        {
+            get => _mpuObjectSize.GetValueOrDefault();
+            set => _mpuObjectSize = value;
+        }
+
+        /// <summary>
+        /// Checks if MpuObjectSize property is set.
+        /// </summary>
+        /// <returns>true if MpuObjectSize property is set.</returns>
+        [MemberNotNullWhen(true, nameof(MpuObjectSize))]
+        internal virtual bool IsSetMpuObjectSize()
+        {
+            return _mpuObjectSize.HasValue;
+        }
         
         internal virtual bool IsMultipartUpload(IAsyncTransferConfig config)
         {
@@ -452,7 +376,5 @@ namespace Allos.Amazon.Sdk.S3.Transfer
             //a nonseekable stream and the ContentLength is more than zero, we also do a multipart upload.
             return true;
         }
-        
-        internal virtual string DebuggerDisplay => ToString() ?? GetType().Name;
     }
 }

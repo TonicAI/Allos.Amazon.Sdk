@@ -18,6 +18,12 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
     {
         private const string Key = "Encrypted|Object.png";
 
+        [ClassInitialize]
+        public static void ClassInitialize(TestContext a)
+        {
+            BaseInitialize();
+        }
+
         [ClassCleanup]
         public static void Cleanup()
         {
@@ -36,7 +42,7 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
 
         private static AmazonS3Client CreateHttpClient()
         {
-            var config = new AmazonS3Config { UseHttp = true };
+            var config = new AmazonS3Config { UseHttp = true, RegionEndpoint = TestAwsRegion };
             var client = new AmazonS3Client(config);
 
             return client;
@@ -47,7 +53,7 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
         [TestCategory("S3")]
         public async Task ServerSideEncryptionByokPutAndGet()
         {
-            var bucketName = S3TestUtils.CreateBucketWithWait(Client);
+            var bucketName = await S3TestUtils.CreateBucketWithWait(Client);
 
             try
             {
@@ -184,7 +190,7 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
         [TestCategory("S3")]
         public async Task ServerSideEncryptionByokTransferUtility()
         {
-            var bucketName = S3TestUtils.CreateBucketWithWait(Client);
+            var bucketName = await S3TestUtils.CreateBucketWithWait(Client);
             try
             {
                 Aes aesEncryption = Aes.Create();

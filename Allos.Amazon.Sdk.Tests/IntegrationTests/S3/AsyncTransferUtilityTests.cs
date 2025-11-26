@@ -41,10 +41,10 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
         {
             BaseInitialize();
             // Create standard bucket for operations
-            _bucketName = S3TestUtils.CreateBucketWithWait(Client);
+            _bucketName = S3TestUtils.CreateBucketWithWait(Client).ConfigureAwait(false).GetAwaiter().GetResult();
 
             // Create a bucket specifically for the SSE-C tests as a bucket policy has to be set on it to require SSE-C.
-            _ssecBucketName = S3TestUtils.CreateBucketWithWait(Client, createForSse: true);
+            _ssecBucketName = S3TestUtils.CreateBucketWithWait(Client, createForSse: true).ConfigureAwait(false).GetAwaiter().GetResult();
             // Apply the bucket policy to SSE-C: https://docs.aws.amazon.com/AmazonS3/latest/userguide/ServerSideEncryptionCustomerKeys.html
             Client.PutBucketPolicyAsync(new()
             {
@@ -348,6 +348,10 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
             }
         }
 
+        /// <summary>
+        /// N.B. etimmerman -- this test fails because we use a SimpleUploadCommand when the length is 0,
+        /// and checksum calculations there are for some reason different. Not being seekable causes this to fail.
+        /// </summary>
         [TestMethod]
         [TestCategory("S3")]
         public async Task UploadUnSeekableStreamWithZeroLengthTest()
@@ -1059,6 +1063,94 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
             }
             Assert.Fail("An OperationCanceledException was not thrown.");
         }
+        
+        [TestMethod]
+        [TestCategory("S3")]
+        public async Task UploadDirectoryWithMixedFileTypesContentTypeTest()
+        {
+            ArgumentNullException.ThrowIfNull(_bucketName);
+            
+            var directory = CreateMixedFileTypeTestDirectory();
+            var keyPrefix = directory.Name;
+
+            // Upload directory without setting explicit ContentType
+            var transferUtility = new AsyncTransferUtility(Client);
+            var request = new UploadDirectoryRequest
+            {
+                BucketName = _bucketName,
+                Directory = directory.FullName,
+                KeyPrefix = keyPrefix,
+                SearchPattern = "*",
+                SearchOption = SearchOption.AllDirectories
+                // Note: No ContentType set - should auto-detect per file
+            };
+
+            await transferUtility.UploadDirectoryAsync(request).ConfigureAwait(false);
+
+            // Validate each file got correct content type based on extension
+            await ValidateDirectoryContentTypes(Client, _bucketName, keyPrefix, directory);
+        }
+
+        public static DirectoryInfo CreateMixedFileTypeTestDirectory()
+        {
+            var directoryPath = GenerateDirectoryPath("MixedFileTypeTest");
+
+            var testFiles = new Dictionary<string, string>
+            {
+                { "test.html", "<html><body>Test HTML</body></html>" },
+                { "test.css", "body { color: red; }" },
+                { "test.js", "console.log('test');" },
+                { "test.json", "{ \"test\": \"value\" }" },
+                { "test.txt", "Plain text content" },
+                { "test.xml", "<?xml version=\"1.0\"?><root>test</root>" },
+                { "test.pdf", "PDF content placeholder" },
+                { "test.svg", "<svg><rect width=\"100\" height=\"100\"/></svg>" }
+            };
+
+            foreach (var file in testFiles)
+            {
+                var filePath = Path.Combine(directoryPath, file.Key);
+                Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
+                File.WriteAllText(filePath, file.Value);
+            }
+
+            return new DirectoryInfo(directoryPath);
+        }
+
+        private static async Task ValidateDirectoryContentTypes(IAmazonS3 s3client, string bucketName, string keyPrefix, DirectoryInfo directory)
+        {
+            var expectedContentTypes = new Dictionary<string, string>
+            {
+                { ".html", "text/html" },
+                { ".css", "text/css" },
+                { ".js", "application/x-javascript" },
+                { ".json", "application/json" },
+                { ".txt", "text/plain" },
+                { ".xml", "text/xml" },
+                { ".pdf", "application/pdf" },
+                { ".svg", "image/svg+xml" }
+            };
+
+            var files = directory.GetFiles("*", SearchOption.AllDirectories);
+            foreach (var file in files)
+            {
+                var filePath = file.FullName;
+                var relativePath = filePath.Substring(directory.FullName.Length + 1);
+                var key = (!string.IsNullOrEmpty(keyPrefix) ? keyPrefix + "/" : string.Empty) + relativePath.Replace("\\", "/");
+
+                var metadata = await s3client.GetObjectMetadataAsync(new GetObjectMetadataRequest
+                {
+                    BucketName = bucketName,
+                    Key = key
+                });
+
+                var extension = Path.GetExtension(file.Name).ToLowerInvariant();
+                var expectedContentType = expectedContentTypes[extension];
+
+                Assert.AreEqual(expectedContentType, metadata.Headers.ContentType,
+                    $"File {file.Name} should have content type {expectedContentType} but got {metadata.Headers.ContentType}");
+            }
+        }
 
         private static void ConfigureProgressValidator(DirectoryProgressValidator<DownloadDirectoryProgressArgs> progressValidator)
         {
@@ -1129,7 +1221,7 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
             await ValidateFileContents(s3Client, bucketName, key, path, AmazonS3Util.MimeTypeFromExtension(ext)).ConfigureAwait(false);
         }
 
-        private static Task ValidateFileContents(IAmazonS3 s3Client, string bucketName, string key, string path, string? contentType)
+        private static async Task ValidateFileContents(IAmazonS3 s3Client, string bucketName, string key, string path, string? contentType)
         {
             var downloadPath = path + ".chk";
             var request = new GetObjectRequest
@@ -1138,21 +1230,21 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
                 Key = key,
             };
 
-            UtilityMethods.WaitUntil(() =>
+            await UtilityMethods.WaitUntil(async () =>
             {
-                using (var response = s3Client.GetObjectAsync(request).ConfigureAwait(false).GetAwaiter().GetResult())
+                using (var response = await s3Client.GetObjectAsync(request).ConfigureAwait(false))
                 {
                     if (!string.IsNullOrWhiteSpace(contentType))
                     {
                         Assert.AreEqual(contentType, response.Headers.ContentType);
                     }
-                    response.WriteResponseStreamToFileAsync(downloadPath, append: false, CancellationToken.None).ConfigureAwait(false).GetAwaiter().GetResult();
+
+                    await response.WriteResponseStreamToFileAsync(downloadPath, append: false, CancellationToken.None)
+                        .ConfigureAwait(false);
                 }
                 return true;
             }, sleepSeconds: 2, maxWaitSeconds: 10);
             UtilityMethods.CompareFiles(path, downloadPath);
-
-            return Task.CompletedTask;
         }
 
         public static async Task ValidateDirectoryContents(IAmazonS3 s3Client, string bucketName, string keyPrefix, DirectoryInfo sourceDirectory)

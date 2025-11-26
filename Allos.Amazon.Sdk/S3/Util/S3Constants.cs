@@ -6,6 +6,7 @@ namespace Allos.Amazon.Sdk.S3.Util
     internal static class S3Constants
     {
         internal static readonly long MinPartSize = 5 * (long)Math.Pow(2, 20);
+        internal static readonly long DefaultPartSize = 8 * (long)Math.Pow(2, 20);
         internal const uint MaxNumberOfParts = 10000;
 
         internal const int DefaultBufferSize = 8192;

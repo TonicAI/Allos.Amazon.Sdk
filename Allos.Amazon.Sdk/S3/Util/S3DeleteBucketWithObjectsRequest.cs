@@ -24,7 +24,7 @@ namespace Allos.Amazon.Sdk.S3.Util
         ///    Returns <c>false</c> if otherwise.
         /// </returns>
         [MemberNotNullWhen(true, nameof(BucketName))]
-        internal bool IsSetBucketName() => !string.IsNullOrWhiteSpace(BucketName);
+        internal virtual bool IsSetBucketName() => !string.IsNullOrWhiteSpace(BucketName);
 
         /// <summary>
         /// The Amazon S3 Client to use for S3 specific operations.

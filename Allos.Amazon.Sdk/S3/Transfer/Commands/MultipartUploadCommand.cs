@@ -5,6 +5,7 @@ using Allos.Amazon.Sdk.Fork;
 using Allos.Amazon.Sdk.S3.Util;
 using Amazon.Runtime;
 using Amazon.Runtime.Internal;
+using Amazon.Runtime.Internal.UserAgent;
 using Amazon.S3;
 using Amazon.S3.Internal;
 using Amazon.S3.Model;
@@ -66,10 +67,12 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
             _inputStreams = new ConcurrentDictionary<uint, Stream>();
             _fileTransporterRequest = fileTransporterRequest;
             _contentLength = _fileTransporterRequest.ContentLength;
+            
+            var targetPartSize = fileTransporterRequest.IsSetPartSize() 
+                ? fileTransporterRequest.PartSize.ToInt64() 
+                : S3Constants.DefaultPartSize;
 
-            _partSize = fileTransporterRequest.IsSetPartSize() ? 
-                fileTransporterRequest.PartSize.ToInt64() : 
-                CalculatePartSize(_contentLength);
+            _partSize = CalculatePartSize(_contentLength, targetPartSize);
 
             if (fileTransporterRequest.InputStream != null)
             {
@@ -83,6 +86,8 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
         }
         
         public virtual SemaphoreSlim? AsyncThrottler { get; set; }
+
+        private readonly Dictionary<uint, ExpectedUploadPart> _expectedUploadParts = new();
 
         public override async Task ExecuteAsync(CancellationToken cancellationToken)
         {
@@ -120,6 +125,29 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
                         cancellationToken.ThrowIfCancellationRequested();
 
                         var uploadRequest = ConstructUploadPartRequest(i, filePosition, initResponse);
+                        
+                        var expectedFileOffset = (i - 1) * _partSize;
+                        // Calculating how many bytes are remaining to be uploaded from the current part.
+                        // This is mainly used for the last part scenario.
+                        var remainingBytes = contentLengthLong - expectedFileOffset;
+                        // We then check based on the remaining bytes and the content length if this is the last part.
+                        var isLastPart = calculateIsLastPart(remainingBytes);
+                        // To maintain the same behavior as the ConstructUploadPartRequest.
+                        // We are setting the remainingBytes/partSize when using the IAmazonS3Encryption client to 0.
+                        if (isLastPart
+                            && S3Client is IAmazonS3Encryption)
+                        {
+                            remainingBytes = 0;
+                        }
+                        _expectedUploadParts.Add(i, new ExpectedUploadPart {
+                            PartNumber = i,
+                            ExpectedContentLength =
+                                isLastPart ?
+                                    remainingBytes : 
+                                    _partSize,
+                            ExpectedFileOffset = expectedFileOffset,
+                            IsLastPart = isLastPart
+                        });
                         _partsToUpload.Enqueue(uploadRequest);
                         filePosition += _partSize;
                     }
@@ -199,8 +227,50 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
         {
             try
             {
-                return await S3Client.UploadPartAsync(uploadRequest, internalCts.Token)
+                var response = await S3Client.UploadPartAsync(uploadRequest, internalCts.Token)
                     .ConfigureAwait(continueOnCapturedContext: false);
+                
+                if (response.PartNumber is null)
+                {
+                    throw new ArgumentNullException(nameof(response.PartNumber));
+                }
+                else
+                {
+                    if (_expectedUploadParts.TryGetValue((uint) response.PartNumber, out var expectedUploadPart))
+                    {
+                        var actualContentLength = uploadRequest.PartSize;
+                        if (actualContentLength != expectedUploadPart.ExpectedContentLength)
+                        {
+                            throw new InvalidOperationException($"Cannot complete multipart upload request. The expected content length of part {expectedUploadPart.PartNumber} " +
+                                $"does not equal the actual content length.");
+                        }
+
+                        if (expectedUploadPart.IsLastPart)
+                        {
+                            if (actualContentLength < 0 ||
+                                actualContentLength > expectedUploadPart.ExpectedContentLength)
+                            {
+                                throw new InvalidOperationException($"Cannot complete multipart upload request. The last part " +
+                                    $"has an invalid content length.");
+                            }
+                        }
+
+                        var actualFileOsset = uploadRequest.FilePosition;
+                        if (!string.IsNullOrEmpty(uploadRequest.FilePath) && 
+                            actualFileOsset != expectedUploadPart.ExpectedFileOffset)
+                        {
+                            throw new InvalidOperationException($"Cannot complete multipart upload request. The expected file offset of part {expectedUploadPart.PartNumber} " +
+                                $"does not equal the actual file offset.");
+                        }
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException("Multipart upload request part was unexpected.");
+                    }
+                }
+
+
+                return response;
             }
             catch (Exception exception)
             {
@@ -243,17 +313,24 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
             }
             
         }
+        
+        internal AbortMultipartUploadRequest ConstructAbortMultipartUploadRequest(string uploadId)
+        {
+            return new AbortMultipartUploadRequest()
+            {
+                BucketName = _fileTransporterRequest.BucketName,
+                ExpectedBucketOwner = _fileTransporterRequest.ExpectedBucketOwner,
+                Key = _fileTransporterRequest.Key,
+                RequestPayer = _fileTransporterRequest.RequestPayer,
+                UploadId = uploadId
+            };
+        }
 
         protected virtual async Task AbortMultipartUploadAsync(string uploadId)
         {
             try
             {
-                await S3Client.AbortMultipartUploadAsync(new AbortMultipartUploadRequest
-                {
-                    BucketName = _fileTransporterRequest.BucketName,
-                    Key = _fileTransporterRequest.Key,
-                    UploadId = uploadId
-                });
+                await S3Client.AbortMultipartUploadAsync(ConstructAbortMultipartUploadRequest(uploadId));
             }
             catch (Exception e)
             {
@@ -274,9 +351,8 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
             {
                 if (args is WebServiceRequestEventArgs wsArgs)
                 {
-                    string currentUserAgent = wsArgs.Headers[AWSSDKUtils.UserAgentHeader];
-                    wsArgs.Headers[AWSSDKUtils.UserAgentHeader] =
-                        currentUserAgent + " ft/s3-transfer md/UploadNonSeekableStream";
+                    ((IAmazonWebServiceRequest)wsArgs.Request).UserAgentDetails.AddFeature(UserAgentFeatureId.S3_TRANSFER);
+                    ((IAmazonWebServiceRequest)wsArgs.Request).UserAgentDetails.AddUserAgentComponent("md/UploadNonSeekableStream");
                 }
             };
 
@@ -384,20 +460,23 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
                 throw;
             }
         }
-
-        protected static long CalculatePartSize(ulong? fileSize)
+        
+        private class ExpectedUploadPart
         {
-            if(fileSize == null)
+            public uint PartNumber { get; set; }
+            public long? ExpectedContentLength { get; set; }
+            public long? ExpectedFileOffset { get; set; }
+            public bool IsLastPart { get; set; }
+        }
+        
+        protected static long CalculatePartSize(ulong? contentLength, long targetPartSize)
+        {
+            if (contentLength == null)
             {
                 return S3Constants.MinPartSize;
             }
-            double partSize = Math.Ceiling((double)fileSize / S3Constants.MaxNumberOfParts);
-            if (partSize < S3Constants.MinPartSize)
-            {
-                partSize = S3Constants.MinPartSize;
-            }
-
-            return (long)partSize;
+            
+            return Math.Max(targetPartSize, (long) contentLength.Value / S3Constants.MaxNumberOfParts);
         }
 
         protected virtual string? DetermineContentType()
@@ -482,6 +561,14 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
 
             return compRequest;
         }
+        
+        private bool calculateIsLastPart(long remainingBytes)
+        {
+            var isLastPart = false;
+            if (remainingBytes <= _partSize)
+                isLastPart = true;
+            return isLastPart;
+        }
 
         protected virtual UploadPartRequest ConstructUploadPartRequest(
             uint partNumber, 
@@ -524,14 +611,18 @@ namespace Allos.Amazon.Sdk.S3.Transfer.Internal
             }
             
             UploadPartRequest uploadPartRequest = ConstructGenericUploadPartRequest(initiateResponse);
-
+            
+            // Calculating how many bytes are remaining to be uploaded from the current part.
+            // This is mainly used for the last part scenario.
+            var remainingBytes = _contentLength.Value.ToInt64() - filePosition;
+            // We then check based on the remaining bytes and the content length if this is the last part.
+            var isLastPart = calculateIsLastPart(remainingBytes);
             uploadPartRequest.PartNumber = Convert.ToInt32(partNumber);
-            uploadPartRequest.PartSize = _partSize;
+            uploadPartRequest.PartSize = isLastPart ? remainingBytes : _partSize;
+            uploadPartRequest.IsLastPart = isLastPart;
 
-            if ((filePosition + _partSize >= contentLengthLong)
-                && S3Client is IAmazonS3Encryption)
+            if (isLastPart && S3Client is IAmazonS3Encryption)
             {
-                uploadPartRequest.IsLastPart = true;
                 uploadPartRequest.PartSize = 0;
             }
 

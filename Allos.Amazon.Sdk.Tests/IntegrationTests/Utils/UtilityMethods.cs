@@ -39,14 +39,14 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Utils
             return fileMd5;
         }
 
-        public static T? WaitUntilSuccess<T>(Func<T> loadFunction, uint sleepSeconds = 5, uint maxWaitSeconds = 300)
+        public static async Task<T?> WaitUntilSuccess<T>(Func<Task<T>> loadFunction, uint sleepSeconds = 5, uint maxWaitSeconds = 300)
         {
             T? result = default;            
-            WaitUntil(() =>
+            await WaitUntil(async () =>
             {
                 try
                 {
-                    result = loadFunction();
+                    result = await loadFunction();
                     return result != null;
                 }
                 catch (AmazonS3Exception s3Ex) when (s3Ex.IsSenderException(TestBase.Logger))
@@ -62,28 +62,28 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Utils
             return result;
         }
 
-        public static void WaitUntilException(Action action, uint sleepSeconds = 5, uint maxWaitSeconds = 300)
+        public static async Task WaitUntilException(Func<Task> action, uint sleepSeconds = 5, uint maxWaitSeconds = 300)
         {        
-            WaitUntil(() =>
+            await WaitUntil(async () =>
             {
-                action();
+                await action();
                 return false;
             }, sleepSeconds, maxWaitSeconds);
         }
 
-        public static void WaitUntilSuccess(Action action, uint sleepSeconds = 5, uint maxWaitSeconds = 300)
+        public static async Task WaitUntilSuccess(Func<Task> action, uint sleepSeconds = 5, uint maxWaitSeconds = 300)
         {
             if (sleepSeconds < 0) throw new ArgumentOutOfRangeException(nameof(sleepSeconds));
-            WaitUntilSuccess(action, new ListSleeper(sleepSeconds * 1000), maxWaitSeconds);
+            await WaitUntilSuccess(action, new ListSleeper(sleepSeconds * 1000), maxWaitSeconds);
         }
 
-        public static void WaitUntilSuccess(Action action, ListSleeper sleeper, uint maxWaitSeconds = 300)
+        public static async Task WaitUntilSuccess(Func<Task> action, ListSleeper sleeper, uint maxWaitSeconds = 300)
         {
-            WaitUntil(() =>
+            await WaitUntil(async () =>
             {
                 try
                 {
-                    action();
+                    await action();
                     return true;
                 }
                 catch (AmazonS3Exception s3Ex) when (s3Ex.IsSenderException(TestBase.Logger))
@@ -97,13 +97,13 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Utils
             }, sleeper, maxWaitSeconds);
         }
 
-        public static void WaitUntil(Func<bool> matchFunction, uint sleepSeconds = 5, uint maxWaitSeconds = 300)
+        public static async Task WaitUntil(Func<Task<bool>> matchFunction, uint sleepSeconds = 5, uint maxWaitSeconds = 300)
         {
             if (sleepSeconds < 0) throw new ArgumentOutOfRangeException(nameof(sleepSeconds));
-            WaitUntil(matchFunction, new ListSleeper(sleepSeconds * 1000), maxWaitSeconds);
+            await WaitUntil(matchFunction, new ListSleeper(sleepSeconds * 1000), maxWaitSeconds);
         }
 
-        private static void WaitUntil(Func<bool> matchFunction, ListSleeper sleeper, uint maxWaitSeconds = 300)
+        private static async Task WaitUntil(Func<Task<bool>> matchFunction, ListSleeper sleeper, uint maxWaitSeconds = 300)
         {
             if (maxWaitSeconds < 0) throw new ArgumentOutOfRangeException(nameof(maxWaitSeconds));
 
@@ -112,7 +112,7 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Utils
 
             while(DateTime.Now < endTime)
             {
-                if (matchFunction())
+                if (await matchFunction())
                     return;
                 sleeper.Sleep();
             }
