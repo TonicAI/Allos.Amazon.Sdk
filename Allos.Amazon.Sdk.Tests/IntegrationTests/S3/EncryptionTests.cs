@@ -47,7 +47,7 @@ namespace Allos.Amazon.Sdk.Tests.IntegrationTests.Tests.S3
             BaseInitialize();
             var encryptionMaterials = new EncryptionMaterialsV2(RSA.Create(), AsymmetricAlgorithmType.RsaOaepSha1);
 
-            AmazonS3CryptoConfigurationV2 config = new(SecurityProfile.V2);
+            AmazonS3CryptoConfigurationV2 config = new(SecurityProfile.V2, CommitmentPolicy.RequireEncryptAllowDecrypt, ContentEncryptionAlgorithm.AesGcmWithCommitment);
 
             _s3EncryptionClientMetadataMode = new(config, encryptionMaterials);
             RetryUtilities.ConfigureClient(_s3EncryptionClientMetadataMode);
