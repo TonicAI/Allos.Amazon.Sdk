@@ -36,7 +36,7 @@
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
       <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
       <DebugSymbols>true</DebugSymbols>
-      <Version>4.0.13.1-debug+build.0</Version>
+      <Version>4.0.13.2-debug+build.0</Version>
       <DocumentationFile>bin\Debug\Allos.Amazon.Sdk.xml</DocumentationFile>
       <NoWarn>1701;1702;1591</NoWarn>
     </PropertyGroup>
@@ -44,7 +44,7 @@
     <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
       <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
       <DebugSymbols>true</DebugSymbols>
-      <Version>4.0.13.1+build.0</Version>
+      <Version>4.0.13.2+build.0</Version>
       <DocumentationFile>bin\Release\Allos.Amazon.Sdk.xml</DocumentationFile>
       <NoWarn>1701;1702;1591</NoWarn>
     </PropertyGroup>
