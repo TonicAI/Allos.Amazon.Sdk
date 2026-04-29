@@ -7,12 +7,14 @@ A manually created forked subset of the official `AWS SDK` (from [aws-sdk-net](h
 - discard functionality annotated with `ObsoleteAttribute`
 
 - use `async` functionality by default
+
   - discard synchronous functionality exposed by contracts
   - uses `Task` instead of `Thread` patterns
 
 - prefer modern `C#` syntax to that of the original source code
 
 - enabled [Nullable reference types](https://learn.microsoft.com/en-us/dotnet/csharp/nullable-references)  (i.e. `#nullable enable`)
+
   - code has been refactored to successfully build / test with them enabled
 
 - coalesce `partial` definitions where possible
@@ -28,9 +30,11 @@ A manually created forked subset of the official `AWS SDK` (from [aws-sdk-net](h
   - can be used by scripts to reconstitute an original file structure for diff purposes
 
 - expose `private` functionality for extensible types
+
   - changed modifier to `protected` 
 
 - expose `internal` functionality
+
   - changed modifier to `protected` for extensible types
   - exposed remaining `internal` to a list of known assemblies via `InternalsVisibleToAttribute`
 
@@ -96,3 +100,14 @@ This limitation has been addressed by including one ore more additional types an
 
 The combination of these patches yields progress update events without limitations.
 
+## Publishing Versions in `TonicAI.allos`
+
+1) Build the latest version of the `Allos.Amazon.Sdk.x.x.x.x*.nupkg` NuGet packages locally
+   - Build once in **`DEBUG`** configuration
+     - There will be 2 packages for each build (one for the lib, one for lib symbols)
+     - If the debug outputs do not have `-debug` after the version number, rename them so they look like `Allos.Amazon.Sdk.x.x.x.x-debug.*nuget`
+   - Build once in **`RELEASE`** configuration
+     - There will be 2 packages for each build (one for the lib, one for lib symbols).
+2) Replace the 4 package that are in  `allos/allos_backend/LocalNuGetFeed`
+3) Update all `.csproj` files in the `Solution` that still have the old `<PackageReference...` version to reflect the new package version in the `LocalNuGetFeed`
+4) Commit these changes and builds local and remote will leverage the updated package versions
